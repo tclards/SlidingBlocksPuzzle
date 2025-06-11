@@ -3,7 +3,19 @@
 
 // 30.26
 
-// defining values for the movement system
+// TODO
+// SFX
+// music?
+// WIN SCREEN
+// Restart Level Button - in case of softlock
+// Level Completion timing
+// Main Menu and Score/Time screen
+// README
+// Credits
+// create many many many levels
+// Cool sprites to make game prettier
+
+// defining global values for the movement system
 constexpr int NORTH = 0;
 constexpr int EAST = 1;
 constexpr int SOUTH = 2;
@@ -12,17 +24,11 @@ constexpr int WEST = 3;
 class Puzzle : public olc::PixelGameEngine
 {
 public:
-	Puzzle()
-	{
-		sAppName = "Sliding Blocks Puzzle Game";
-	}
+	
 
-	// Definition for level size and block size
-	olc::vf2d vLevelSize = { 16,15 };
-	olc::vi2d vBlockSize = { 16,16 };
-
-	// Strings containing levels
-	std::string sLevel = 
+// Strings containing levels
+#pragma region Levels
+	std::string sLevel =
 		"################"
 		"#..............#"
 		"#...+....+.....#"
@@ -38,8 +44,10 @@ public:
 		"#........+.....#"
 		"#..............#"
 		"################";
+#pragma endregion
 
-	// Structs containing definitions & logic for block types
+// Structs containing definitions & logic for block types
+#pragma region Block Types
 	struct block // basic block definition
 	{
 		block()
@@ -102,7 +110,7 @@ public:
 
 		bool Push(const int direction) override
 		{
-			return true;
+			return direction == EAST || direction == WEST;
 		}
 	};
 	struct block_vertical : public block // block that moves up and down
@@ -114,9 +122,19 @@ public:
 
 		bool Push(const int direction) override
 		{
-			return true;
+			return direction == NORTH || direction == SOUTH;
 		}
 	};
+#pragma endregion
+
+	Puzzle()
+	{
+		sAppName = "Sliding Blocks Puzzle Game";
+	}
+
+	// Definition for level size and block size
+	olc::vf2d vLevelSize = { 16,15 };
+	olc::vi2d vBlockSize = { 16,16 };
 
 	// Vector of unique pointers to the blocks making up a level
 	std::vector<std::unique_ptr<block>> vLevel;
