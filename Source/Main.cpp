@@ -13,7 +13,7 @@ public:
 
 	// Definition for level size and block size
 	olc::vf2d vLevelSize = { 16,15 };
-	olc::vf2d vBlockSize = { 16,16 };
+	olc::vi2d vBlockSize = { 16,16 };
 
 	// Strings containing levels
 	std::string sLevel = 
