@@ -121,6 +121,9 @@ public:
 	// Vector of unique pointers to the blocks making up a level
 	std::vector<std::unique_ptr<block>> vLevel;
 
+	// vector holding player location
+	olc::vi2d vPlayerPos;
+
 public:
 	// Function for loading a level from string template
 	void LoadLevel(int n)
@@ -138,6 +141,7 @@ public:
 					break;
 				case 'P':
 					vLevel.emplace_back(std::make_unique<block_player>());
+					vPlayerPos = { x,y };
 					break;
 				case '+':
 					vLevel.emplace_back(std::make_unique<block_simple>());
@@ -191,18 +195,77 @@ public:
 			bPushing = true;
 		}
 
+		// lambda function for translating our 2D coordinates into 1D
+		auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; };
+
 		// movement logic
 		if (bPushing) // check if a push attempt is happening this frame
 		{
+			olc::vi2d vBlockPos = vPlayerPos; // 'cursor' to track attempted movement
 
+			bool bAllowPush = false;
+			bool bTest = true;
+
+			// test for ability to move in a specific direction
+			while (bTest)
+			{
+				if (vLevel[id(vBlockPos)]!= nullptr) // check target block space for nullptr
+				{
+					if (vLevel[id(vBlockPos)]->Push((iDirPush + 2) % 4 )) // call blocks push function to determine if it can be pushed in the direction specified
+					{
+						// if block is allowed to be pushed in that direction - move cursor that direction so we can check for collision in neighboring space
+						switch (iDirPush) // select neighbor
+						{
+						case NORTH: vBlockPos.y--; break;
+						case SOUTH: vBlockPos.y++; break;
+						case EAST: vBlockPos.x++; break;
+						case WEST: vBlockPos.x--; break;
+						}
+					}
+					else // block cant be pushed that way -- end testing
+					{
+						bTest = false;
+					}
+				}
+				else // target space was nullptr - player can move there. End testing
+				{
+					bAllowPush = true;
+					bTest = false;
+				}
+			}
+
+			if (bAllowPush) // if push is allowed - execute push logic
+			{
+				while (vBlockPos != vPlayerPos) // walk backwards until reaching player position from valid move location that cursor found, swapping block positions as needed
+				{
+					olc::vi2d vSourcePos = vBlockPos;
+					switch (iDirPush)
+					{
+					case NORTH: vSourcePos.y++; break;
+					case SOUTH: vSourcePos.y--; break;
+					case EAST: vSourcePos.x--; break;
+					case WEST: vSourcePos.x++; break;
+					}
+
+					std::swap(vLevel[id(vSourcePos)], vLevel[id(vBlockPos)]); // swap blocks
+					vBlockPos = vSourcePos; // increment 'cursor' backwards
+				}
+
+				// update player location after movement logic loop completes
+				switch (iDirPush) 
+				{
+				case NORTH: vPlayerPos.y--; break;
+				case SOUTH: vPlayerPos.y++; break;
+				case EAST: vPlayerPos.x++; break;
+				case WEST: vPlayerPos.x--; break;
+				}
+			}
 		}
 
 		// Clear screen to black before drawing each frame
 		Clear(olc::BLACK);
 
-		// lambda function for translating our 2D coordinates into 1D
-		auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; };
-
+		// draw logic
 		olc::vi2d vBlockPos = { 0,0 };
 		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++)
 		{
