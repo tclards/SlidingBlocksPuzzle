@@ -34,7 +34,7 @@ public:
 		"################";
 
 	// Structs containing definitions & logic for block types
-	struct block
+	struct block // basic block definition
 	{
 		block()
 		{
@@ -46,18 +46,39 @@ public:
 
 		}
 	};
-	struct block_solid : public block
+	struct block_solid : public block // solid immovable block -- ie walls
 	{
 		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
 		{
 			pge->FillRect(pos * size, size, olc::BLUE);
 		}
 	};
-	struct block_player : public block
+	struct block_player : public block // player block
 	{
 		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
 		{
 			pge->FillRect(pos * size, size, olc::WHITE);
+		}
+	};
+	struct block_simple : public block // block that moves in any direction
+	{
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		{
+			pge->FillRect(pos * size, size, olc::RED);
+		}
+	};
+	struct block_horizontal : public block // block that moves in any direction
+	{
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		{
+			pge->FillRect(pos * size, size, olc::GREEN);
+		}
+	};
+	struct block_vertical : public block // block that moves in any direction
+	{
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		{
+			pge->FillRect(pos * size, size, olc::YELLOW);
 		}
 	};
 
@@ -81,6 +102,15 @@ public:
 					break;
 				case 'P':
 					vLevel.emplace_back(std::make_unique<block_player>());
+					break;
+				case '+':
+					vLevel.emplace_back(std::make_unique<block_simple>());
+					break;
+				case '-':
+					vLevel.emplace_back(std::make_unique<block_horizontal>());
+					break;
+				case '|':
+					vLevel.emplace_back(std::make_unique<block_vertical>());
 					break;
 
 				default:
