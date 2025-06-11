@@ -3,6 +3,12 @@
 
 // 30.26
 
+// defining values for the movement system
+constexpr int NORTH = 0;
+constexpr int EAST = 1;
+constexpr int SOUTH = 2;
+constexpr int WEST = 3;
+
 class Puzzle : public olc::PixelGameEngine
 {
 public:
@@ -45,12 +51,22 @@ public:
 		{
 
 		}
+
+		virtual bool Push(const int direction)
+		{
+			return true;
+		}
 	};
 	struct block_solid : public block // solid immovable block -- ie walls
 	{
 		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
 		{
 			pge->FillRect(pos * size, size, olc::BLUE);
+		}
+
+		bool Push(const int direction) override
+		{
+			return false;
 		}
 	};
 	struct block_player : public block // player block
@@ -59,6 +75,11 @@ public:
 		{
 			pge->FillRect(pos * size, size, olc::WHITE);
 		}
+
+		bool Push(const int direction) override
+		{
+			return true;
+		}
 	};
 	struct block_simple : public block // block that moves in any direction
 	{
@@ -66,19 +87,34 @@ public:
 		{
 			pge->FillRect(pos * size, size, olc::RED);
 		}
+
+		bool Push(const int direction) override
+		{
+			return true;
+		}
 	};
-	struct block_horizontal : public block // block that moves in any direction
+	struct block_horizontal : public block // block that moves side to side
 	{
 		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
 		{
 			pge->FillRect(pos * size, size, olc::GREEN);
 		}
+
+		bool Push(const int direction) override
+		{
+			return true;
+		}
 	};
-	struct block_vertical : public block // block that moves in any direction
+	struct block_vertical : public block // block that moves up and down
 	{
 		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
 		{
 			pge->FillRect(pos * size, size, olc::YELLOW);
+		}
+
+		bool Push(const int direction) override
+		{
+			return true;
 		}
 	};
 
@@ -131,7 +167,37 @@ public:
 	// Runs every frame
 	bool OnUserUpdate(float fElapsedTime) override
 	{
-		// Clear screen to black at the start of every frame
+		// user input
+		bool bPushing = false;
+		int iDirPush = NORTH;
+		if (GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
+		{
+			iDirPush = 0;
+			bPushing = true;
+		}
+		if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
+		{
+			iDirPush = SOUTH;
+			bPushing = true;
+		}
+		if (GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
+		{
+			iDirPush = WEST;
+			bPushing = true;
+		}
+		if (GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
+		{
+			iDirPush = EAST;
+			bPushing = true;
+		}
+
+		// movement logic
+		if (bPushing) // check if a push attempt is happening this frame
+		{
+
+		}
+
+		// Clear screen to black before drawing each frame
 		Clear(olc::BLACK);
 
 		// lambda function for translating our 2D coordinates into 1D
