@@ -53,6 +53,13 @@ public:
 			pge->FillRect(pos * size, size, olc::BLUE);
 		}
 	};
+	struct block_player : public block
+	{
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		{
+			pge->FillRect(pos * size, size, olc::WHITE);
+		}
+	};
 
 	// Vector of unique pointers to the blocks making up a level
 	std::vector<std::unique_ptr<block>> vLevel;
@@ -71,6 +78,9 @@ public:
 				{
 				case '#':
 					vLevel.emplace_back(std::make_unique<block_solid>());
+					break;
+				case 'P':
+					vLevel.emplace_back(std::make_unique<block_player>());
 					break;
 
 				default:
