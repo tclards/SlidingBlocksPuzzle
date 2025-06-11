@@ -28,10 +28,18 @@ public:
 
 // Strings containing levels
 #pragma region Levels
+
+	// +		= any direction movable block
+	// -		= horizontal movement block
+	// P		= player block
+	// #		= solid immovable wall block
+	// integer 	= countdown block, any direction but limited number of movements as defined by integer (1 - 9)
+	// @		= level completion tiles
+
 	std::string sLevel =
 		"################"
 		"#..............#"
-		"#...+....+.....#"
+		"#...+.9..+.....#"
 		"#........+..|..#"
 		"#........+..|..#"
 		"#....P......|..#"
@@ -42,7 +50,7 @@ public:
 		"#..-.........@.#"
 		"#.....+....|...#"
 		"#........+.....#"
-		"#..............#"
+		"#.....1........#"
 		"################";
 #pragma endregion
 
@@ -63,6 +71,11 @@ public:
 		virtual bool Push(const int direction)
 		{
 			return true;
+		}
+
+		virtual void Move()
+		{
+
 		}
 	};
 	struct block_solid : public block // solid immovable block -- ie walls
@@ -125,6 +138,31 @@ public:
 			return direction == NORTH || direction == SOUTH;
 		}
 	};
+	struct block_countdown : public block // block that a specific number of times in any direction
+	{
+		int iMoveCount = 0; // number of moves the countdown block can move
+
+		block_countdown(int iNumOfMovesAllowed)
+		{
+			iMoveCount = iNumOfMovesAllowed;
+		}
+
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		{
+			pge->FillRect(pos * size, size, olc::CYAN);
+			pge->DrawString(pos * size + olc::vi2d(4, 4), std::to_string(iMoveCount), olc::BLACK);
+		}
+
+		bool Push(const int direction) override
+		{
+			return iMoveCount > 0;
+		}
+
+		void Move() override
+		{
+			iMoveCount--;
+		}
+	};
 #pragma endregion
 
 	Puzzle()
@@ -170,7 +208,33 @@ public:
 				case '|':
 					vLevel.emplace_back(std::make_unique<block_vertical>());
 					break;
-
+				case '1':
+					vLevel.emplace_back(std::make_unique<block_countdown>(1));
+					break;
+				case '2':
+					vLevel.emplace_back(std::make_unique<block_countdown>(2));
+					break;
+				case '3':
+					vLevel.emplace_back(std::make_unique<block_countdown>(3));
+					break;
+				case '4':
+					vLevel.emplace_back(std::make_unique<block_countdown>(4));
+					break;
+				case '5':
+					vLevel.emplace_back(std::make_unique<block_countdown>(5));
+					break;
+				case '6':
+					vLevel.emplace_back(std::make_unique<block_countdown>(6));
+					break;
+				case '7':
+					vLevel.emplace_back(std::make_unique<block_countdown>(7));
+					break;
+				case '8':
+					vLevel.emplace_back(std::make_unique<block_countdown>(8));
+					break;
+				case '9':
+					vLevel.emplace_back(std::make_unique<block_countdown>(9));
+					break;
 				default:
 					vLevel.emplace_back(nullptr);
 				}
@@ -263,6 +327,11 @@ public:
 					case SOUTH: vSourcePos.y--; break;
 					case EAST: vSourcePos.x--; break;
 					case WEST: vSourcePos.x++; break;
+					}
+
+					if (vLevel[id(vSourcePos)] != nullptr) // check for nullptr
+					{
+						vLevel[id(vSourcePos)]->Move(); // call any custom move logic before actually excecuting move
 					}
 
 					std::swap(vLevel[id(vSourcePos)], vLevel[id(vBlockPos)]); // swap blocks
