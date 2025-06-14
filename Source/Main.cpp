@@ -1,19 +1,24 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
-// 1.10.25
+// 1.20.50
 
 // TODO
+// animations for level transition
+// animations for teleport tiles?
 // SFX
 // music?
-// WIN SCREEN for all levels beaten
 // Level Completion timing
-// Main Menu and Score/Time screen
+// Main Menu?
+// Score/Time tracking
 // README
-// Credits
 // create many many many levels
 // Cool sprites to make game prettier
 // teleport tile
+
+// Controls:
+// WASD or Arrow Keys to move Player Block
+// R Key to Restart Level in case of softlock
 
 // defining global values for the movement system
 constexpr int NORTH = 0;
@@ -75,7 +80,8 @@ public:
 		"#.....1........#"
 		"################";
 
-	std::string sLevel_1 =
+	float iTime_1 = 0.0f;
+	std::string sLevel_1 = // starting here -> make sure to add any new levels to the LoadAll function that is used in OnUserCreate
 		"################"
 		"#..............#"
 		"#...+.9..+.....#"
@@ -92,6 +98,7 @@ public:
 		"#.....1........#"
 		"################";
 
+	float iTime_2 = 0.0f;
 	std::string sLevel_2 =
 		"################"
 		"#..............#"
@@ -246,9 +253,12 @@ public:
 	// Function to load all levels into memory
 	void LoadAll()
 	{
+		// Push back each game level
 		vAllLevels.push_back(sLevel_0);
 		vAllLevels.push_back(sLevel_1);
 		vAllLevels.push_back(sLevel_2);
+
+		// End cap for vector, used in End Of Game logic
 		vAllLevels.push_back("End");
 	}
 
@@ -485,8 +495,8 @@ public:
 			}
 		}
 
-		// UI for active gameplay
-		if (iCurLevel != -1)
+		// UI
+		if (iCurLevel != -1) // UI for active gameplay
 		{
 			// Goal Tracking UI
 			DrawString(4, 4, "Goals: " + std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), olc::WHITE);
@@ -494,7 +504,7 @@ public:
 			// Level Tracking UI
 			DrawString(128, 4, "Level: " + std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
 		}
-		else
+		else				// UI for win conditions
 		{
 			// Win Screen
 			DrawString((256 / 2) - 108, (240 / 2) -96, "YOU WIN!", olc::WHITE);
