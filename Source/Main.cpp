@@ -6,8 +6,7 @@
 // TODO
 // SFX
 // music?
-// WIN SCREEN
-// Restart Level Button - in case of softlock
+// WIN SCREEN for all levels beaten
 // Level Completion timing
 // Main Menu and Score/Time screen
 // README
@@ -36,7 +35,30 @@ public:
 	// integer 	= countdown block, any direction but limited number of movements as defined by integer (1 - 9)
 	// @		= level completion tiles
 
-	std::string sLevel =
+	// internal use, manually set, variable to track how many levels exist
+	int iNumOfLevels = 2;
+
+	// Vector containing all levels
+	std::vector <std::string> vAllLevels;
+
+	std::string sLevel_Error = // default to this if we run out of levels
+		"################"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	std::string sLevel_0 = // test level - not added to allLevels vector
 		"################"
 		"#..............#"
 		"#...+.9..+.....#"
@@ -48,6 +70,40 @@ public:
 		"#..+++....#..@.#"
 		"#.........#..@.#"
 		"#..-.........@.#"
+		"#.....+....|...#"
+		"#........+.....#"
+		"#.....1........#"
+		"################";
+
+	std::string sLevel_1 =
+		"################"
+		"#..............#"
+		"#...+.9..+.....#"
+		"#........+..|..#"
+		"#........+..|..#"
+		"#....P......|..#"
+		"#.......---....#"
+		"#..............#"
+		"#..+++....#..2.#"
+		"#.........#..@.#"
+		"#..-.........@.#"
+		"#.....+....|...#"
+		"#........+.....#"
+		"#.....1........#"
+		"################";
+
+	std::string sLevel_2 =
+		"################"
+		"#..............#"
+		"#...+.3..+.....#"
+		"#........+..|..#"
+		"#........+..|..#"
+		"#....P.........#"
+		"#..4....+++....#"
+		"#..............#"
+		"#..+++....#..@.#"
+		"#.........#..@.#"
+		"#..-...........#"
 		"#.....+....|...#"
 		"#........+.....#"
 		"#.....1........#"
@@ -183,7 +239,19 @@ public:
 	// vector holding player location
 	olc::vi2d vPlayerPos;
 
+	// Variable tracking which level the player is on
+	int iCurLevel = 1;
+
 public:
+	// Function to load all levels into memory
+	void LoadAll()
+	{
+		vAllLevels.push_back(sLevel_0);
+		vAllLevels.push_back(sLevel_1);
+		vAllLevels.push_back(sLevel_2);
+		vAllLevels.push_back("End");
+	}
+
 	// Function for loading a level from string template
 	void LoadLevel(int n)
 	{
@@ -191,13 +259,30 @@ public:
 		vLevel.clear();
 		vGoals.clear();
 
+		// check for no more levels in memory
+		if (vAllLevels[iCurLevel] == "End")
+		{
+			iCurLevel = -1;
+		}
+
+		// Begin load level
+		std::string sLevelToLoad;
+		if (iCurLevel == -1)
+		{
+			sLevelToLoad = sLevel_Error;
+		}
+		else
+		{
+			sLevelToLoad = vAllLevels[iCurLevel];
+		}
+
 		// iterate over level
 		for (int y = 0; y < vLevelSize.y; y++)
 		{
 			for (int x = 0; x < vLevelSize.x; x++)
 			{
 				// index into 1D version of array coordinates
-				switch (sLevel[y * vLevelSize.x + x])
+				switch (sLevelToLoad[y * vLevelSize.x + x])
 				{
 				case '#':
 					vLevel.emplace_back(std::make_unique<block_solid>());
@@ -256,7 +341,8 @@ public:
 	// Runs once at start of game
 	bool OnUserCreate() override
 	{
-		LoadLevel(0);
+		LoadAll();
+		LoadLevel(iCurLevel);
 
 		return true;
 	}
@@ -286,6 +372,10 @@ public:
 		{
 			iDirPush = EAST;
 			bPushing = true;
+		}
+		if (GetKey(olc::Key::R).bPressed)
+		{
+			LoadLevel(iCurLevel);
 		}
 
 		// lambda function for translating our 2D coordinates into 1D
@@ -395,8 +485,28 @@ public:
 			}
 		}
 
-		// Goal Tracking UI
-		DrawString(4, 4, "Goals: " + std::to_string(nGoals) + "/ " + std::to_string(vGoals.size()), olc::WHITE);
+		// UI for active gameplay
+		if (iCurLevel != -1)
+		{
+			// Goal Tracking UI
+			DrawString(4, 4, "Goals: " + std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), olc::WHITE);
+
+			// Level Tracking UI
+			DrawString(128, 4, "Level: " + std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
+		}
+		else
+		{
+			// Win Screen
+			DrawString((256 / 2) - 108, (240 / 2) -96, "YOU WIN!", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
+		}
+
+		// Win Tracking
+		if (nGoals >= vGoals.size() && iCurLevel != -1)
+		{
+			iCurLevel++;
+			LoadLevel(iCurLevel);
+		}
 
 		return true;
 	}
