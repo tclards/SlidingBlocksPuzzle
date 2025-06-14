@@ -1,7 +1,7 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
-// 30.26
+// 1.10.25
 
 // TODO
 // SFX
@@ -14,6 +14,7 @@
 // Credits
 // create many many many levels
 // Cool sprites to make game prettier
+// teleport tile
 
 // defining global values for the movement system
 constexpr int NORTH = 0;
@@ -24,7 +25,6 @@ constexpr int WEST = 3;
 class Puzzle : public olc::PixelGameEngine
 {
 public:
-	
 
 // Strings containing levels
 #pragma region Levels
@@ -174,6 +174,9 @@ public:
 	olc::vf2d vLevelSize = { 16,15 };
 	olc::vi2d vBlockSize = { 16,16 };
 
+	// Vector containing level goals
+	std::vector<olc::vi2d> vGoals;
+
 	// Vector of unique pointers to the blocks making up a level
 	std::vector<std::unique_ptr<block>> vLevel;
 
@@ -184,6 +187,10 @@ public:
 	// Function for loading a level from string template
 	void LoadLevel(int n)
 	{
+		// Clear existing level data
+		vLevel.clear();
+		vGoals.clear();
+
 		// iterate over level
 		for (int y = 0; y < vLevelSize.y; y++)
 		{
@@ -234,6 +241,10 @@ public:
 					break;
 				case '9':
 					vLevel.emplace_back(std::make_unique<block_countdown>(9));
+					break;
+				case '@':
+					vGoals.push_back({ x,y });
+					vLevel.emplace_back(nullptr);
 					break;
 				default:
 					vLevel.emplace_back(nullptr);
@@ -349,12 +360,27 @@ public:
 			}
 		}
 
+		// win condition checking 
+		int nGoals = 0;
+		for (auto& g : vGoals)
+		{
+			if (vLevel[id(g)] != nullptr)
+			{
+				nGoals++;
+			}
+		}
+
 		// Clear screen to black before drawing each frame
 		Clear(olc::BLACK);
 
 		// draw logic
 		olc::vi2d vBlockPos = { 0,0 };
-		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++)
+
+		for (auto& g : vGoals) // win condition drawing
+		{
+			FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+		}
+		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++) // block drawing
 		{
 			for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
 			{
@@ -368,6 +394,9 @@ public:
 				}
 			}
 		}
+
+		// Goal Tracking UI
+		DrawString(4, 4, "Goals: " + std::to_string(nGoals) + "/ " + std::to_string(vGoals.size()), olc::WHITE);
 
 		return true;
 	}
