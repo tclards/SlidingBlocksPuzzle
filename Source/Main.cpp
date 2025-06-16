@@ -1,20 +1,30 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
+#define OLC_SOUNDWAVE
+#include "olcSoundWaveEngine.h"
+
 // 1.20.50
 
-// TODO
+// TODO_A
+// SFX & Music 
+//		- make block push MovementSFX different than moving into Empty Tile SFX
+//		- Gather Files and add them to project folders
+//		- add File Paths in Sound section
+//		- Bug Fix Win Tile SFX Logic
+// Level Completion timer logic + UI
+// Score Tracking Screen & Pause Function?
+// ReadMe File
+// Create More Levels!
+// Create Graphics for each Block Type. 
+//		- Tilable Background Sprite for empty space?
+
+// TODO_B
 // animations for level transition
-// animations for teleport tiles?
-// SFX
-// music?
-// Level Completion timing
 // Main Menu?
-// Score/Time tracking
-// README
-// create many many many levels
-// Cool sprites to make game prettier
-// teleport tile
+// Teleport Tile 
+//		- SFX
+//		- Graphics
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -39,6 +49,8 @@ public:
 	// #		= solid immovable wall block
 	// integer 	= countdown block, any direction but limited number of movements as defined by integer (1 - 9)
 	// @		= level completion tiles
+
+	// Only currently supporting up to 9 win tiles per level
 
 	// internal use, manually set, variable to track how many levels exist
 	int iNumOfLevels = 2;
@@ -228,11 +240,8 @@ public:
 	};
 #pragma endregion
 
-	Puzzle()
-	{
-		sAppName = "Sliding Blocks Puzzle Game";
-	}
-
+// Variables
+#pragma region Vars
 	// Definition for level size and block size
 	olc::vf2d vLevelSize = { 16,15 };
 	olc::vi2d vBlockSize = { 16,16 };
@@ -248,8 +257,34 @@ public:
 
 	// Variable tracking which level the player is on
 	int iCurLevel = 1;
+#pragma endregion
 
-public:
+// Audio
+#pragma region Sound
+	// Audio Engine
+	olc::sound::WaveEngine audioEngine;
+	olc::sound::Wave audioSlot_Music;
+	olc::sound::Wave audioSlot_SFX;
+	float fVolumeSlider = 1.0f;
+
+	// Background Music
+	std::string sBackgroundMusic_1 = "//SFX//Silent.wav";
+
+	// SFX 
+	std::string sMovement_1 = "//SFX//Silent.wav";	
+	std::string sMovementFailure_1 = "//SFX//Silent.wav";
+	std::string sWinTileClick_1 = "//SFX//Silent.wav";
+	std::string sRestartLevel_1 = "//SFX//Silent.wav";
+	std::string sWinJingle_1 = "//SFX//Silent.wav";	
+	std::string sLevelTransition_1 = "//SFX//Silent.wav";
+#pragma endregion
+
+	// Constructor
+	Puzzle()
+	{
+		sAppName = "Sliding Blocks Puzzle Game";
+	}
+
 	// Function to load all levels into memory
 	void LoadAll()
 	{
@@ -263,7 +298,7 @@ public:
 	}
 
 	// Function for loading a level from string template
-	void LoadLevel(int n)
+	void LoadLevel(int n, bool bWasRestart)
 	{
 		// Clear existing level data
 		vLevel.clear();
@@ -284,6 +319,23 @@ public:
 		else
 		{
 			sLevelToLoad = vAllLevels[iCurLevel];
+		}
+
+		// SFX
+		if (iCurLevel == -1)
+		{
+			audioSlot_SFX.LoadAudioWaveform(sWinJingle_1);						// Load WinJingle SFX
+			audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);		// Play SFX
+		}
+		else if (bWasRestart == true)
+		{
+			audioSlot_SFX.LoadAudioWaveform(sRestartLevel_1);					// Load Restart SFX
+			audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);		// Play SFX
+		}
+		else
+		{
+			audioSlot_SFX.LoadAudioWaveform(sLevelTransition_1);				// Load Level Load SFX
+			audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);		// Play SFX
 		}
 
 		// iterate over level
@@ -351,9 +403,15 @@ public:
 	// Runs once at start of game
 	bool OnUserCreate() override
 	{
-		LoadAll();
-		LoadLevel(iCurLevel);
+		// Audio Handling
+		audioEngine.InitialiseAudio();											// Initialize Audio Engine
+		audioSlot_Music.LoadAudioWaveform(sBackgroundMusic_1);					// Load Background Music
+		audioEngine.PlayWaveform(&audioSlot_Music, true, fVolumeSlider);		// Play and Loop Background Music
 
+		// Level Loading
+		LoadAll();																// Load ALL levels into memory
+		LoadLevel(iCurLevel, false);											// Load current level for playing
+			
 		return true;
 	}
 
@@ -385,7 +443,7 @@ public:
 		}
 		if (GetKey(olc::Key::R).bPressed)
 		{
-			LoadLevel(iCurLevel);
+			LoadLevel(iCurLevel, true);
 		}
 
 		// lambda function for translating our 2D coordinates into 1D
@@ -457,6 +515,16 @@ public:
 				case EAST: vPlayerPos.x++; break;
 				case WEST: vPlayerPos.x--; break;
 				}
+
+				// Movement SFX
+				audioSlot_SFX.LoadAudioWaveform(sMovement_1);						// Load Movement SFX
+				audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);		// Play SFX
+			}
+			else
+			{
+				// Movement Failed SFX
+				audioSlot_SFX.LoadAudioWaveform(sMovementFailure_1);				// Load Movement Failure SFX
+				audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);		// Play SFX
 			}
 		}
 
@@ -466,9 +534,270 @@ public:
 		{
 			if (vLevel[id(g)] != nullptr)
 			{
-				nGoals++;
+				nGoals++; // Increment Goals
 			}
 		}
+
+// SFX for Win Tiles
+#pragma region SFX logic for Win Tiles
+		// This is overcomplicated and a bit silly
+		// I did it this way due to the way Win Tiles and Goal Checking is handled.
+		// Could do something better and simpler here by making Win Tiles an actual block type and including a bTileClick bool as an attatched var
+		// TODO later possibly?
+		// This causes crashes when going back and forth across unoccupied tiles - Commenting it out for now
+
+		//bool bSFXHasPlayed_WinTileClick_1 = false;	// default all SFX flags to false before goals sfx check
+		//bool bSFXHasPlayed_WinTileClick_2 = false;
+		//bool bSFXHasPlayed_WinTileClick_3 = false;
+		//bool bSFXHasPlayed_WinTileClick_4 = false;
+		//bool bSFXHasPlayed_WinTileClick_5 = false;
+		//bool bSFXHasPlayed_WinTileClick_6 = false;
+		//bool bSFXHasPlayed_WinTileClick_7 = false;
+		//bool bSFXHasPlayed_WinTileClick_8 = false;
+		//bool bSFXHasPlayed_WinTileClick_9 = false;
+		//switch (nGoals)
+		//{
+		//case 0:
+		//	// No win tiles are covered this frame so set all SFXHasPlayed_WinTileClick flags to false
+		//	bSFXHasPlayed_WinTileClick_1 = false;
+		//	bSFXHasPlayed_WinTileClick_2 = false;
+		//	bSFXHasPlayed_WinTileClick_3 = false;
+		//	bSFXHasPlayed_WinTileClick_4 = false;
+		//	bSFXHasPlayed_WinTileClick_5 = false;
+		//	bSFXHasPlayed_WinTileClick_6 = false;
+		//	bSFXHasPlayed_WinTileClick_7 = false;
+		//	bSFXHasPlayed_WinTileClick_8 = false;
+		//	bSFXHasPlayed_WinTileClick_9 = false;
+		//	break;
+		//case 1:
+		//	// 1 win tile is covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
+		//	bSFXHasPlayed_WinTileClick_2 = false;
+		//	bSFXHasPlayed_WinTileClick_3 = false;
+		//	bSFXHasPlayed_WinTileClick_4 = false;
+		//	bSFXHasPlayed_WinTileClick_5 = false;
+		//	bSFXHasPlayed_WinTileClick_6 = false;
+		//	bSFXHasPlayed_WinTileClick_7 = false;
+		//	bSFXHasPlayed_WinTileClick_8 = false;
+		//	bSFXHasPlayed_WinTileClick_9 = false;
+		//	// check SFXHasPlayed flag
+		//	if (bSFXHasPlayed_WinTileClick_1 == true)
+		//	{
+		//		// do nothing, because SFX already played
+		//		break;
+		//	}
+		//	else
+		//	{
+		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
+		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
+		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flag for sfx already played
+		//		break;
+
+		//	}
+		//case 2:
+		//	// 2 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
+		//	bSFXHasPlayed_WinTileClick_3 = false;
+		//	bSFXHasPlayed_WinTileClick_4 = false;
+		//	bSFXHasPlayed_WinTileClick_5 = false;
+		//	bSFXHasPlayed_WinTileClick_6 = false;
+		//	bSFXHasPlayed_WinTileClick_7 = false;
+		//	bSFXHasPlayed_WinTileClick_8 = false;
+		//	bSFXHasPlayed_WinTileClick_9 = false;
+		//	// check SFXHasPlayed flag
+		//	if (bSFXHasPlayed_WinTileClick_2 == true)
+		//	{
+		//		// do nothing, because SFX already played
+		//		break;
+		//	}
+		//	else
+		//	{
+		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
+		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
+		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
+		//		bSFXHasPlayed_WinTileClick_2 = true;
+		//		break;
+
+		//	}
+		//case 3:
+		//	// 3 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
+		//	bSFXHasPlayed_WinTileClick_4 = false;
+		//	bSFXHasPlayed_WinTileClick_5 = false;
+		//	bSFXHasPlayed_WinTileClick_6 = false;
+		//	bSFXHasPlayed_WinTileClick_7 = false;
+		//	bSFXHasPlayed_WinTileClick_8 = false;
+		//	bSFXHasPlayed_WinTileClick_9 = false;
+		//	// check SFXHasPlayed flag
+		//	if (bSFXHasPlayed_WinTileClick_3 == true)
+		//	{
+		//		// do nothing, because SFX already played
+		//		break;
+		//	}
+		//	else
+		//	{
+		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
+		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
+		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
+		//		bSFXHasPlayed_WinTileClick_2 = true;
+		//		bSFXHasPlayed_WinTileClick_3 = true;
+		//		break;
+
+		//	}
+		//case 4:
+		//	// 4 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
+		//	bSFXHasPlayed_WinTileClick_5 = false;
+		//	bSFXHasPlayed_WinTileClick_6 = false;
+		//	bSFXHasPlayed_WinTileClick_7 = false;
+		//	bSFXHasPlayed_WinTileClick_8 = false;
+		//	bSFXHasPlayed_WinTileClick_9 = false;
+		//	// check SFXHasPlayed flag
+		//	if (bSFXHasPlayed_WinTileClick_4 == true)
+		//	{
+		//		// do nothing, because SFX already played
+		//		break;
+		//	}
+		//	else
+		//	{
+		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
+		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
+		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
+		//		bSFXHasPlayed_WinTileClick_2 = true;
+		//		bSFXHasPlayed_WinTileClick_3 = true;
+		//		bSFXHasPlayed_WinTileClick_4 = true;
+		//		break;
+
+		//	}
+		//case 5:
+		//	// 5 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
+		//	bSFXHasPlayed_WinTileClick_6 = false;
+		//	bSFXHasPlayed_WinTileClick_7 = false;
+		//	bSFXHasPlayed_WinTileClick_8 = false;
+		//	bSFXHasPlayed_WinTileClick_9 = false;
+		//	// check SFXHasPlayed flag
+		//	if (bSFXHasPlayed_WinTileClick_5 == true)
+		//	{
+		//		// do nothing, because SFX already played
+		//		break;
+		//	}
+		//	else
+		//	{
+		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
+		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
+		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
+		//		bSFXHasPlayed_WinTileClick_2 = true;
+		//		bSFXHasPlayed_WinTileClick_3 = true;
+		//		bSFXHasPlayed_WinTileClick_4 = true;
+		//		bSFXHasPlayed_WinTileClick_5 = true;
+		//		break;
+
+		//	}
+		//case 6:
+		//	// 6 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
+		//	bSFXHasPlayed_WinTileClick_7 = false;
+		//	bSFXHasPlayed_WinTileClick_8 = false;
+		//	bSFXHasPlayed_WinTileClick_9 = false;
+		//	// check SFXHasPlayed flag
+		//	if (bSFXHasPlayed_WinTileClick_6 == true)
+		//	{
+		//		// do nothing, because SFX already played
+		//		break;
+		//	}
+		//	else
+		//	{
+		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
+		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
+		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
+		//		bSFXHasPlayed_WinTileClick_2 = true;
+		//		bSFXHasPlayed_WinTileClick_3 = true;
+		//		bSFXHasPlayed_WinTileClick_4 = true;
+		//		bSFXHasPlayed_WinTileClick_5 = true;
+		//		bSFXHasPlayed_WinTileClick_6 = true;
+		//		break;
+
+		//	}
+		//case 7:
+		//	// 7 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
+		//	bSFXHasPlayed_WinTileClick_8 = false;
+		//	bSFXHasPlayed_WinTileClick_9 = false;
+		//	// check SFXHasPlayed flag
+		//	if (bSFXHasPlayed_WinTileClick_7 == true)
+		//	{
+		//		// do nothing, because SFX already played
+		//		break;
+		//	}
+		//	else
+		//	{
+		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
+		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
+		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
+		//		bSFXHasPlayed_WinTileClick_2 = true;
+		//		bSFXHasPlayed_WinTileClick_3 = true;
+		//		bSFXHasPlayed_WinTileClick_4 = true;
+		//		bSFXHasPlayed_WinTileClick_5 = true;
+		//		bSFXHasPlayed_WinTileClick_6 = true;
+		//		bSFXHasPlayed_WinTileClick_7 = true;
+		//		break;
+
+		//	}
+		//case 8:
+		//	// 8 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
+		//	bSFXHasPlayed_WinTileClick_9 = false;
+		//	// check SFXHasPlayed flag
+		//	if (bSFXHasPlayed_WinTileClick_8 == true)
+		//	{
+		//		// do nothing, because SFX already played
+		//		break;
+		//	}
+		//	else
+		//	{
+		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
+		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
+		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
+		//		bSFXHasPlayed_WinTileClick_2 = true;
+		//		bSFXHasPlayed_WinTileClick_3 = true;
+		//		bSFXHasPlayed_WinTileClick_4 = true;
+		//		bSFXHasPlayed_WinTileClick_5 = true;
+		//		bSFXHasPlayed_WinTileClick_6 = true;
+		//		bSFXHasPlayed_WinTileClick_7 = true;
+		//		bSFXHasPlayed_WinTileClick_8 = true;
+		//		break;
+
+		//	}
+		//case 9:
+		//	// check SFXHasPlayed flag
+		//	if (bSFXHasPlayed_WinTileClick_9 == true)
+		//	{
+		//		// do nothing, because SFX already played
+		//		break;
+		//	}
+		//	else
+		//	{
+		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
+		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
+		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
+		//		bSFXHasPlayed_WinTileClick_2 = true;
+		//		bSFXHasPlayed_WinTileClick_3 = true;
+		//		bSFXHasPlayed_WinTileClick_4 = true;
+		//		bSFXHasPlayed_WinTileClick_5 = true;
+		//		bSFXHasPlayed_WinTileClick_6 = true;
+		//		bSFXHasPlayed_WinTileClick_7 = true;
+		//		bSFXHasPlayed_WinTileClick_8 = true;
+		//		bSFXHasPlayed_WinTileClick_9 = true;
+		//		break;
+
+		//	}
+		//default:
+		//	// Should never hit this unless someone has added levels with more than 9 win tiles
+		//	bSFXHasPlayed_WinTileClick_1 = true;
+		//	bSFXHasPlayed_WinTileClick_2 = true;
+		//	bSFXHasPlayed_WinTileClick_3 = true;
+		//	bSFXHasPlayed_WinTileClick_4 = true;
+		//	bSFXHasPlayed_WinTileClick_5 = true;
+		//	bSFXHasPlayed_WinTileClick_6 = true;
+		//	bSFXHasPlayed_WinTileClick_7 = true;
+		//	bSFXHasPlayed_WinTileClick_8 = true;
+		//	bSFXHasPlayed_WinTileClick_9 = true;
+		//	break;
+		//}
+#pragma endregion
 
 		// Clear screen to black before drawing each frame
 		Clear(olc::BLACK);
@@ -515,7 +844,7 @@ public:
 		if (nGoals >= vGoals.size() && iCurLevel != -1)
 		{
 			iCurLevel++;
-			LoadLevel(iCurLevel);
+			LoadLevel(iCurLevel, false);
 		}
 
 		return true;
