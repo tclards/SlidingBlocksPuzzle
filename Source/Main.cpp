@@ -273,7 +273,7 @@ public:
 	// SFX 
 	std::string sMovement_1 = "//SFX//Silent.wav";	
 	std::string sMovementFailure_1 = "//SFX//Silent.wav";
-	std::string sWinTileClick_1 = "//SFX//Silent.wav";
+	/*std::string sWinTileClick_1 = "//SFX//Silent.wav";*/
 	std::string sRestartLevel_1 = "//SFX//Silent.wav";
 	std::string sWinJingle_1 = "//SFX//Silent.wav";	
 	std::string sLevelTransition_1 = "//SFX//Silent.wav";
