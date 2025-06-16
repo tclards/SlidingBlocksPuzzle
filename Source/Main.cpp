@@ -8,16 +8,15 @@
 
 // TODO_A
 // SFX & Music 
-//		- make block push MovementSFX different than moving into Empty Tile SFX
-//		- Gather Files and add them to project folders
-//		- add File Paths in Sound section
 //		- Bug Fix Win Tile SFX Logic
+//		- spamming movement rapidly can cause crash related to movement SFX
 // Level Completion timer logic + UI
 // Score Tracking Screen & Pause Function?
 // ReadMe File
 // Create More Levels!
 // Create Graphics for each Block Type. 
 //		- Tilable Background Sprite for empty space?
+// Add Deconstructor
 
 // TODO_B
 // animations for level transition
@@ -265,18 +264,20 @@ public:
 	olc::sound::WaveEngine audioEngine;
 	olc::sound::Wave audioSlot_Music;
 	olc::sound::Wave audioSlot_SFX;
-	float fVolumeSlider = 1.0f;
+	olc::sound::Wave audioSlot_Movement_1;
+	olc::sound::Wave audioSlot_Movement_2;
+	float fAudioSpeed = 1.0f;
 
 	// Background Music
-	std::string sBackgroundMusic_1 = "//SFX//Silent.wav";
+	std::string sBackgroundMusic_1 = "SFX//BackgroundMusic_1.wav";	
 
 	// SFX 
-	std::string sMovement_1 = "//SFX//Silent.wav";	
-	std::string sMovementFailure_1 = "//SFX//Silent.wav";
-	/*std::string sWinTileClick_1 = "//SFX//Silent.wav";*/
-	std::string sRestartLevel_1 = "//SFX//Silent.wav";
-	std::string sWinJingle_1 = "//SFX//Silent.wav";	
-	std::string sLevelTransition_1 = "//SFX//Silent.wav";
+	std::string sMovement_1 = "SFX//Movement_1.wav";
+	std::string sMovementFailure_1 = "SFX//Movement_Failed_1.wav";
+	std::string sWinTileClick_1 = "SFX//Silent.wav";
+	std::string sRestartLevel_1 = "SFX//RestartLevel_1.wav";			
+	std::string sWinJingle_1 = "SFX//WinJingle_1.wav";					
+	std::string sLevelTransition_1 = "SFX//LevelTransition_1.wav";		
 #pragma endregion
 
 	// Constructor
@@ -325,17 +326,17 @@ public:
 		if (iCurLevel == -1)
 		{
 			audioSlot_SFX.LoadAudioWaveform(sWinJingle_1);						// Load WinJingle SFX
-			audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);		// Play SFX
+			audioEngine.PlayWaveform(&audioSlot_SFX, false, fAudioSpeed);		// Play SFX
 		}
 		else if (bWasRestart == true)
 		{
 			audioSlot_SFX.LoadAudioWaveform(sRestartLevel_1);					// Load Restart SFX
-			audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);		// Play SFX
+			audioEngine.PlayWaveform(&audioSlot_SFX, false, fAudioSpeed);		// Play SFX
 		}
 		else
 		{
 			audioSlot_SFX.LoadAudioWaveform(sLevelTransition_1);				// Load Level Load SFX
-			audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);		// Play SFX
+			audioEngine.PlayWaveform(&audioSlot_SFX, false, fAudioSpeed);		// Play SFX
 		}
 
 		// iterate over level
@@ -404,13 +405,15 @@ public:
 	bool OnUserCreate() override
 	{
 		// Audio Handling
-		audioEngine.InitialiseAudio();											// Initialize Audio Engine
-		audioSlot_Music.LoadAudioWaveform(sBackgroundMusic_1);					// Load Background Music
-		audioEngine.PlayWaveform(&audioSlot_Music, true, fVolumeSlider);		// Play and Loop Background Music
+		audioEngine.InitialiseAudio();																	// Initialize Audio Engine
+		audioSlot_Music.LoadAudioWaveform(sBackgroundMusic_1);											// Load Background Music
+		audioEngine.PlayWaveform(&audioSlot_Music, true, fAudioSpeed * 0.75f);						// Play and Loop Background Music
+		audioSlot_Movement_1.LoadAudioWaveform(sMovement_1);											// Load Movement SFX
+		audioSlot_Movement_2.LoadAudioWaveform(sMovementFailure_1);										// Load Movement Failure SFX
 
 		// Level Loading
-		LoadAll();																// Load ALL levels into memory
-		LoadLevel(iCurLevel, false);											// Load current level for playing
+		LoadAll();																						// Load ALL levels into memory
+		LoadLevel(iCurLevel, false);																	// Load current level for playing
 			
 		return true;
 	}
@@ -421,35 +424,40 @@ public:
 		// user input
 		bool bPushing = false;
 		int iDirPush = NORTH;
-		if (GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
+		if (iCurLevel != -1) // disable most input on end screen
 		{
-			iDirPush = 0;
-			bPushing = true;
-		}
-		if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
-		{
-			iDirPush = SOUTH;
-			bPushing = true;
-		}
-		if (GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
-		{
-			iDirPush = WEST;
-			bPushing = true;
-		}
-		if (GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
-		{
-			iDirPush = EAST;
-			bPushing = true;
-		}
-		if (GetKey(olc::Key::R).bPressed)
-		{
-			LoadLevel(iCurLevel, true);
+			if (GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
+			{
+				iDirPush = 0;
+				bPushing = true;
+			}
+			if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
+			{
+				iDirPush = SOUTH;
+				bPushing = true;
+			}
+			if (GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
+			{
+				iDirPush = WEST;
+				bPushing = true;
+			}
+			if (GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
+			{
+				iDirPush = EAST;
+				bPushing = true;
+			}
+			if (GetKey(olc::Key::R).bPressed)
+			{
+				LoadLevel(iCurLevel, true);
+			}
 		}
 
 		// lambda function for translating our 2D coordinates into 1D
 		auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; };
 
 		// movement logic
+		bool bPlayerMoved = false;
+		int iMovementSuceededOrFailed = -1; // -1 = no move, 0 = move failed, 1 = move succeeded
 		if (bPushing) // check if a push attempt is happening this frame
 		{
 			olc::vi2d vBlockPos = vPlayerPos; // 'cursor' to track attempted movement
@@ -475,11 +483,15 @@ public:
 					}
 					else // block cant be pushed that way -- end testing
 					{
+						bPlayerMoved = true;
+						iMovementSuceededOrFailed = 0;
 						bTest = false;
 					}
 				}
 				else // target space was nullptr - player can move there. End testing
 				{
+					bPlayerMoved = true;
+					iMovementSuceededOrFailed = 1;
 					bAllowPush = true;
 					bTest = false;
 				}
@@ -515,16 +527,19 @@ public:
 				case EAST: vPlayerPos.x++; break;
 				case WEST: vPlayerPos.x--; break;
 				}
-
-				// Movement SFX
-				audioSlot_SFX.LoadAudioWaveform(sMovement_1);						// Load Movement SFX
-				audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);		// Play SFX
 			}
-			else
+		}
+
+		// Movement SFX
+		if (bPlayerMoved == true)
+		{
+			if (iMovementSuceededOrFailed == 0) // Movement Failed
 			{
-				// Movement Failed SFX
-				audioSlot_SFX.LoadAudioWaveform(sMovementFailure_1);				// Load Movement Failure SFX
-				audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);		// Play SFX
+				audioEngine.PlayWaveform(&audioSlot_Movement_2, false, fAudioSpeed * 2.0f);
+			}
+			else if (iMovementSuceededOrFailed == 1) // Movement Succeeded
+			{
+				audioEngine.PlayWaveform(&audioSlot_Movement_1, false, fAudioSpeed * 2.0f);
 			}
 		}
 
