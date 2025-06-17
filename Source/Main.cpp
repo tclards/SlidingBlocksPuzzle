@@ -5,6 +5,7 @@
 #include "olcSoundWaveEngine.h"
 
 #include "chrono"
+#include "iostream"
 
 // 1.20.50
 
@@ -13,22 +14,34 @@
 
 // TODO_A
 // Level Completion timer logic - win screen restart: reset timers already in
+// create code system to skip to checkpoint levels
+// 
 // Score Tracking UI - Gold Star, Silver Star,or Bronze Star
-// Score Tracking Screen - display moves used, time taken, and star level achieved for all 50 levels. Include PAR time and moves?
+// Score Tracking Screen at end of game - display moves used, time taken, and star level achieved for all 50 levels. Include PAR time and moves?
+// 
 // Fill out Levels! 48 Left!!
+// 
 // Create Graphics for each Block Type. 
 //		- Tilable Background Sprite for empty space?
-// create code system to skip to checkpoint levels
-// Options and User Input for volume control
-// Win Screen logo for middle of screen
+// 
+// Options file io
+// 
+// High Score Screen and saving logic 
+//		- needs implementing in main menu function
+// 
+// Win Screen logo for middle of win screen
+//
+// screenshot functionality
+//
+// add main menu theme song
+//
+// add quit game option to pause menu
 
-// TODO_B
+// TODO_B wish list
 // animations for level transition
-// Main Menu?
 // Teleport Tile 
 //		- SFX
 //		- Graphics
-// High Score Screen and saving logic
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -53,7 +66,6 @@ public:
 
 // Strings containing levels
 #pragma region Levels
-
 	// +		= any direction movable block
 	// -		= horizontal movement block
 	// P		= player block
@@ -65,6 +77,10 @@ public:
 
 	// internal use, manually set, variable to track how many levels exist
 	int iNumOfLevels = 50;
+
+	// Codes for Skipping Levels
+	std::string sMediumLevelCode = "FWZHHITMPL"; // Skip to Level 16
+	std::string sHardLevelCode = "PZJNIWWMPX";   // Skip to Level 36
 
 	// Vector containing all levels
 	std::vector <std::string> vAllLevels;
@@ -1190,6 +1206,11 @@ public:
 	// Flags for pausing game
 	bool bPaused = false;
 	bool bPauseJinglePlayed = false;
+
+	// Main Menu Flags
+	bool bMainMenu = true;
+	int iCurDisplay = -1; // - 1: main menu, 0: high score screen, 1: options screen
+
 #pragma endregion
 
 // Audio
@@ -1335,7 +1356,7 @@ public:
 		audioEngine_Music.StopAll();
 
 		// check for no more levels in memory
-		if (vAllLevels[iCurLevel] == "End")
+		if (vAllLevels[iCurLevel] == "End" || bMainMenu)
 		{
 			iCurLevel = -1;
 		}
@@ -1352,20 +1373,23 @@ public:
 		}
 
 		// SFX
-		if (iCurLevel == -1)
+		if (!bMainMenu) // Dont Play Load SFX when loading Main Menu
 		{
-			audioSlot_WinJingle.LoadAudioWaveform(sWinJingle_1);						// Load WinJingle SFX
-			audioEngine.PlayWaveform(&audioSlot_WinJingle, false, fAudioSpeed);			// Play SFX
-		}
-		else if (bWasRestart == true)
-		{
-			audioSlot_RestartLevel.LoadAudioWaveform(sRestartLevel_1);					// Load Restart SFX
-			audioEngine.PlayWaveform(&audioSlot_RestartLevel, false, fAudioSpeed);		// Play SFX
-		}
-		else
-		{
-			audioSlot_LevelTransition.LoadAudioWaveform(sLevelTransition_1);			// Load Level Load SFX
-			audioEngine.PlayWaveform(&audioSlot_LevelTransition, false, fAudioSpeed);	// Play SFX
+			if (iCurLevel == -1)
+			{
+				audioSlot_WinJingle.LoadAudioWaveform(sWinJingle_1);						// Load WinJingle SFX
+				audioEngine.PlayWaveform(&audioSlot_WinJingle, false, fAudioSpeed);			// Play SFX
+			}
+			else if (bWasRestart == true)
+			{
+				audioSlot_RestartLevel.LoadAudioWaveform(sRestartLevel_1);					// Load Restart SFX
+				audioEngine.PlayWaveform(&audioSlot_RestartLevel, false, fAudioSpeed);		// Play SFX
+			}
+			else
+			{
+				audioSlot_LevelTransition.LoadAudioWaveform(sLevelTransition_1);			// Load Level Load SFX
+				audioEngine.PlayWaveform(&audioSlot_LevelTransition, false, fAudioSpeed);	// Play SFX
+			}
 		}
 
 		// iterate over level
@@ -1433,15 +1457,178 @@ public:
 		audioEngine_Music.PlayWaveform(&audioSlot_Music, true, fAudioSpeed * 0.75f);
 	}
 
+	// Called Every Frame while the Main Menu system is open
+	void MainMenu()
+	{
+		switch (iCurDisplay)
+		{
+		case 0: // High Score Screen
+			// User Input:
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
+			{
+				iCurDisplay = -1;
+			}
+			if (GetKey(olc::Key::UP).bPressed || GetKey(olc::Key::W).bPressed)		// Move Up The Scores List
+			{
+
+			}
+			if (GetKey(olc::Key::DOWN).bPressed || GetKey(olc::Key::S).bPressed)	// Move Down The Scores List
+			{
+
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel();
+
+			// Draw UI
+			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "HIGH SCORES", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
+
+			break;
+
+		case 1: // Options Screen
+			// User Input:
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
+			{
+				iCurDisplay = -1;
+			}
+			if (GetKey(olc::Key::D).bPressed)		// Increase SFX Volume
+			{
+				fSFXVolume += 0.1f;
+				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+			}
+			if (GetKey(olc::Key::A).bPressed)		// Decrease SFX Volume
+			{
+				fSFXVolume -= 0.1f;
+				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+			}
+			if (GetKey(olc::Key::RIGHT).bPressed)	// Increase Music Volume
+			{
+				fMusicVolume += 0.1f;
+			}
+			if (GetKey(olc::Key::LEFT).bPressed)	// Decrease Music Volume
+			{
+				fMusicVolume -= 0.1f;
+			}
+
+			// Clamp Volume Values
+			if (fMusicVolume > 1.0f)
+			{
+				fMusicVolume = 1.0f;
+			}
+			if (fMusicVolume < 0.0f)
+			{
+				fMusicVolume = 0.0f;
+			}
+			if (fSFXVolume > 1.0f)
+			{
+				fSFXVolume = 1.0f;
+			}
+			if (fSFXVolume < 0.0f)
+			{
+				fSFXVolume = 0.0f;
+			}
+
+			// Apply Changes
+			audioEngine.SetOutputVolume(fSFXVolume);
+			audioEngine_Music.SetOutputVolume(fMusicVolume);
+
+			// Draw Blank Menu Level
+			DrawLevel();
+
+			// Draw UI
+			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "OPTIONS", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) - 85, "Press Arrow Keys to", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) - 75, "Adjust Music Volume", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) - 60, "Press A or D to", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) - 50, "Adjust SFX Volume", olc::WHITE);
+
+			DrawString((256 / 2) - 108, (240 / 2) + 72, "Music: " + std::to_string(fMusicVolume), olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 82, "SFX: " +std::to_string(fSFXVolume), olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
+
+			break;
+
+		default: // Main Menu
+			// User Input:
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)  // Close Game
+			{
+				this->~Puzzle();
+			}
+			if (GetKey(olc::Key::H).bPressed)								    	// Open High Score Menu
+			{
+				iCurDisplay = 0;
+			}
+			if (GetKey(olc::Key::O).bPressed)								    	// Open Options Menu
+			{
+				iCurDisplay = 1;
+			}
+			if (GetKey(olc::Key::ENTER).bPressed)								    // Start Game
+			{
+				// Start Game
+				bMainMenu = false;													// Set Flag to close Main Menu System
+				iCurLevel = 1;
+				LoadLevel(iCurLevel, false);										// Load First Level
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel();
+
+			// Draw UI
+			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "MAIN MENU", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 52, "Press Enter to Start Game", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 65, "Press H to see High Scores", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 78, "Press O for Options", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Quit", olc::WHITE);
+
+			break;
+		}
+	}
+
+	// Draws the current level to the screen
+	void DrawLevel()
+	{
+		// lambda function for translating our 2D coordinates into 1D
+		auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; };
+
+		// Clear screen to black before drawing each frame
+		Clear(olc::BLACK);
+
+		// draw logic
+		olc::vi2d vBlockPos = { 0,0 };
+
+		for (auto& g : vGoals) // win condition drawing
+		{
+			FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+		}
+		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++) // block drawing
+		{
+			for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
+			{
+				// get pointer to block at a particular position
+				auto& b = vLevel[id(vBlockPos)];
+
+				// check for nullptr, then draw
+				if (b)
+				{
+					b->DrawSelf(this, vBlockPos, vBlockSize);
+				}
+			}
+		}
+	}
+
 	// Runs once at start of game
 	bool OnUserCreate() override
 	{
-		// Audio Loadind
+		// Audio Loading
 		LoadAllAudio();
 
 		// Level Loading
-		LoadAllLevels();																						// Load ALL levels into memory
-		LoadLevel(iCurLevel, false);																			// Load current level for playing
+		LoadAllLevels();													// Load ALL levels into memory
+
+		// Load Blank Menu Level
+		LoadLevel(iCurLevel, false);
+		bMainMenu = true;
 			
 		return true;
 	}
@@ -1449,6 +1636,14 @@ public:
 	// Runs every frame
 	bool OnUserUpdate(float fElapsedTime) override
 	{
+		// Main Menu Stuff
+		if (bMainMenu)
+		{
+			MainMenu();
+
+			return true;
+		}
+
 		if (!bPaused)
 		{
 			// user input
@@ -1482,16 +1677,15 @@ public:
 				}
 				if (GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
 				{
-					bPaused = true;										// Pause Game
+					bPaused = true;	// Pause Game
 				}
 			}
 			else
 			{
 				if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed) // Win Screen ESC
 				{
-					iCurLevel = 1;										// Set Level Back to 1
 					audioEngine_Music.SetOutputVolume(fMusicVolume);	// Unmute Background Music
-					LoadLevel(iCurLevel, false);						// Reload Level to 1
+					bMainMenu = true;									// Set Flag
 
 					// Reset Move Counters
 					iNumOfMoves_1 = 0;
@@ -1862,30 +2056,8 @@ public:
 				}
 			}
 
-			// Clear screen to black before drawing each frame
-			Clear(olc::BLACK);
-
-			// draw logic
-			olc::vi2d vBlockPos = { 0,0 };
-
-			for (auto& g : vGoals) // win condition drawing
-			{
-				FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
-			}
-			for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++) // block drawing
-			{
-				for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
-				{
-					// get pointer to block at a particular position
-					auto& b = vLevel[id(vBlockPos)];
-
-					// check for nullptr, then draw
-					if (b)
-					{
-						b->DrawSelf(this, vBlockPos, vBlockSize);
-					}
-				}
-			}
+			// Draw Function
+			DrawLevel();
 
 			// UI
 			if (iCurLevel != -1) // UI for active gameplay
@@ -2074,7 +2246,7 @@ public:
 				audioEngine_Music.SetOutputVolume(0.0f);
 				DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", olc::WHITE);
 				DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
-				DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC to restart!", olc::WHITE);
+				DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC for Main Menu", olc::WHITE);
 			}
 
 			// Win Tracking
