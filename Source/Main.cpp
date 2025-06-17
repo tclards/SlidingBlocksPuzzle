@@ -8,18 +8,19 @@
 
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor
-// Crash on moving too fast, seemingly related to movement SFX
 
 // TODO_A
 // SFX & Music 
 //		- Add Pause Jingle file path and file
 // Level Completion timer logic
 // number of moves functionality
+// add difficulty level UI
 // Score Tracking Screen - Gold Star, Silver Star,or Bronze Star
 // ReadMe File
 // Create More Levels!
 // Create Graphics for each Block Type. 
 //		- Tilable Background Sprite for empty space?
+// create code system to skip to checkpoint levels
 
 // TODO_B
 // animations for level transition
@@ -55,7 +56,7 @@ public:
 	// Only currently supporting up to 9 win tiles per level
 
 	// internal use, manually set, variable to track how many levels exist
-	int iNumOfLevels = 2;
+	int iNumOfLevels = 50;
 
 	// Vector containing all levels
 	std::vector <std::string> vAllLevels;
@@ -94,9 +95,11 @@ public:
 		"#..............#"
 		"################";
 
+	// starting here -> make sure to add any new levels to the LoadAll function that is used in OnUserCreate, and update UI for timer and move counter on pause menu and main UI
+	// Easy Levels - 10
 	float iTime_1 = 0.0f;
 	int iNumOfMoves_1 = 0;
-	std::string sLevel_1 = // starting here -> make sure to add any new levels to the LoadAll function that is used in OnUserCreate, and update UI for timer and move counter
+	std::string sLevel_1 = 
 		"################"
 		"#P.............#"
 		"#..............#"
@@ -130,6 +133,920 @@ public:
 		"################"
 		"################"
 		"################"
+		"################";
+
+	float iTime_3 = 0.0f;	// todo
+	int iNumOfMoves_3 = 0;
+	std::string sLevel_3 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_4 = 0.0f;
+	int iNumOfMoves_4 = 0;
+	std::string sLevel_4 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_5 = 0.0f;
+	int iNumOfMoves_5 = 0;
+	std::string sLevel_5 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_6 = 0.0f;
+	int iNumOfMoves_6 = 0;
+	std::string sLevel_6 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_7 = 0.0f;
+	int iNumOfMoves_7 = 0;
+	std::string sLevel_7 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_8 = 0.0f;
+	int iNumOfMoves_8 = 0;
+	std::string sLevel_8 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_9 = 0.0f;
+	int iNumOfMoves_9 = 0;
+	std::string sLevel_9 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_10 = 0.0f;
+	int iNumOfMoves_10 = 0;
+	std::string sLevel_10 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_11 = 0.0f;
+	int iNumOfMoves_11 = 0;
+	std::string sLevel_11 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_12 = 0.0f;
+	int iNumOfMoves_12 = 0;
+	std::string sLevel_12 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_13 = 0.0f;
+	int iNumOfMoves_13 = 0;
+	std::string sLevel_13 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_14 = 0.0f;
+	int iNumOfMoves_14 = 0;
+	std::string sLevel_14 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_15 = 0.0f;
+	int iNumOfMoves_15 = 0;
+	std::string sLevel_15 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	// Medium Levels - 20
+	float iTime_16 = 0.0f;
+	int iNumOfMoves_16 = 0;
+	std::string sLevel_16 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_17 = 0.0f;
+	int iNumOfMoves_17 = 0;
+	std::string sLevel_17 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_18 = 0.0f;
+	int iNumOfMoves_18 = 0;
+	std::string sLevel_18 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_19 = 0.0f;
+	int iNumOfMoves_19 = 0;
+	std::string sLevel_19 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_20 = 0.0f;
+	int iNumOfMoves_20 = 0;
+	std::string sLevel_20 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_21 = 0.0f;
+	int iNumOfMoves_21 = 0;
+	std::string sLevel_21 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_22 = 0.0f;
+	int iNumOfMoves_22 = 0;
+	std::string sLevel_22 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_23 = 0.0f;
+	int iNumOfMoves_23 = 0;
+	std::string sLevel_23 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_24 = 0.0f;
+	int iNumOfMoves_24 = 0;
+	std::string sLevel_24 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_25 = 0.0f;
+	int iNumOfMoves_25 = 0;
+	std::string sLevel_25 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_26 = 0.0f;
+	int iNumOfMoves_26 = 0;
+	std::string sLevel_26 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_27 = 0.0f;
+	int iNumOfMoves_27 = 0;
+	std::string sLevel_27 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_28 = 0.0f;
+	int iNumOfMoves_28 = 0;
+	std::string sLevel_28 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_29 = 0.0f;
+	int iNumOfMoves_29 = 0;
+	std::string sLevel_29 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_30 = 0.0f;
+	int iNumOfMoves_30 = 0;
+	std::string sLevel_30 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_31 = 0.0f;
+	int iNumOfMoves_31 = 0;
+	std::string sLevel_31 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_32 = 0.0f;
+	int iNumOfMoves_32 = 0;
+	std::string sLevel_32 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_33 = 0.0f;
+	int iNumOfMoves_33 = 0;
+	std::string sLevel_33 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_34 = 0.0f;
+	int iNumOfMoves_34 = 0;
+	std::string sLevel_34 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_35 = 0.0f;
+	int iNumOfMoves_35 = 0;
+	std::string sLevel_35 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	// Hard Levels - 15
+	float iTime_36 = 0.0f;
+	int iNumOfMoves_36 = 0;
+	std::string sLevel_36 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_37 = 0.0f;
+	int iNumOfMoves_37 = 0;
+	std::string sLevel_37 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_38 = 0.0f;
+	int iNumOfMoves_38 = 0;
+	std::string sLevel_38 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_39 = 0.0f;
+	int iNumOfMoves_39 = 0;
+	std::string sLevel_39 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_40 = 0.0f;
+	int iNumOfMoves_40 = 0;
+	std::string sLevel_40 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_41 = 0.0f;
+	int iNumOfMoves_41 = 0;
+	std::string sLevel_41 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_42 = 0.0f;
+	int iNumOfMoves_42 = 0;
+	std::string sLevel_42 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_43 = 0.0f;
+	int iNumOfMoves_43 = 0;
+	std::string sLevel_43 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_44 = 0.0f;
+	int iNumOfMoves_44 = 0;
+	std::string sLevel_44 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_45 = 0.0f;
+	int iNumOfMoves_45 = 0;
+	std::string sLevel_45 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_46 = 0.0f;
+	int iNumOfMoves_46 = 0;
+	std::string sLevel_46 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_47 = 0.0f;
+	int iNumOfMoves_47 = 0;
+	std::string sLevel_47 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_48 = 0.0f;
+	int iNumOfMoves_48 = 0;
+	std::string sLevel_48 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_49 = 0.0f;
+	int iNumOfMoves_49 = 0;
+	std::string sLevel_49 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"################";
+
+	float iTime_50 = 0.0f;
+	int iNumOfMoves_50 = 0;
+	std::string sLevel_50 =
+		"################"
+		"#P+@...........#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
+		"#..............#"
 		"################";
 #pragma endregion
 
@@ -305,6 +1222,8 @@ public:
 	// Deconstructor
 	~Puzzle()
 	{
+		audioEngine.StopAll();
+		audioEngine_Music.StopAll();
 		audioEngine.~WaveEngine();
 		audioEngine_Music.~WaveEngine();
 	}
@@ -340,6 +1259,54 @@ public:
 		vAllLevels.push_back(sLevel_0);
 		vAllLevels.push_back(sLevel_1);
 		vAllLevels.push_back(sLevel_2);
+		vAllLevels.push_back(sLevel_3);
+		vAllLevels.push_back(sLevel_4);
+		vAllLevels.push_back(sLevel_5);
+		vAllLevels.push_back(sLevel_6);
+		vAllLevels.push_back(sLevel_7);
+		vAllLevels.push_back(sLevel_8);
+		vAllLevels.push_back(sLevel_9);
+		vAllLevels.push_back(sLevel_10);
+		vAllLevels.push_back(sLevel_11);
+		vAllLevels.push_back(sLevel_12);
+		vAllLevels.push_back(sLevel_13);
+		vAllLevels.push_back(sLevel_14);
+		vAllLevels.push_back(sLevel_15);
+		vAllLevels.push_back(sLevel_16);
+		vAllLevels.push_back(sLevel_17);
+		vAllLevels.push_back(sLevel_18);
+		vAllLevels.push_back(sLevel_19);
+		vAllLevels.push_back(sLevel_20);
+		vAllLevels.push_back(sLevel_21);
+		vAllLevels.push_back(sLevel_22);
+		vAllLevels.push_back(sLevel_23);
+		vAllLevels.push_back(sLevel_24);
+		vAllLevels.push_back(sLevel_25);
+		vAllLevels.push_back(sLevel_26);
+		vAllLevels.push_back(sLevel_27);
+		vAllLevels.push_back(sLevel_28);
+		vAllLevels.push_back(sLevel_29);
+		vAllLevels.push_back(sLevel_30);
+		vAllLevels.push_back(sLevel_31);
+		vAllLevels.push_back(sLevel_32);
+		vAllLevels.push_back(sLevel_33);
+		vAllLevels.push_back(sLevel_34);
+		vAllLevels.push_back(sLevel_35);
+		vAllLevels.push_back(sLevel_36);
+		vAllLevels.push_back(sLevel_37);
+		vAllLevels.push_back(sLevel_38);
+		vAllLevels.push_back(sLevel_39);
+		vAllLevels.push_back(sLevel_40);
+		vAllLevels.push_back(sLevel_41);
+		vAllLevels.push_back(sLevel_42);
+		vAllLevels.push_back(sLevel_43);
+		vAllLevels.push_back(sLevel_44);
+		vAllLevels.push_back(sLevel_45);
+		vAllLevels.push_back(sLevel_46);
+		vAllLevels.push_back(sLevel_47);
+		vAllLevels.push_back(sLevel_48);
+		vAllLevels.push_back(sLevel_49);
+		vAllLevels.push_back(sLevel_50);
 
 		// End cap for vector, used in End Of Game logic
 		vAllLevels.push_back("End");
@@ -351,6 +1318,10 @@ public:
 		// Clear existing level data
 		vLevel.clear();
 		vGoals.clear();
+
+		// reset audio
+		audioEngine.StopAll();
+		audioEngine_Music.StopAll();
 
 		// check for no more levels in memory
 		if (vAllLevels[iCurLevel] == "End")
@@ -446,6 +1417,9 @@ public:
 				}
 			}
 		}
+
+		// restart music
+		audioEngine_Music.PlayWaveform(&audioSlot_Music, true, fAudioSpeed * 0.75f);
 	}
 
 	// Runs once at start of game
@@ -705,6 +1679,198 @@ public:
 			case 2:
 				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_2);
 				sTimerUI = "Level Timer: " + std::to_string(iTime_2);
+				break;
+			case 3:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_3);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_3);
+				break;
+			case 4:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_4);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_4);
+				break;
+			case 5:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_5);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_5);
+				break;
+			case 6:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_6);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_6);
+				break;
+			case 7:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_7);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_7);
+				break;
+			case 8:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_8);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_8);
+				break;
+			case 9:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_9);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_9);
+				break;
+			case 10:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_10);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_10);
+				break;
+			case 11:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_11);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_11);
+				break;
+			case 12:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_12);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_12);
+				break;
+			case 13:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_13);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_13);
+				break;
+			case 14:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_14);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_14);
+				break;
+			case 15:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_15);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_15);
+				break;
+			case 16:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_16);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_16);
+				break;
+			case 17:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_17);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_17);
+				break;
+			case 18:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_18);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_18);
+				break;
+			case 19:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_19);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_19);
+				break;
+			case 20:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_20);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_20);
+				break;
+			case 21:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_21);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_21);
+				break;
+			case 22:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_22);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_22);
+				break;
+			case 23:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_23);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_23);
+				break;
+			case 24:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_24);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_24);
+				break;
+			case 25:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_25);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_25);
+				break;
+			case 26:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_26);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_26);
+				break;
+			case 27:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_27);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_27);
+				break;
+			case 28:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_28);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_28);
+				break;
+			case 29:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_29);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_29);
+				break;
+			case 30:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_30);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_30);
+				break;
+			case 31:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_31);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_31);
+				break;
+			case 32:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_32);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_32);
+				break;
+			case 33:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_33);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_33);
+				break;
+			case 34:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_34);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_34);
+				break;
+			case 35:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_35);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_35);
+				break;
+			case 36:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_36);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_36);
+				break;
+			case 37:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_37);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_37);
+				break;
+			case 38:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_38);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_38);
+				break;
+			case 39:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_39);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_39);
+				break;
+			case 40:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_40);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_40);
+				break;
+			case 41:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_41);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_41);
+				break;
+			case 42:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_42);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_42);
+				break;
+			case 43:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_43);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_43);
+				break;
+			case 44:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_44);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_44);
+				break;
+			case 45:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_45);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_45);
+				break;
+			case 46:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_46);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_46);
+				break;
+			case 47:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_47);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_47);
+				break;
+			case 48:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_48);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_48);
+				break;
+			case 49:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_49);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_49);
+				break;
+			case 50:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_50);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_50);
 				break;
 			default:
 				break;
