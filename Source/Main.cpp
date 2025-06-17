@@ -4,6 +4,8 @@
 #define OLC_SOUNDWAVE
 #include "olcSoundWaveEngine.h"
 
+#include "chrono"
+
 // 1.20.50
 
 // TODO_BUGS
@@ -13,12 +15,12 @@
 // Level Completion timer logic - win screen restart: reset timers already in
 // Score Tracking UI - Gold Star, Silver Star,or Bronze Star
 // Score Tracking Screen - display moves used, time taken, and star level achieved for all 50 levels. Include PAR time and moves?
-// ReadMe File
 // Fill out Levels! 48 Left!!
 // Create Graphics for each Block Type. 
 //		- Tilable Background Sprite for empty space?
 // create code system to skip to checkpoint levels
 // Options and User Input for volume control
+// Win Screen logo for middle of screen
 
 // TODO_B
 // animations for level transition
@@ -35,6 +37,9 @@
 // O - Options Menu (TODO)
 // I - Score Tracking Screen (TODO)
 // C - Cheat Code Skip (TODO)
+
+// Created by Tyler Clardy in June 2025
+// Thanks to oneLoneCoder for the PixelGameEngine and SoundWaveEngine, as well as the inspiration for the start of the project. You rock, Javid!
 
 // defining global values for the movement system
 constexpr int NORTH = 0;
