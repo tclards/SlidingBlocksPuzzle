@@ -10,13 +10,11 @@
 // Crash on closing program - seemingly related to audio engine wave deconstructor
 
 // TODO_A
-// SFX & Music 
-//		- Add Pause Jingle file path and file
 // Level Completion timer logic - win screen restart: reset timers already in
 // Score Tracking UI - Gold Star, Silver Star,or Bronze Star
-// Score Tracking Screen - display moves used, time taken, and star level achieved for all 50 levels
+// Score Tracking Screen - display moves used, time taken, and star level achieved for all 50 levels. Include PAR time and moves?
 // ReadMe File
-// Create More Levels!
+// Fill out Levels! 48 Left!!
 // Create Graphics for each Block Type. 
 //		- Tilable Background Sprite for empty space?
 // create code system to skip to checkpoint levels
@@ -34,6 +32,9 @@
 // WASD or Arrow Keys to move Player Block
 // R Key to Restart Level in case of softlock
 // ESC or P to Pause
+// O - Options Menu (TODO)
+// I - Score Tracking Screen (TODO)
+// C - Cheat Code Skip (TODO)
 
 // defining global values for the movement system
 constexpr int NORTH = 0;
@@ -1199,6 +1200,7 @@ public:
 	olc::sound::Wave audioSlot_WinJingle;
 	olc::sound::Wave audioSlot_LevelTransition;
 	olc::sound::Wave audioSlot_PauseJingle;
+	olc::sound::Wave audioSlot_UnPauseJingle;
 	float fAudioSpeed = 1.0f;
 	float fMusicVolume = 0.5f;
 	float fSFXVolume = 1.0f;
@@ -1212,7 +1214,8 @@ public:
 	std::string sRestartLevel_1 = "SFX//RestartLevel_1.wav";			
 	std::string sWinJingle_1 = "SFX//WinJingle_1.wav";					
 	std::string sLevelTransition_1 = "SFX//LevelTransition_1.wav";	
-	std::string sPauseJingle_1 = "SFX//Silent.wav";
+	std::string sPauseJingle_1 = "SFX//Pause_1.wav";
+	std::string sUnPauseJingle_1 = "SFX//Unpause_1.wav";
 #pragma endregion
 
 	// Constructor
@@ -1244,7 +1247,8 @@ public:
 		audioSlot_RestartLevel.LoadAudioWaveform(sRestartLevel_1);
 		audioSlot_WinJingle.LoadAudioWaveform(sWinJingle_1);
 		audioSlot_LevelTransition.LoadAudioWaveform(sLevelTransition_1);
-		audioSlot_PauseJingle.LoadAudioWaveform(sPauseJingle_1);									
+		audioSlot_PauseJingle.LoadAudioWaveform(sPauseJingle_1);	
+		audioSlot_UnPauseJingle.LoadAudioWaveform(sUnPauseJingle_1);
 
 		// Set Volume					
 		audioEngine_Music.SetOutputVolume(fMusicVolume);
@@ -2092,7 +2096,7 @@ public:
 			// Check for user input to unpase
 			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)
 			{
-				audioEngine.PlayWaveform(&audioSlot_PauseJingle, false, fAudioSpeed);	// Play Pause Jingle SFX
+				audioEngine.PlayWaveform(&audioSlot_UnPauseJingle, false, fAudioSpeed);	// Play UnPause Jingle SFX
 				audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
 				bPaused = false;														// Reset Flags
 				bPauseJinglePlayed = false;
