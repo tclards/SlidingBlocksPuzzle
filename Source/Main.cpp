@@ -6,17 +6,20 @@
 
 // 1.20.50
 
+// TODO_BUGS
+// Crash on closing program - seemingly related to audio engine wave deconstructor
+// Crash on moving too fast, seemingly related to movement SFX
+
 // TODO_A
 // SFX & Music 
-//		- Bug Fix Win Tile SFX Logic
-//		- spamming movement rapidly can cause crash related to movement SFX
-// Level Completion timer logic + UI
-// Score Tracking Screen & Pause Function?
+//		- Add Pause Jingle file path and file
+// Level Completion timer logic
+// number of moves functionality
+// Score Tracking Screen - Gold Star, Silver Star,or Bronze Star
 // ReadMe File
 // Create More Levels!
 // Create Graphics for each Block Type. 
 //		- Tilable Background Sprite for empty space?
-// Add Deconstructor
 
 // TODO_B
 // animations for level transition
@@ -76,55 +79,57 @@ public:
 
 	std::string sLevel_0 = // test level - not added to allLevels vector
 		"################"
+		"#P.............#"
 		"#..............#"
-		"#...+.9..+.....#"
-		"#........+..|..#"
-		"#........+..|..#"
-		"#....P......|..#"
-		"#..5....---....#"
+		"##.##########.##"
 		"#..............#"
-		"#..+++....#..@.#"
-		"#.........#..@.#"
-		"#..-.........@.#"
-		"#.....+....|...#"
-		"#........+.....#"
-		"#.....1........#"
+		"#..............#"
+		"#.|...++++...|.#"
+		"#..............#"
+		"#.....@@@@.....#"
+		"#..............#"
+		"#.....____.....#"
+		"#.4..........3.#"
+		"#..............#"
+		"#..............#"
 		"################";
 
 	float iTime_1 = 0.0f;
-	std::string sLevel_1 = // starting here -> make sure to add any new levels to the LoadAll function that is used in OnUserCreate
+	int iNumOfMoves_1 = 0;
+	std::string sLevel_1 = // starting here -> make sure to add any new levels to the LoadAll function that is used in OnUserCreate, and update UI for timer and move counter
 		"################"
+		"#P.............#"
 		"#..............#"
-		"#...+.9..+.....#"
-		"#........+..|..#"
-		"#........+..|..#"
-		"#....P......|..#"
-		"#.......---....#"
+		"##.##########.##"
 		"#..............#"
-		"#..+++....#..2.#"
-		"#.........#..@.#"
-		"#..-.........@.#"
-		"#.....+....|...#"
-		"#........+.....#"
-		"#.....1........#"
+		"#..............#"
+		"#.|...+.++...|.#"
+		"#..............#"
+		"#.....@@@@.....#"
+		"#..............#"
+		"#.....____.....#"
+		"#.2..........3.#"
+		"#..............#"
+		"#..............#"
 		"################";
 
 	float iTime_2 = 0.0f;
+	int iNumOfMoves_2 = 0;
 	std::string sLevel_2 =
 		"################"
+		"#P..#..........#"
+		"###2#..........#"
+		"#.........######"
+		"#....-.+...@@@@#"
+		"#.........###.##"
 		"#..............#"
-		"#...+.3..+.....#"
-		"#........+..|..#"
-		"#........+..|..#"
-		"#....P.........#"
-		"#..4....+++....#"
+		"#...........5..#"
 		"#..............#"
-		"#..+++....#..@.#"
-		"#.........#..@.#"
-		"#..-...........#"
-		"#.....+....|...#"
-		"#........+.....#"
-		"#.....1........#"
+		"################"
+		"################"
+		"################"
+		"################"
+		"################"
 		"################";
 #pragma endregion
 
@@ -239,8 +244,8 @@ public:
 	};
 #pragma endregion
 
-// Variables
-#pragma region Vars
+// Variables & Flags
+#pragma region Vars & Flags
 	// Definition for level size and block size
 	olc::vf2d vLevelSize = { 16,15 };
 	olc::vi2d vBlockSize = { 16,16 };
@@ -256,17 +261,28 @@ public:
 
 	// Variable tracking which level the player is on
 	int iCurLevel = 1;
+
+	// Flags for pausing game
+	bool bPaused = false;
+	bool bPauseJinglePlayed = false;
 #pragma endregion
 
 // Audio
 #pragma region Sound
 	// Audio Engine
 	olc::sound::WaveEngine audioEngine;
+	olc::sound::WaveEngine audioEngine_Music;
 	olc::sound::Wave audioSlot_Music;
-	olc::sound::Wave audioSlot_SFX;
-	olc::sound::Wave audioSlot_Movement_1;
-	olc::sound::Wave audioSlot_Movement_2;
+	olc::sound::Wave audioSlot_SFX_WinTile;
+	olc::sound::Wave audioSlot_Movement_Succeed;
+	olc::sound::Wave audioSlot_Movement_Fail;
+	olc::sound::Wave audioSlot_RestartLevel;
+	olc::sound::Wave audioSlot_WinJingle;
+	olc::sound::Wave audioSlot_LevelTransition;
+	olc::sound::Wave audioSlot_PauseJingle;
 	float fAudioSpeed = 1.0f;
+	float fMusicVolume = 0.5f;
+	float fSFXVolume = 1.0f;
 
 	// Background Music
 	std::string sBackgroundMusic_1 = "SFX//BackgroundMusic_1.wav";	
@@ -274,10 +290,10 @@ public:
 	// SFX 
 	std::string sMovement_1 = "SFX//Movement_1.wav";
 	std::string sMovementFailure_1 = "SFX//Movement_Failed_1.wav";
-	std::string sWinTileClick_1 = "SFX//Silent.wav";
 	std::string sRestartLevel_1 = "SFX//RestartLevel_1.wav";			
 	std::string sWinJingle_1 = "SFX//WinJingle_1.wav";					
-	std::string sLevelTransition_1 = "SFX//LevelTransition_1.wav";		
+	std::string sLevelTransition_1 = "SFX//LevelTransition_1.wav";	
+	std::string sPauseJingle_1 = "SFX//Silent.wav";
 #pragma endregion
 
 	// Constructor
@@ -286,8 +302,39 @@ public:
 		sAppName = "Sliding Blocks Puzzle Game";
 	}
 
+	// Deconstructor
+	~Puzzle()
+	{
+		audioEngine.~WaveEngine();
+		audioEngine_Music.~WaveEngine();
+	}
+
+	// Function to load all audio into memory
+	void LoadAllAudio()
+	{
+		// Initialize Audio Engines
+		audioEngine_Music.InitialiseAudio();	
+		audioEngine.InitialiseAudio();
+
+		// Load Slots
+		audioSlot_Music.LoadAudioWaveform(sBackgroundMusic_1);		
+		audioSlot_Movement_Succeed.LoadAudioWaveform(sMovement_1);
+		audioSlot_Movement_Fail.LoadAudioWaveform(sMovementFailure_1);
+		audioSlot_RestartLevel.LoadAudioWaveform(sRestartLevel_1);
+		audioSlot_WinJingle.LoadAudioWaveform(sWinJingle_1);
+		audioSlot_LevelTransition.LoadAudioWaveform(sLevelTransition_1);
+		audioSlot_PauseJingle.LoadAudioWaveform(sPauseJingle_1);									
+
+		// Set Volume					
+		audioEngine_Music.SetOutputVolume(fMusicVolume);
+		audioEngine.SetOutputVolume(fSFXVolume);
+
+		// Start background music
+		audioEngine_Music.PlayWaveform(&audioSlot_Music, true, fAudioSpeed * 0.75f);
+	}
+
 	// Function to load all levels into memory
-	void LoadAll()
+	void LoadAllLevels()
 	{
 		// Push back each game level
 		vAllLevels.push_back(sLevel_0);
@@ -325,18 +372,18 @@ public:
 		// SFX
 		if (iCurLevel == -1)
 		{
-			audioSlot_SFX.LoadAudioWaveform(sWinJingle_1);						// Load WinJingle SFX
-			audioEngine.PlayWaveform(&audioSlot_SFX, false, fAudioSpeed);		// Play SFX
+			audioSlot_WinJingle.LoadAudioWaveform(sWinJingle_1);						// Load WinJingle SFX
+			audioEngine.PlayWaveform(&audioSlot_WinJingle, false, fAudioSpeed);			// Play SFX
 		}
 		else if (bWasRestart == true)
 		{
-			audioSlot_SFX.LoadAudioWaveform(sRestartLevel_1);					// Load Restart SFX
-			audioEngine.PlayWaveform(&audioSlot_SFX, false, fAudioSpeed);		// Play SFX
+			audioSlot_RestartLevel.LoadAudioWaveform(sRestartLevel_1);					// Load Restart SFX
+			audioEngine.PlayWaveform(&audioSlot_RestartLevel, false, fAudioSpeed);		// Play SFX
 		}
 		else
 		{
-			audioSlot_SFX.LoadAudioWaveform(sLevelTransition_1);				// Load Level Load SFX
-			audioEngine.PlayWaveform(&audioSlot_SFX, false, fAudioSpeed);		// Play SFX
+			audioSlot_LevelTransition.LoadAudioWaveform(sLevelTransition_1);			// Load Level Load SFX
+			audioEngine.PlayWaveform(&audioSlot_LevelTransition, false, fAudioSpeed);	// Play SFX
 		}
 
 		// iterate over level
@@ -404,16 +451,12 @@ public:
 	// Runs once at start of game
 	bool OnUserCreate() override
 	{
-		// Audio Handling
-		audioEngine.InitialiseAudio();																	// Initialize Audio Engine
-		audioSlot_Music.LoadAudioWaveform(sBackgroundMusic_1);											// Load Background Music
-		audioEngine.PlayWaveform(&audioSlot_Music, true, fAudioSpeed * 0.75f);						// Play and Loop Background Music
-		audioSlot_Movement_1.LoadAudioWaveform(sMovement_1);											// Load Movement SFX
-		audioSlot_Movement_2.LoadAudioWaveform(sMovementFailure_1);										// Load Movement Failure SFX
+		// Audio Loadind
+		LoadAllAudio();
 
 		// Level Loading
-		LoadAll();																						// Load ALL levels into memory
-		LoadLevel(iCurLevel, false);																	// Load current level for playing
+		LoadAllLevels();																						// Load ALL levels into memory
+		LoadLevel(iCurLevel, false);																			// Load current level for playing
 			
 		return true;
 	}
@@ -421,448 +464,259 @@ public:
 	// Runs every frame
 	bool OnUserUpdate(float fElapsedTime) override
 	{
-		// user input
-		bool bPushing = false;
-		int iDirPush = NORTH;
-		if (iCurLevel != -1) // disable most input on end screen
+		if (!bPaused)
 		{
-			if (GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
+			// user input
+			bool bPushing = false;
+			int iDirPush = NORTH;
+			if (iCurLevel != -1) // disable most input on end screen
 			{
-				iDirPush = 0;
-				bPushing = true;
-			}
-			if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
-			{
-				iDirPush = SOUTH;
-				bPushing = true;
-			}
-			if (GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
-			{
-				iDirPush = WEST;
-				bPushing = true;
-			}
-			if (GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
-			{
-				iDirPush = EAST;
-				bPushing = true;
-			}
-			if (GetKey(olc::Key::R).bPressed)
-			{
-				LoadLevel(iCurLevel, true);
-			}
-		}
-
-		// lambda function for translating our 2D coordinates into 1D
-		auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; };
-
-		// movement logic
-		bool bPlayerMoved = false;
-		int iMovementSuceededOrFailed = -1; // -1 = no move, 0 = move failed, 1 = move succeeded
-		if (bPushing) // check if a push attempt is happening this frame
-		{
-			olc::vi2d vBlockPos = vPlayerPos; // 'cursor' to track attempted movement
-
-			bool bAllowPush = false;
-			bool bTest = true;
-
-			// test for ability to move in a specific direction
-			while (bTest)
-			{
-				if (vLevel[id(vBlockPos)]!= nullptr) // check target block space for nullptr
+				if (GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
 				{
-					if (vLevel[id(vBlockPos)]->Push((iDirPush + 2) % 4 )) // call blocks push function to determine if it can be pushed in the direction specified
+					iDirPush = 0;
+					bPushing = true;
+				}
+				if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
+				{
+					iDirPush = SOUTH;
+					bPushing = true;
+				}
+				if (GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
+				{
+					iDirPush = WEST;
+					bPushing = true;
+				}
+				if (GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
+				{
+					iDirPush = EAST;
+					bPushing = true;
+				}
+				if (GetKey(olc::Key::R).bPressed)
+				{
+					LoadLevel(iCurLevel, true);
+				}
+				if (GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
+				{
+					bPaused = true;										// Pause Game
+				}
+			}
+			else
+			{
+				if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed) // Win Screen ESC
+				{
+					iCurLevel = 1;										// Set Level Back to 1
+					audioEngine_Music.SetOutputVolume(fMusicVolume);	// Unmute Background Music
+					LoadLevel(iCurLevel, false);						// Reload Level to 1
+
+					return true;
+				}
+			}
+
+			// lambda function for translating our 2D coordinates into 1D
+			auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; };
+
+			// movement logic
+			bool bPlayerMoved = false;
+			int iMovementSuceededOrFailed = -1; // -1 = no move, 0 = move failed, 1 = move succeeded
+			if (bPushing) // check if a push attempt is happening this frame
+			{
+				olc::vi2d vBlockPos = vPlayerPos; // 'cursor' to track attempted movement
+
+				bool bAllowPush = false;
+				bool bTest = true;
+
+				// test for ability to move in a specific direction
+				while (bTest)
+				{
+					if (vLevel[id(vBlockPos)] != nullptr) // check target block space for nullptr
 					{
-						// if block is allowed to be pushed in that direction - move cursor that direction so we can check for collision in neighboring space
-						switch (iDirPush) // select neighbor
+						if (vLevel[id(vBlockPos)]->Push((iDirPush + 2) % 4)) // call blocks push function to determine if it can be pushed in the direction specified
 						{
-						case NORTH: vBlockPos.y--; break;
-						case SOUTH: vBlockPos.y++; break;
-						case EAST: vBlockPos.x++; break;
-						case WEST: vBlockPos.x--; break;
+							// if block is allowed to be pushed in that direction - move cursor that direction so we can check for collision in neighboring space
+							switch (iDirPush) // select neighbor
+							{
+							case NORTH: vBlockPos.y--; break;
+							case SOUTH: vBlockPos.y++; break;
+							case EAST: vBlockPos.x++; break;
+							case WEST: vBlockPos.x--; break;
+							}
+						}
+						else // block cant be pushed that way -- end testing
+						{
+							bPlayerMoved = true;
+							iMovementSuceededOrFailed = 0;
+							bTest = false;
 						}
 					}
-					else // block cant be pushed that way -- end testing
+					else // target space was nullptr - player can move there. End testing
 					{
 						bPlayerMoved = true;
-						iMovementSuceededOrFailed = 0;
+						iMovementSuceededOrFailed = 1;
+						bAllowPush = true;
 						bTest = false;
 					}
 				}
-				else // target space was nullptr - player can move there. End testing
-				{
-					bPlayerMoved = true;
-					iMovementSuceededOrFailed = 1;
-					bAllowPush = true;
-					bTest = false;
-				}
-			}
 
-			if (bAllowPush) // if push is allowed - execute push logic
-			{
-				while (vBlockPos != vPlayerPos) // walk backwards until reaching player position from valid move location that cursor found, swapping block positions as needed
+				if (bAllowPush) // if push is allowed - execute push logic
 				{
-					olc::vi2d vSourcePos = vBlockPos;
+					while (vBlockPos != vPlayerPos) // walk backwards until reaching player position from valid move location that cursor found, swapping block positions as needed
+					{
+						olc::vi2d vSourcePos = vBlockPos;
+						switch (iDirPush)
+						{
+						case NORTH: vSourcePos.y++; break;
+						case SOUTH: vSourcePos.y--; break;
+						case EAST: vSourcePos.x--; break;
+						case WEST: vSourcePos.x++; break;
+						}
+
+						if (vLevel[id(vSourcePos)] != nullptr) // check for nullptr
+						{
+							vLevel[id(vSourcePos)]->Move(); // call any custom move logic before actually excecuting move
+						}
+
+						std::swap(vLevel[id(vSourcePos)], vLevel[id(vBlockPos)]); // swap blocks
+						vBlockPos = vSourcePos; // increment 'cursor' backwards
+					}
+
+					// update player location after movement logic loop completes
 					switch (iDirPush)
 					{
-					case NORTH: vSourcePos.y++; break;
-					case SOUTH: vSourcePos.y--; break;
-					case EAST: vSourcePos.x--; break;
-					case WEST: vSourcePos.x++; break;
+					case NORTH: vPlayerPos.y--; break;
+					case SOUTH: vPlayerPos.y++; break;
+					case EAST: vPlayerPos.x++; break;
+					case WEST: vPlayerPos.x--; break;
 					}
+				}
+			}
 
-					if (vLevel[id(vSourcePos)] != nullptr) // check for nullptr
+			// Movement SFX
+			if (bPlayerMoved == true)
+			{
+				if (iMovementSuceededOrFailed == 0) // Movement Failed
+				{
+					audioEngine.PlayWaveform(&audioSlot_Movement_Fail, false, fAudioSpeed * 2.0f);
+				}
+				else if (iMovementSuceededOrFailed == 1) // Movement Succeeded
+				{
+					audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed * 2.0f);
+				}
+			}
+
+			// win condition checking 
+			int nGoals = 0;
+			for (auto& g : vGoals)
+			{
+				if (vLevel[id(g)] != nullptr)
+				{
+					nGoals++; // Increment Goals
+				}
+			}
+
+			// Clear screen to black before drawing each frame
+			Clear(olc::BLACK);
+
+			// draw logic
+			olc::vi2d vBlockPos = { 0,0 };
+
+			for (auto& g : vGoals) // win condition drawing
+			{
+				FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+			}
+			for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++) // block drawing
+			{
+				for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
+				{
+					// get pointer to block at a particular position
+					auto& b = vLevel[id(vBlockPos)];
+
+					// check for nullptr, then draw
+					if (b)
 					{
-						vLevel[id(vSourcePos)]->Move(); // call any custom move logic before actually excecuting move
+						b->DrawSelf(this, vBlockPos, vBlockSize);
 					}
-
-					std::swap(vLevel[id(vSourcePos)], vLevel[id(vBlockPos)]); // swap blocks
-					vBlockPos = vSourcePos; // increment 'cursor' backwards
-				}
-
-				// update player location after movement logic loop completes
-				switch (iDirPush) 
-				{
-				case NORTH: vPlayerPos.y--; break;
-				case SOUTH: vPlayerPos.y++; break;
-				case EAST: vPlayerPos.x++; break;
-				case WEST: vPlayerPos.x--; break;
 				}
 			}
-		}
 
-		// Movement SFX
-		if (bPlayerMoved == true)
-		{
-			if (iMovementSuceededOrFailed == 0) // Movement Failed
+			// UI
+			if (iCurLevel != -1) // UI for active gameplay
 			{
-				audioEngine.PlayWaveform(&audioSlot_Movement_2, false, fAudioSpeed * 2.0f);
+				// Goal Tracking UI
+				DrawString(4, 4, "Goals: " + std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), olc::WHITE);
+
+				// Level Tracking UI
+				DrawString(128, 4, "Level: " + std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
 			}
-			else if (iMovementSuceededOrFailed == 1) // Movement Succeeded
+			else				// UI for win conditions
 			{
-				audioEngine.PlayWaveform(&audioSlot_Movement_1, false, fAudioSpeed * 2.0f);
+				// Win Screen Stuff
+				audioEngine_Music.SetOutputVolume(0.0f);
+				DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", olc::WHITE);
+				DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
+				DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC to restart!", olc::WHITE);
 			}
-		}
 
-		// win condition checking 
-		int nGoals = 0;
-		for (auto& g : vGoals)
-		{
-			if (vLevel[id(g)] != nullptr)
+			// Win Tracking
+			if (nGoals >= vGoals.size() && iCurLevel != -1)
 			{
-				nGoals++; // Increment Goals
+				iCurLevel++;
+				LoadLevel(iCurLevel, false);
 			}
+
+			return true;
 		}
-
-// SFX for Win Tiles
-#pragma region SFX logic for Win Tiles
-		// This is overcomplicated and a bit silly
-		// I did it this way due to the way Win Tiles and Goal Checking is handled.
-		// Could do something better and simpler here by making Win Tiles an actual block type and including a bTileClick bool as an attatched var
-		// TODO later possibly?
-		// This causes crashes when going back and forth across unoccupied tiles - Commenting it out for now
-
-		//bool bSFXHasPlayed_WinTileClick_1 = false;	// default all SFX flags to false before goals sfx check
-		//bool bSFXHasPlayed_WinTileClick_2 = false;
-		//bool bSFXHasPlayed_WinTileClick_3 = false;
-		//bool bSFXHasPlayed_WinTileClick_4 = false;
-		//bool bSFXHasPlayed_WinTileClick_5 = false;
-		//bool bSFXHasPlayed_WinTileClick_6 = false;
-		//bool bSFXHasPlayed_WinTileClick_7 = false;
-		//bool bSFXHasPlayed_WinTileClick_8 = false;
-		//bool bSFXHasPlayed_WinTileClick_9 = false;
-		//switch (nGoals)
-		//{
-		//case 0:
-		//	// No win tiles are covered this frame so set all SFXHasPlayed_WinTileClick flags to false
-		//	bSFXHasPlayed_WinTileClick_1 = false;
-		//	bSFXHasPlayed_WinTileClick_2 = false;
-		//	bSFXHasPlayed_WinTileClick_3 = false;
-		//	bSFXHasPlayed_WinTileClick_4 = false;
-		//	bSFXHasPlayed_WinTileClick_5 = false;
-		//	bSFXHasPlayed_WinTileClick_6 = false;
-		//	bSFXHasPlayed_WinTileClick_7 = false;
-		//	bSFXHasPlayed_WinTileClick_8 = false;
-		//	bSFXHasPlayed_WinTileClick_9 = false;
-		//	break;
-		//case 1:
-		//	// 1 win tile is covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
-		//	bSFXHasPlayed_WinTileClick_2 = false;
-		//	bSFXHasPlayed_WinTileClick_3 = false;
-		//	bSFXHasPlayed_WinTileClick_4 = false;
-		//	bSFXHasPlayed_WinTileClick_5 = false;
-		//	bSFXHasPlayed_WinTileClick_6 = false;
-		//	bSFXHasPlayed_WinTileClick_7 = false;
-		//	bSFXHasPlayed_WinTileClick_8 = false;
-		//	bSFXHasPlayed_WinTileClick_9 = false;
-		//	// check SFXHasPlayed flag
-		//	if (bSFXHasPlayed_WinTileClick_1 == true)
-		//	{
-		//		// do nothing, because SFX already played
-		//		break;
-		//	}
-		//	else
-		//	{
-		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
-		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
-		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flag for sfx already played
-		//		break;
-
-		//	}
-		//case 2:
-		//	// 2 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
-		//	bSFXHasPlayed_WinTileClick_3 = false;
-		//	bSFXHasPlayed_WinTileClick_4 = false;
-		//	bSFXHasPlayed_WinTileClick_5 = false;
-		//	bSFXHasPlayed_WinTileClick_6 = false;
-		//	bSFXHasPlayed_WinTileClick_7 = false;
-		//	bSFXHasPlayed_WinTileClick_8 = false;
-		//	bSFXHasPlayed_WinTileClick_9 = false;
-		//	// check SFXHasPlayed flag
-		//	if (bSFXHasPlayed_WinTileClick_2 == true)
-		//	{
-		//		// do nothing, because SFX already played
-		//		break;
-		//	}
-		//	else
-		//	{
-		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
-		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
-		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
-		//		bSFXHasPlayed_WinTileClick_2 = true;
-		//		break;
-
-		//	}
-		//case 3:
-		//	// 3 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
-		//	bSFXHasPlayed_WinTileClick_4 = false;
-		//	bSFXHasPlayed_WinTileClick_5 = false;
-		//	bSFXHasPlayed_WinTileClick_6 = false;
-		//	bSFXHasPlayed_WinTileClick_7 = false;
-		//	bSFXHasPlayed_WinTileClick_8 = false;
-		//	bSFXHasPlayed_WinTileClick_9 = false;
-		//	// check SFXHasPlayed flag
-		//	if (bSFXHasPlayed_WinTileClick_3 == true)
-		//	{
-		//		// do nothing, because SFX already played
-		//		break;
-		//	}
-		//	else
-		//	{
-		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
-		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
-		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
-		//		bSFXHasPlayed_WinTileClick_2 = true;
-		//		bSFXHasPlayed_WinTileClick_3 = true;
-		//		break;
-
-		//	}
-		//case 4:
-		//	// 4 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
-		//	bSFXHasPlayed_WinTileClick_5 = false;
-		//	bSFXHasPlayed_WinTileClick_6 = false;
-		//	bSFXHasPlayed_WinTileClick_7 = false;
-		//	bSFXHasPlayed_WinTileClick_8 = false;
-		//	bSFXHasPlayed_WinTileClick_9 = false;
-		//	// check SFXHasPlayed flag
-		//	if (bSFXHasPlayed_WinTileClick_4 == true)
-		//	{
-		//		// do nothing, because SFX already played
-		//		break;
-		//	}
-		//	else
-		//	{
-		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
-		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
-		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
-		//		bSFXHasPlayed_WinTileClick_2 = true;
-		//		bSFXHasPlayed_WinTileClick_3 = true;
-		//		bSFXHasPlayed_WinTileClick_4 = true;
-		//		break;
-
-		//	}
-		//case 5:
-		//	// 5 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
-		//	bSFXHasPlayed_WinTileClick_6 = false;
-		//	bSFXHasPlayed_WinTileClick_7 = false;
-		//	bSFXHasPlayed_WinTileClick_8 = false;
-		//	bSFXHasPlayed_WinTileClick_9 = false;
-		//	// check SFXHasPlayed flag
-		//	if (bSFXHasPlayed_WinTileClick_5 == true)
-		//	{
-		//		// do nothing, because SFX already played
-		//		break;
-		//	}
-		//	else
-		//	{
-		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
-		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
-		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
-		//		bSFXHasPlayed_WinTileClick_2 = true;
-		//		bSFXHasPlayed_WinTileClick_3 = true;
-		//		bSFXHasPlayed_WinTileClick_4 = true;
-		//		bSFXHasPlayed_WinTileClick_5 = true;
-		//		break;
-
-		//	}
-		//case 6:
-		//	// 6 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
-		//	bSFXHasPlayed_WinTileClick_7 = false;
-		//	bSFXHasPlayed_WinTileClick_8 = false;
-		//	bSFXHasPlayed_WinTileClick_9 = false;
-		//	// check SFXHasPlayed flag
-		//	if (bSFXHasPlayed_WinTileClick_6 == true)
-		//	{
-		//		// do nothing, because SFX already played
-		//		break;
-		//	}
-		//	else
-		//	{
-		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
-		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
-		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
-		//		bSFXHasPlayed_WinTileClick_2 = true;
-		//		bSFXHasPlayed_WinTileClick_3 = true;
-		//		bSFXHasPlayed_WinTileClick_4 = true;
-		//		bSFXHasPlayed_WinTileClick_5 = true;
-		//		bSFXHasPlayed_WinTileClick_6 = true;
-		//		break;
-
-		//	}
-		//case 7:
-		//	// 7 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
-		//	bSFXHasPlayed_WinTileClick_8 = false;
-		//	bSFXHasPlayed_WinTileClick_9 = false;
-		//	// check SFXHasPlayed flag
-		//	if (bSFXHasPlayed_WinTileClick_7 == true)
-		//	{
-		//		// do nothing, because SFX already played
-		//		break;
-		//	}
-		//	else
-		//	{
-		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
-		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
-		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
-		//		bSFXHasPlayed_WinTileClick_2 = true;
-		//		bSFXHasPlayed_WinTileClick_3 = true;
-		//		bSFXHasPlayed_WinTileClick_4 = true;
-		//		bSFXHasPlayed_WinTileClick_5 = true;
-		//		bSFXHasPlayed_WinTileClick_6 = true;
-		//		bSFXHasPlayed_WinTileClick_7 = true;
-		//		break;
-
-		//	}
-		//case 8:
-		//	// 8 win tiles are covered this frame so set all larger SFXHasPlayed_WinTileClick flags to false
-		//	bSFXHasPlayed_WinTileClick_9 = false;
-		//	// check SFXHasPlayed flag
-		//	if (bSFXHasPlayed_WinTileClick_8 == true)
-		//	{
-		//		// do nothing, because SFX already played
-		//		break;
-		//	}
-		//	else
-		//	{
-		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
-		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
-		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
-		//		bSFXHasPlayed_WinTileClick_2 = true;
-		//		bSFXHasPlayed_WinTileClick_3 = true;
-		//		bSFXHasPlayed_WinTileClick_4 = true;
-		//		bSFXHasPlayed_WinTileClick_5 = true;
-		//		bSFXHasPlayed_WinTileClick_6 = true;
-		//		bSFXHasPlayed_WinTileClick_7 = true;
-		//		bSFXHasPlayed_WinTileClick_8 = true;
-		//		break;
-
-		//	}
-		//case 9:
-		//	// check SFXHasPlayed flag
-		//	if (bSFXHasPlayed_WinTileClick_9 == true)
-		//	{
-		//		// do nothing, because SFX already played
-		//		break;
-		//	}
-		//	else
-		//	{
-		//		audioSlot_SFX.LoadAudioWaveform(sWinTileClick_1);						// Load Tile Click SFX
-		//		audioEngine.PlayWaveform(&audioSlot_SFX, false, fVolumeSlider);			// Play SFX
-		//		bSFXHasPlayed_WinTileClick_1 = true;									// Set flags for sfx already played
-		//		bSFXHasPlayed_WinTileClick_2 = true;
-		//		bSFXHasPlayed_WinTileClick_3 = true;
-		//		bSFXHasPlayed_WinTileClick_4 = true;
-		//		bSFXHasPlayed_WinTileClick_5 = true;
-		//		bSFXHasPlayed_WinTileClick_6 = true;
-		//		bSFXHasPlayed_WinTileClick_7 = true;
-		//		bSFXHasPlayed_WinTileClick_8 = true;
-		//		bSFXHasPlayed_WinTileClick_9 = true;
-		//		break;
-
-		//	}
-		//default:
-		//	// Should never hit this unless someone has added levels with more than 9 win tiles
-		//	bSFXHasPlayed_WinTileClick_1 = true;
-		//	bSFXHasPlayed_WinTileClick_2 = true;
-		//	bSFXHasPlayed_WinTileClick_3 = true;
-		//	bSFXHasPlayed_WinTileClick_4 = true;
-		//	bSFXHasPlayed_WinTileClick_5 = true;
-		//	bSFXHasPlayed_WinTileClick_6 = true;
-		//	bSFXHasPlayed_WinTileClick_7 = true;
-		//	bSFXHasPlayed_WinTileClick_8 = true;
-		//	bSFXHasPlayed_WinTileClick_9 = true;
-		//	break;
-		//}
-#pragma endregion
-
-		// Clear screen to black before drawing each frame
-		Clear(olc::BLACK);
-
-		// draw logic
-		olc::vi2d vBlockPos = { 0,0 };
-
-		for (auto& g : vGoals) // win condition drawing
+		else if (bPaused)
 		{
-			FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
-		}
-		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++) // block drawing
-		{
-			for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
+			// Play SFX
+			if (bPauseJinglePlayed == false)
 			{
-				// get pointer to block at a particular position
-				auto& b = vLevel[id(vBlockPos)];
-
-				// check for nullptr, then draw
-				if (b)
-				{
-					b->DrawSelf(this, vBlockPos, vBlockSize);
-				}
+				audioEngine.PlayWaveform(&audioSlot_PauseJingle, false, fAudioSpeed);
+				bPauseJinglePlayed = true;
 			}
-		}
 
-		// UI
-		if (iCurLevel != -1) // UI for active gameplay
-		{
-			// Goal Tracking UI
-			DrawString(4, 4, "Goals: " + std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), olc::WHITE);
+			// Pause Background Music
+			audioEngine_Music.SetOutputVolume(0.0f);
 
-			// Level Tracking UI
-			DrawString(128, 4, "Level: " + std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
-		}
-		else				// UI for win conditions
-		{
-			// Win Screen
-			DrawString((256 / 2) - 108, (240 / 2) -96, "YOU WIN!", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
-		}
+			// Check for user input to unpase
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)
+			{
+				audioEngine.PlayWaveform(&audioSlot_PauseJingle, false, fAudioSpeed);	// Play Pause Jingle SFX
+				audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
+				bPaused = false;														// Reset Flags
+				bPauseJinglePlayed = false;
+			}
 
-		// Win Tracking
-		if (nGoals >= vGoals.size() && iCurLevel != -1)
-		{
-			iCurLevel++;
-			LoadLevel(iCurLevel, false);
-		}
+			// Clear screen to black before drawing each frame
+			Clear(olc::BLACK);
 
-		return true;
+			// Draw Pause Window
+			FillRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::DARK_BLUE);
+			DrawRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::WHITE);
+
+			// Get Timer and Movement Data
+			std::string sMovementUI;
+			std::string sTimerUI;
+			switch (iCurLevel)
+			{
+			case 1:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_1);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_1);
+				break;
+			case 2:
+				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_2);
+				sTimerUI = "Level Timer: " + std::to_string(iTime_2);
+				break;
+			default:
+				break;
+			}
+
+			// Draw UI Elements
+			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 92, sTimerUI, olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 78, sMovementUI, olc::WHITE);
+
+			return true;
+		}
 	}
 };
 
