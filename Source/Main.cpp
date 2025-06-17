@@ -12,9 +12,9 @@
 // TODO_A
 // SFX & Music 
 //		- Add Pause Jingle file path and file
-// Level Completion timer logic
-// number of moves functionality
-// Score Tracking Screen - Gold Star, Silver Star,or Bronze Star
+// Level Completion timer logic - win screen restart: reset timers already in
+// Score Tracking UI - Gold Star, Silver Star,or Bronze Star
+// Score Tracking Screen - display moves used, time taken, and star level achieved for all 50 levels
 // ReadMe File
 // Create More Levels!
 // Create Graphics for each Block Type. 
@@ -28,6 +28,7 @@
 // Teleport Tile 
 //		- SFX
 //		- Graphics
+// High Score Screen and saving logic
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -1483,6 +1484,110 @@ public:
 					audioEngine_Music.SetOutputVolume(fMusicVolume);	// Unmute Background Music
 					LoadLevel(iCurLevel, false);						// Reload Level to 1
 
+					// Reset Move Counters
+					iNumOfMoves_1 = 0;
+					iNumOfMoves_2 = 0;
+					iNumOfMoves_3 = 0;
+					iNumOfMoves_4 =	0;
+					iNumOfMoves_5 =	0;
+					iNumOfMoves_6 =	0;
+					iNumOfMoves_7 =	0;
+					iNumOfMoves_8 =	0;
+					iNumOfMoves_9 =	0;
+					iNumOfMoves_10 = 0;
+					iNumOfMoves_11 = 0;
+					iNumOfMoves_12 = 0;
+					iNumOfMoves_13 = 0;
+					iNumOfMoves_14 = 0;
+					iNumOfMoves_15 = 0;
+					iNumOfMoves_16 = 0;
+					iNumOfMoves_17 = 0;
+					iNumOfMoves_18 = 0;
+					iNumOfMoves_19 = 0;
+					iNumOfMoves_20 = 0;
+					iNumOfMoves_21 = 0;
+					iNumOfMoves_22 = 0;
+					iNumOfMoves_23 = 0;
+					iNumOfMoves_24 = 0;
+					iNumOfMoves_25 = 0;
+					iNumOfMoves_26 = 0;
+					iNumOfMoves_27 = 0;
+					iNumOfMoves_28 = 0;
+					iNumOfMoves_29 = 0;
+					iNumOfMoves_30 = 0;
+					iNumOfMoves_31 = 0;
+					iNumOfMoves_32 = 0;
+					iNumOfMoves_33 = 0;
+					iNumOfMoves_34 = 0;
+					iNumOfMoves_35 = 0;
+					iNumOfMoves_36 = 0;
+					iNumOfMoves_37 = 0;
+					iNumOfMoves_38 = 0;
+					iNumOfMoves_39 = 0;
+					iNumOfMoves_40 = 0;
+					iNumOfMoves_41 = 0;
+					iNumOfMoves_42 = 0;
+					iNumOfMoves_43 = 0;
+					iNumOfMoves_44 = 0;
+					iNumOfMoves_45 = 0;
+					iNumOfMoves_46 = 0;
+					iNumOfMoves_47 = 0;
+					iNumOfMoves_48 = 0;
+					iNumOfMoves_49 = 0;
+					iNumOfMoves_50 = 0;
+
+					// Reset Timers
+					iTime_1 = 0.0f;
+					iTime_2 = 0.0f;
+					iTime_3 = 0.0f;
+					iTime_4 = 0.0f;
+					iTime_5 = 0.0f;
+					iTime_6 = 0.0f;
+					iTime_7 = 0.0f;
+					iTime_8 = 0.0f;
+					iTime_9 = 0.0f;
+					iTime_10 = 0.0f;
+					iTime_11 = 0.0f;
+					iTime_12 = 0.0f;
+					iTime_13 = 0.0f;
+					iTime_14 = 0.0f;
+					iTime_15 = 0.0f;
+					iTime_16 = 0.0f;
+					iTime_17 = 0.0f;
+					iTime_18 = 0.0f;
+					iTime_19 = 0.0f;
+					iTime_20 = 0.0f;
+					iTime_21 = 0.0f;
+					iTime_22 = 0.0f;
+					iTime_23 = 0.0f;
+					iTime_24 = 0.0f;
+					iTime_25 = 0.0f;
+					iTime_26 = 0.0f;
+					iTime_27 = 0.0f;
+					iTime_28 = 0.0f;
+					iTime_29 = 0.0f;
+					iTime_30 = 0.0f;
+					iTime_31 = 0.0f;
+					iTime_32 = 0.0f;
+					iTime_33 = 0.0f;
+					iTime_34 = 0.0f;
+					iTime_35 = 0.0f;
+					iTime_36 = 0.0f;
+					iTime_37 = 0.0f;
+					iTime_38 = 0.0f;
+					iTime_39 = 0.0f;
+					iTime_40 = 0.0f;
+					iTime_41 = 0.0f;
+					iTime_42 = 0.0f;
+					iTime_43 = 0.0f;
+					iTime_44 = 0.0f;
+					iTime_45 = 0.0f;
+					iTime_46 = 0.0f;
+					iTime_47 = 0.0f;
+					iTime_48 = 0.0f;
+					iTime_49 = 0.0f;
+					iTime_50 = 0.0f;
+
 					return true;
 				}
 			}
@@ -1578,6 +1683,166 @@ public:
 				}
 			}
 
+			// Move Counting
+			if (bPlayerMoved == true && iMovementSuceededOrFailed == 1)
+			{
+				switch (iCurLevel)
+				{
+				case 1:
+					iNumOfMoves_1++;
+					break;
+				case 2:
+					iNumOfMoves_2++;
+					break;
+				case 3:
+					iNumOfMoves_3++;
+					break;
+				case 4:
+					iNumOfMoves_4++; 
+					break;
+				case 5:
+					iNumOfMoves_5++;
+					break;
+				case 6:
+					iNumOfMoves_6++;
+					break;
+				case 7:
+					iNumOfMoves_7++;
+					break;
+				case 8:
+					iNumOfMoves_8++;
+					break;
+				case 9:
+					iNumOfMoves_8++;
+					break;
+				case 10:
+					iNumOfMoves_10++;
+					break;
+				case 11:
+					iNumOfMoves_11++;
+					break;
+				case 12:
+					iNumOfMoves_12++;
+					break;
+				case 13:
+					iNumOfMoves_13++;
+					break;
+				case 14:
+					iNumOfMoves_14++;
+					break;
+				case 15:
+					iNumOfMoves_15++;
+					break;
+				case 16:
+					iNumOfMoves_16++;
+					break;
+				case 17:
+					iNumOfMoves_17++;
+					break;
+				case 18:
+					iNumOfMoves_18++;
+					break;
+				case 19:
+					iNumOfMoves_19++;
+					break;
+				case 20:
+					iNumOfMoves_20++;
+					break;
+				case 21:
+					iNumOfMoves_21++;
+					break;
+				case 22:
+					iNumOfMoves_22++;
+					break;
+				case 23:
+					iNumOfMoves_23++;
+					break;
+				case 24:
+					iNumOfMoves_24++;
+					break;
+				case 25:
+					iNumOfMoves_25++;
+					break;
+				case 26:
+					iNumOfMoves_26++;
+					break;
+				case 27:
+					iNumOfMoves_27++;
+					break;
+				case 28:
+					iNumOfMoves_28++;
+					break;
+				case 29:
+					iNumOfMoves_29++;
+					break;
+				case 30:
+					iNumOfMoves_30++;
+					break;
+				case 31:
+					iNumOfMoves_31++;
+					break;
+				case 32:
+					iNumOfMoves_32++;
+					break;
+				case 33:
+					iNumOfMoves_33++;
+					break;
+				case 34:
+					iNumOfMoves_34++;
+					break;
+				case 35:
+					iNumOfMoves_35++;
+					break;
+				case 36:
+					iNumOfMoves_36++;
+					break;
+				case 37:
+					iNumOfMoves_37++;
+					break;
+				case 38:
+					iNumOfMoves_38++;
+					break;
+				case 39:
+					iNumOfMoves_39++;
+					break;
+				case 40:
+					iNumOfMoves_40++;
+					break;
+				case 41:
+					iNumOfMoves_41++;
+					break;
+				case 42:
+					iNumOfMoves_42++;
+					break;
+				case 43:
+					iNumOfMoves_43++;
+					break;
+				case 44:
+					iNumOfMoves_44++;
+					break;
+				case 45:
+					iNumOfMoves_45++;
+					break;
+				case 46:
+					iNumOfMoves_46++;
+					break;
+				case 47:
+					iNumOfMoves_47++;
+					break;
+				case 48:
+					iNumOfMoves_48++;
+					break;
+				case 49:
+					iNumOfMoves_49++;
+					break;
+				case 50:
+					iNumOfMoves_50++;
+					break;
+				default:
+					break;
+				}
+			}
+
 			// win condition checking 
 			int nGoals = 0;
 			for (auto& g : vGoals)
@@ -1635,6 +1900,163 @@ public:
 				{ 
 					DrawString(128 + 20, 4, "Level: ", olc::WHITE);
 					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::RED);
+				}
+
+				// Move Number UI
+				switch (iCurLevel)
+				{
+				case 1:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_1), olc::WHITE);
+					break;
+				case 2:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_2), olc::WHITE);
+					break;
+				case 3:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_3), olc::WHITE);
+					break;
+				case 4:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_4), olc::WHITE);
+					break;
+				case 5:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_5), olc::WHITE);
+					break;
+				case 6:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_6), olc::WHITE);
+					break;
+				case 7:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_7), olc::WHITE);
+					break;
+				case 8:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_8), olc::WHITE);
+					break;
+				case 9:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_9), olc::WHITE);
+					break;
+				case 10:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_10), olc::WHITE);
+					break;
+				case 11:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_11), olc::WHITE);
+					break;
+				case 12:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_12), olc::WHITE);
+					break;
+				case 13:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_13), olc::WHITE);
+					break;
+				case 14:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_14), olc::WHITE);
+					break;
+				case 15:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_15), olc::WHITE);
+					break;
+				case 16:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_16), olc::WHITE);
+					break;
+				case 17:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_17), olc::WHITE);
+					break;
+				case 18:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_18), olc::WHITE);
+					break;
+				case 19:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_19), olc::WHITE);
+					break;
+				case 20:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_20), olc::WHITE);
+					break;
+				case 21:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_21), olc::WHITE);
+					break;
+				case 22:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_22), olc::WHITE);
+					break;
+				case 23:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_23), olc::WHITE);
+					break;
+				case 24:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_24), olc::WHITE);
+					break;
+				case 25:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_25), olc::WHITE);
+					break;
+				case 26:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_26), olc::WHITE);
+					break;
+				case 27:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_27), olc::WHITE);
+					break;
+				case 28:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_28), olc::WHITE);
+					break;
+				case 29:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_29), olc::WHITE);
+					break;
+				case 30:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_30), olc::WHITE);
+					break;
+				case 31:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_31), olc::WHITE);
+					break;
+				case 32:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_32), olc::WHITE);
+					break;
+				case 33:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_33), olc::WHITE);
+					break;
+				case 34:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_34), olc::WHITE);
+					break;
+				case 35:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_35), olc::WHITE);
+					break;
+				case 36:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_36), olc::WHITE);
+					break;
+				case 37:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_37), olc::WHITE);
+					break;
+				case 38:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_38), olc::WHITE);
+					break;
+				case 39:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_39), olc::WHITE);
+					break;
+				case 40:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_40), olc::WHITE);
+					break;
+				case 41:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_41), olc::WHITE);
+					break;
+				case 42:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_42), olc::WHITE);
+					break;
+				case 43:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_43), olc::WHITE);
+					break;
+				case 44:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_44), olc::WHITE);
+					break;
+				case 45:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_45), olc::WHITE);
+					break;
+				case 46:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_46), olc::WHITE);
+					break;
+				case 47:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_47), olc::WHITE);
+					break;
+				case 48:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_48), olc::WHITE);
+					break;
+				case 49:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_49), olc::WHITE);
+					break;
+				case 50:
+					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_50), olc::WHITE);
+					break;
+				default:
+					break;
 				}
 			}
 			else				// UI for win conditions
