@@ -14,13 +14,13 @@
 //		- Add Pause Jingle file path and file
 // Level Completion timer logic
 // number of moves functionality
-// add difficulty level UI
 // Score Tracking Screen - Gold Star, Silver Star,or Bronze Star
 // ReadMe File
 // Create More Levels!
 // Create Graphics for each Block Type. 
 //		- Tilable Background Sprite for empty space?
 // create code system to skip to checkpoint levels
+// Options and User Input for volume control
 
 // TODO_B
 // animations for level transition
@@ -32,6 +32,7 @@
 // Controls:
 // WASD or Arrow Keys to move Player Block
 // R Key to Restart Level in case of softlock
+// ESC or P to Pause
 
 // defining global values for the movement system
 constexpr int NORTH = 0;
@@ -1619,7 +1620,22 @@ public:
 				DrawString(4, 4, "Goals: " + std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), olc::WHITE);
 
 				// Level Tracking UI
-				DrawString(128, 4, "Level: " + std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
+				if (iCurLevel < 16)
+				{
+					DrawString(128 + 20, 4, "Level: ", olc::WHITE);
+					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::GREEN);
+
+				}
+				else if (iCurLevel < 36)
+				{
+					DrawString(128 + 20, 4, "Level: ", olc::WHITE);
+					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::YELLOW);
+				}
+				else
+				{ 
+					DrawString(128 + 20, 4, "Level: ", olc::WHITE);
+					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::RED);
+				}
 			}
 			else				// UI for win conditions
 			{
