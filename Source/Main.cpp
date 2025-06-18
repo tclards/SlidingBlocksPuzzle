@@ -13,7 +13,7 @@
 // Crash on closing program - seemingly related to audio engine wave deconstructor
 
 // TODO_A
-// Level Completion timer logic - win screen restart: reset timers already in
+// Level Completion timer logic
 // create code system to skip to checkpoint levels
 // 
 // Score Tracking UI - Gold Star, Silver Star,or Bronze Star
@@ -27,8 +27,8 @@
 // Options file io
 // 
 // High Score Screen
-//		- needs implementing in main menu function
-//		- nees file io
+//		- needs timer integration once timer functionality is implemented
+//		- needs file io
 // 
 // Win Screen logo for middle of win screen
 //
@@ -1211,6 +1211,9 @@ public:
 	bool bMainMenu = true;
 	int iCurDisplay = -1; // - 1: main menu, 0: high score screen, 1: options screen
 
+	// Page number variable used in some menus
+	int iPageNum = 1;
+
 	// Flag for Debug Testing Mode
 	bool bDebugMode = false;
 
@@ -1490,26 +1493,157 @@ public:
 			// User Input:
 			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
 			{
+				iPageNum = 1;
 				iCurDisplay = -1;
 			}
-			if (GetKey(olc::Key::UP).bPressed || GetKey(olc::Key::W).bPressed)		// Move Up The Scores List
+			if (GetKey(olc::Key::LEFT).bPressed || GetKey(olc::Key::A).bPressed)		// Move to next page
 			{
-
+				if (iPageNum > 1)
+				{
+					iPageNum--;
+				}
 			}
-			if (GetKey(olc::Key::DOWN).bPressed || GetKey(olc::Key::S).bPressed)	// Move Down The Scores List
+			if (GetKey(olc::Key::RIGHT).bPressed || GetKey(olc::Key::D).bPressed)	    // Move to previous page
 			{
-
+				if (iPageNum < 8)
+				{
+					iPageNum++;
+				}
 			}
 
 			// Draw Blank Menu Level
 			DrawLevel();
 
 			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "HIGH SCORES", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 42, 24, "HIGH SCORES", olc::WHITE);
+			DrawString(20, 193, "Press Left or Right to", olc::WHITE);
+			DrawString(20, 202, "Select Page", olc::WHITE);
+			DrawString(20, 212, "Press ESC to Close", olc::WHITE);
+			DrawString(230, 215, std::to_string(iPageNum), olc::WHITE);
 
+			// Display Scores 
+			switch (iPageNum)
+			{
+			case 1:
+				DrawString(20, 33, "Level 1:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_1) + " Time: ", olc::WHITE);
+				DrawString(20, 53, "Level 2:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_2) + " Time: ", olc::WHITE);
+				DrawString(20, 73, "Level 3:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_3) + " Time: ", olc::WHITE);
+				DrawString(20, 93, "Level 4:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_4) + " Time: ", olc::WHITE);
+				DrawString(20, 113, "Level 5:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_5) + " Time: ", olc::WHITE);
+				DrawString(20, 133, "Level 6:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_6) + " Time: ", olc::WHITE);
+				DrawString(20, 153, "Level 7:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_7) + " Time: ", olc::WHITE);
+				break;
+			case 2:
+				DrawString(20, 33, "Level 8:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_8) + " Time: ", olc::WHITE);
+				DrawString(20, 53, "Level 9:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_9) + " Time: ", olc::WHITE);
+				DrawString(20, 73, "Level 10:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_10) + " Time: ", olc::WHITE);
+				DrawString(20, 93, "Level 11:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_11) + " Time: ", olc::WHITE);
+				DrawString(20, 113, "Level 12:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_12) + " Time: ", olc::WHITE);
+				DrawString(20, 133, "Level 13:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_13) + " Time: ", olc::WHITE);
+				DrawString(20, 153, "Level 14:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_14) + " Time: ", olc::WHITE);
+				break;
+			case 3:
+				DrawString(20, 33, "Level 15:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_15) + " Time: ", olc::WHITE);
+				DrawString(20, 53, "Level 16:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_16) + " Time: ", olc::WHITE);
+				DrawString(20, 73, "Level 17:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_17) + " Time: ", olc::WHITE);
+				DrawString(20, 93, "Level 18:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_18) + " Time: ", olc::WHITE);
+				DrawString(20, 113, "Level 19:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_19) + " Time: ", olc::WHITE);
+				DrawString(20, 133, "Level 20:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_20) + " Time: ", olc::WHITE);
+				DrawString(20, 153, "Level 21:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_21) + " Time: ", olc::WHITE);
+				break;
+			case 4:
+				DrawString(20, 33, "Level 22:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_22) + " Time: ", olc::WHITE);
+				DrawString(20, 53, "Level 23:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_23) + " Time: ", olc::WHITE);
+				DrawString(20, 73, "Level 24:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_24) + " Time: ", olc::WHITE);
+				DrawString(20, 93, "Level 25:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_25) + " Time: ", olc::WHITE);
+				DrawString(20, 113, "Level 26:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_26) + " Time: ", olc::WHITE);
+				DrawString(20, 133, "Level 27:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_27) + " Time: ", olc::WHITE);
+				DrawString(20, 153, "Level 28:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_28) + " Time: ", olc::WHITE);
+				break;
+			case 5:
+				DrawString(20, 33, "Level 29:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_29) + " Time: ", olc::WHITE);
+				DrawString(20, 53, "Level 30:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_30) + " Time: ", olc::WHITE);
+				DrawString(20, 73, "Level 31:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_31) + " Time: ", olc::WHITE);
+				DrawString(20, 93, "Level 32:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_32) + " Time: ", olc::WHITE);
+				DrawString(20, 113, "Level 33:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_33) + " Time: ", olc::WHITE);
+				DrawString(20, 133, "Level 34:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_34) + " Time: ", olc::WHITE);
+				DrawString(20, 153, "Level 35:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_35) + " Time: ", olc::WHITE);
+				break;
+			case 6:
+				DrawString(20, 33, "Level 36:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_36) + " Time: ", olc::WHITE);
+				DrawString(20, 53, "Level 37:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_37) + " Time: ", olc::WHITE);
+				DrawString(20, 73, "Level 38:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_38) + " Time: ", olc::WHITE);
+				DrawString(20, 93, "Level 39:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_39) + " Time: ", olc::WHITE);
+				DrawString(20, 113, "Level 40:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_40) + " Time: ", olc::WHITE);
+				DrawString(20, 133, "Level 41:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_41) + " Time: ", olc::WHITE);
+				DrawString(20, 153, "Level 42:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_42) + " Time: ", olc::WHITE);
+				break;
+			case 7:
+				DrawString(20, 33, "Level 43:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_43) + " Time: ", olc::WHITE);
+				DrawString(20, 53, "Level 44:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_44) + " Time: ", olc::WHITE);
+				DrawString(20, 73, "Level 45:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_45) + " Time: ", olc::WHITE);
+				DrawString(20, 93, "Level 46:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_46) + " Time: ", olc::WHITE);
+				DrawString(20, 113, "Level 47:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_47) + " Time: ", olc::WHITE);
+				DrawString(20, 133, "Level 48:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_48) + " Time: ", olc::WHITE);
+				DrawString(20, 153, "Level 49:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_49) + " Time: ", olc::WHITE);
+				break;
+			case 8:
+				DrawString(20, 33, "Level 50:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_50) + " Time: ", olc::WHITE);
+				break;
+			default:
+				break;
+			}
 			break;
-
 		case 1: // Options Screen
 			// User Input:
 			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
@@ -1570,9 +1704,7 @@ public:
 			DrawString((256 / 2) - 108, (240 / 2) + 72, "Music: " + std::to_string(fMusicVolume), olc::WHITE);
 			DrawString((256 / 2) - 108, (240 / 2) + 82, "SFX: " +std::to_string(fSFXVolume), olc::WHITE);
 			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
-
 			break;
-
 		default: // Main Menu
 			// User Input:
 			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)  // Close Game
@@ -1604,7 +1736,6 @@ public:
 			DrawString((256 / 2) - 108, (240 / 2) + 65, "Press H to see High Scores", olc::WHITE);
 			DrawString((256 / 2) - 108, (240 / 2) + 78, "Press O for Options", olc::WHITE);
 			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Quit", olc::WHITE);
-
 			break;
 		}
 	}
