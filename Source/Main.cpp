@@ -1083,7 +1083,7 @@ public:
 
 		}
 
-		virtual void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size)
+		virtual void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin)
 		{
 
 		}
@@ -1100,7 +1100,7 @@ public:
 	};
 	struct block_solid : public block // solid immovable block -- ie walls
 	{
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
 		{
 			pge->FillRect(pos * size, size, olc::BLUE);
 		}
@@ -1112,7 +1112,7 @@ public:
 	};
 	struct block_player : public block // player block
 	{
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
 		{
 			pge->FillRect(pos * size, size, olc::WHITE);
 		}
@@ -1124,7 +1124,7 @@ public:
 	};
 	struct block_simple : public block // block that moves in any direction
 	{
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
 		{
 			pge->FillRect(pos * size, size, olc::RED);
 		}
@@ -1136,7 +1136,7 @@ public:
 	};
 	struct block_horizontal : public block // block that moves side to side
 	{
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
 		{
 			pge->FillRect(pos * size, size, olc::GREEN);
 		}
@@ -1148,7 +1148,7 @@ public:
 	};
 	struct block_vertical : public block // block that moves up and down
 	{
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
 		{
 			pge->FillRect(pos * size, size, olc::YELLOW);
 		}
@@ -1167,7 +1167,7 @@ public:
 			iMoveCount = iNumOfMovesAllowed;
 		}
 
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
 		{
 			pge->FillRect(pos * size, size, olc::CYAN);
 			pge->DrawString(pos * size + olc::vi2d(4, 4), std::to_string(iMoveCount), olc::BLACK);
