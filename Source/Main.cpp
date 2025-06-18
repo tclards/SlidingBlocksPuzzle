@@ -19,7 +19,7 @@
 // Score Tracking UI - Gold Star, Silver Star,or Bronze Star
 // Score Tracking Screen at end of game - display moves used, time taken, and star level achieved for all 50 levels. Include PAR time and moves?
 // 
-// Fill out Levels! 48 Left!!
+// Fill out Levels!
 // 
 // Create Graphics for each Block Type. 
 //		- Tilable Background Sprite for empty space?
@@ -33,8 +33,6 @@
 // Win Screen logo for middle of win screen
 //
 // screenshot functionality
-//
-// add main menu theme song
 //
 // add quit game option to pause menu
 
@@ -52,6 +50,8 @@
 // O - Options Menu (TODO)
 // I - Score Tracking Screen (TODO)
 // C - Cheat Code Skip (TODO)
+// CTRL + D - Enable Debug Mode
+// N (While Debug Enabled) - Next Level
 
 // Created by Tyler Clardy in June 2025
 // Thanks to oneLoneCoder for the PixelGameEngine and SoundWaveEngine, as well as the inspiration for the start of the project. You rock, Javid!
@@ -1213,6 +1213,9 @@ public:
 	bool bMainMenu = true;
 	int iCurDisplay = -1; // - 1: main menu, 0: high score screen, 1: options screen
 
+	// Flag for Debug Testing Mode
+	bool bDebugMode = false;
+
 #pragma endregion
 
 // Audio
@@ -1220,7 +1223,10 @@ public:
 	// Audio Engine
 	olc::sound::WaveEngine audioEngine;
 	olc::sound::WaveEngine audioEngine_Music;
-	olc::sound::Wave audioSlot_Music;
+	olc::sound::Wave audioSlot_Music_1;
+	olc::sound::Wave audioSlot_Music_2;
+	olc::sound::Wave audioSlot_Music_3;
+	olc::sound::Wave audioSlot_Music_Menu;
 	olc::sound::Wave audioSlot_SFX_WinTile;
 	olc::sound::Wave audioSlot_Movement_Succeed;
 	olc::sound::Wave audioSlot_Movement_Fail;
@@ -1235,6 +1241,9 @@ public:
 
 	// Background Music
 	std::string sBackgroundMusic_1 = "SFX//BackgroundMusic_1.wav";	
+	std::string sBackgroundMusic_2 = "SFX//BackgroundMusic_2.wav";
+	std::string sBackgroundMusic_3 = "SFX//BackgroundMusic_3.wav";
+	std::string sBackgroundMusic_Menu = "SFX//MenuMusic_1.wav";
 
 	// SFX 
 	std::string sMovement_1 = "SFX//Movement_1.wav";
@@ -1269,7 +1278,10 @@ public:
 		audioEngine.InitialiseAudio();
 
 		// Load Slots
-		audioSlot_Music.LoadAudioWaveform(sBackgroundMusic_1);		
+		audioSlot_Music_1.LoadAudioWaveform(sBackgroundMusic_1);
+		audioSlot_Music_2.LoadAudioWaveform(sBackgroundMusic_2);
+		audioSlot_Music_3.LoadAudioWaveform(sBackgroundMusic_3);
+		audioSlot_Music_Menu.LoadAudioWaveform(sBackgroundMusic_Menu);
 		audioSlot_Movement_Succeed.LoadAudioWaveform(sMovement_1);
 		audioSlot_Movement_Fail.LoadAudioWaveform(sMovementFailure_1);
 		audioSlot_RestartLevel.LoadAudioWaveform(sRestartLevel_1);
@@ -1281,9 +1293,6 @@ public:
 		// Set Volume					
 		audioEngine_Music.SetOutputVolume(fMusicVolume);
 		audioEngine.SetOutputVolume(fSFXVolume);
-
-		// Start background music
-		audioEngine_Music.PlayWaveform(&audioSlot_Music, true, fAudioSpeed * 0.75f);
 	}
 
 	// Function to load all levels into memory
@@ -1456,7 +1465,22 @@ public:
 		}
 
 		// restart music
-		audioEngine_Music.PlayWaveform(&audioSlot_Music, true, fAudioSpeed * 0.75f);
+		if (iCurLevel >= 1 && iCurLevel <= 15 && !bMainMenu)
+		{
+			audioEngine_Music.PlayWaveform(&audioSlot_Music_1, true, fAudioSpeed * 0.75f);
+		}
+		else if (iCurLevel >= 16 && iCurLevel <= 35 && !bMainMenu)
+		{
+			audioEngine_Music.PlayWaveform(&audioSlot_Music_2, true, fAudioSpeed * 0.75f);
+		}
+		else if (iCurLevel >= 36 && iCurLevel <= 50 && !bMainMenu)
+		{
+			audioEngine_Music.PlayWaveform(&audioSlot_Music_3, true, fAudioSpeed * 0.75f);
+		}
+		else if (bMainMenu)
+		{
+			audioEngine_Music.PlayWaveform(&audioSlot_Music_Menu, true, fAudioSpeed * 0.75f);
+		}
 	}
 
 	// Called Every Frame while the Main Menu system is open
@@ -1680,6 +1704,17 @@ public:
 				if (GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
 				{
 					bPaused = true;	// Pause Game
+				}
+				if (GetKey(olc::Key::CTRL).bHeld && GetKey(olc::Key::D).bPressed) // DebugMode
+				{
+					if (bDebugMode)
+					{
+						bDebugMode = false;
+					}
+					else
+					{
+						bDebugMode = true;
+					}
 				}
 			}
 			else
@@ -2085,6 +2120,11 @@ public:
 					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::RED);
 				}
 
+				if (bDebugMode) // Debug Mode Indicator
+				{
+					DrawString(0 + 17, 0 + 17, "DEBUG", olc::DARK_GREY);
+				}
+
 				// Move Number UI
 				switch (iCurLevel)
 				{
@@ -2253,6 +2293,11 @@ public:
 
 			// Win Tracking
 			if (nGoals >= vGoals.size() && iCurLevel != -1)
+			{
+				iCurLevel++;
+				LoadLevel(iCurLevel, false);
+			}
+			else if (bDebugMode && GetKey(olc::Key::N).bPressed) // Debug Mode Skip
 			{
 				iCurLevel++;
 				LoadLevel(iCurLevel, false);
