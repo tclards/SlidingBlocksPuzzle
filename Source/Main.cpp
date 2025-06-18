@@ -33,8 +33,6 @@
 // Win Screen logo for middle of win screen
 //
 // screenshot functionality
-//
-// add quit game option to pause menu
 
 // TODO_B wish list
 // animations for level transition
@@ -2317,13 +2315,24 @@ public:
 			// Pause Background Music
 			audioEngine_Music.SetOutputVolume(0.0f);
 
-			// Check for user input to unpase
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)
+			// Check for user input to unpause or Quit
+			if (GetKey(olc::Key::ENTER).bPressed)										// Unpause
 			{
 				audioEngine.PlayWaveform(&audioSlot_UnPauseJingle, false, fAudioSpeed);	// Play UnPause Jingle SFX
 				audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
 				bPaused = false;														// Reset Flags
 				bPauseJinglePlayed = false;
+			}
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Quit to Main Menu
+			{
+				audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
+				bPaused = false;														// Reset Pause Flags
+				bPauseJinglePlayed = false;
+
+				bMainMenu = true;														// Set Main Menu Flag
+				LoadLevel(52, false);
+
+				return true;
 			}
 
 			// Clear screen to black before drawing each frame
@@ -2544,8 +2553,11 @@ public:
 
 			// Draw UI Elements
 			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 92, sTimerUI, olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 78, sMovementUI, olc::WHITE);
+			DrawString(20, 45, "Stats for Current Level", olc::WHITE);
+			DrawString(20, 70, sTimerUI, olc::WHITE);
+			DrawString(20, 57, sMovementUI, olc::WHITE);
+			DrawString(20, 212, "Press Enter to Resume", olc::WHITE);
+			DrawString(20, 198, "Press ESC for Main Menu", olc::WHITE);
 
 			return true;
 		}
