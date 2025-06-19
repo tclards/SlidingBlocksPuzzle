@@ -12,7 +12,6 @@
 
 // TODO_A
 // Level Completion timer logic
-// create code system to skip to checkpoint levels
 // 
 // Score Tracking UI - Gold Star, Silver Star,or Bronze Star for level transition times
 // 
@@ -29,8 +28,7 @@
 // 
 // screenshot functionality
 //
-// Update Level Codes
-// SFX for level code succeed and fail
+// 3bytes logo for startup routine
 
 // TODO_B wish list
 // animations for level transition
@@ -1239,6 +1237,17 @@ public:
 	// Text Input for Level Select
 	std::string sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
 
+	// Flags and Vars for Start Up Routine
+	bool bGameStarted = false;
+	bool bDoStartUpJingle = true;
+	olc::sound::PlayingWave pwStart; // Variable to store a Reference to the StartUp Jingle
+	float fStartTime = 0.0f;
+	double dDuration = 0.0f;
+	float fTarget = 0.0f;
+	float fTimer = 0.0f;
+
+	// Flag for Background Music
+	bool bDoBackgroundMusic = false;
 #pragma endregion
 
 // Audio
@@ -1260,10 +1269,11 @@ public:
 	olc::sound::Wave audioSlot_UnPauseJingle;
 	olc::sound::Wave audioSlot_LevelCode_Succeed;
 	olc::sound::Wave audioSlot_LevelCode_Fail;
+	olc::sound::Wave audioSlot_GameStartUp;
 
 	float fAudioSpeed = 1.0f;
-	float fMusicVolume = 0.5f;
-	float fSFXVolume = 1.0f;
+	float fMusicVolume = 0.3f;
+	float fSFXVolume = 0.2f;
 
 	// Background Music
 	std::string sBackgroundMusic_1 = "SFX//BackgroundMusic_1.wav";	
@@ -1279,8 +1289,9 @@ public:
 	std::string sLevelTransition_1 = "SFX//LevelTransition_1.wav";	
 	std::string sPauseJingle_1 = "SFX//Pause_1.wav";
 	std::string sUnPauseJingle_1 = "SFX//Unpause_1.wav";
-	std::string sLevelCode_1 = "SFX//Silent.wav";						// todo
-	std::string sLevelCodeFail_1 = "SFX//Silent.wav";					// todo
+	std::string sLevelCode_1 = "SFX//InputCode_Succeed_1.wav";		
+	std::string sLevelCodeFail_1 = "SFX//InputCode_Fail_1.wav";	
+	std::string sGameStartUp = "SFX//GameStartup_1.wav";
 #pragma endregion
 
 	// Constructor
@@ -1319,6 +1330,7 @@ public:
 		audioSlot_UnPauseJingle.LoadAudioWaveform(sUnPauseJingle_1);
 		audioSlot_LevelCode_Succeed.LoadAudioWaveform(sLevelCode_1);
 		audioSlot_LevelCode_Fail.LoadAudioWaveform(sLevelCodeFail_1);
+		audioSlot_GameStartUp.LoadAudioWaveform(sGameStartUp);
 
 		// Set Volume					
 		audioEngine_Music.SetOutputVolume(fMusicVolume);
@@ -1519,6 +1531,7 @@ public:
 	// Called Every Frame while the Main Menu system is open
 	void MainMenu()
 	{
+
 		iLevelSet = -1;
 
 		switch (iCurDisplay)
@@ -1898,7 +1911,7 @@ public:
 		gfxTiles.Load("Graphics//TileSheet.png");
 
 		// Level Loading
-		LoadAllLevels();													// Load ALL levels into memory
+		LoadAllLevels();																// Load ALL levels into memory
 
 		// Load Blank Menu Level
 		LoadLevel(iCurLevel, false);
@@ -1910,920 +1923,966 @@ public:
 	// Runs every frame
 	bool OnUserUpdate(float fElapsedTime) override
 	{
-		// Main Menu Stuff
-		if (bMainMenu)
+
+// Startup Routine for beginning of Game
+#pragma region StartUp Routine
+		// Check Background Music Flag
+		if (!bDoBackgroundMusic)
 		{
-			MainMenu();
-
-			return true;
-		}
-
-		if (!bPaused)
-		{
-			// user input
-			bool bPushing = false;
-			int iDirPush = NORTH;
-			if (iCurLevel != -1) // disable most input on end screen
-			{
-				if (GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
-				{
-					iDirPush = 0;
-					bPushing = true;
-				}
-				if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
-				{
-					iDirPush = SOUTH;
-					bPushing = true;
-				}
-				if (GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
-				{
-					iDirPush = WEST;
-					bPushing = true;
-				}
-				if (GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
-				{
-					iDirPush = EAST;
-					bPushing = true;
-				}
-				if (GetKey(olc::Key::R).bPressed)
-				{
-					LoadLevel(iCurLevel, true);
-				}
-				if (GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
-				{
-					bPaused = true;	// Pause Game
-				}
-				if (GetKey(olc::Key::CTRL).bHeld && GetKey(olc::Key::ENTER).bPressed && GetKey(olc::Key::MINUS).bPressed) // DebugMode
-				{
-					if (bDebugMode)
-					{
-						bDebugMode = false;
-					}
-					else
-					{
-						bDebugMode = true;
-					}
-				}
-			}
-			else
-			{
-				if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed) // Win Screen ESC
-				{
-					audioEngine_Music.SetOutputVolume(fMusicVolume);	// Unmute Background Music
-					bMainMenu = true;									// Set Flag
-
-					// Reset Move Counters
-					iNumOfMoves_1 = 0;
-					iNumOfMoves_2 = 0;
-					iNumOfMoves_3 = 0;
-					iNumOfMoves_4 =	0;
-					iNumOfMoves_5 =	0;
-					iNumOfMoves_6 =	0;
-					iNumOfMoves_7 =	0;
-					iNumOfMoves_8 =	0;
-					iNumOfMoves_9 =	0;
-					iNumOfMoves_10 = 0;
-					iNumOfMoves_11 = 0;
-					iNumOfMoves_12 = 0;
-					iNumOfMoves_13 = 0;
-					iNumOfMoves_14 = 0;
-					iNumOfMoves_15 = 0;
-					iNumOfMoves_16 = 0;
-					iNumOfMoves_17 = 0;
-					iNumOfMoves_18 = 0;
-					iNumOfMoves_19 = 0;
-					iNumOfMoves_20 = 0;
-					iNumOfMoves_21 = 0;
-					iNumOfMoves_22 = 0;
-					iNumOfMoves_23 = 0;
-					iNumOfMoves_24 = 0;
-					iNumOfMoves_25 = 0;
-					iNumOfMoves_26 = 0;
-					iNumOfMoves_27 = 0;
-					iNumOfMoves_28 = 0;
-					iNumOfMoves_29 = 0;
-					iNumOfMoves_30 = 0;
-					iNumOfMoves_31 = 0;
-					iNumOfMoves_32 = 0;
-					iNumOfMoves_33 = 0;
-					iNumOfMoves_34 = 0;
-					iNumOfMoves_35 = 0;
-					iNumOfMoves_36 = 0;
-					iNumOfMoves_37 = 0;
-					iNumOfMoves_38 = 0;
-					iNumOfMoves_39 = 0;
-					iNumOfMoves_40 = 0;
-					iNumOfMoves_41 = 0;
-					iNumOfMoves_42 = 0;
-					iNumOfMoves_43 = 0;
-					iNumOfMoves_44 = 0;
-					iNumOfMoves_45 = 0;
-					iNumOfMoves_46 = 0;
-					iNumOfMoves_47 = 0;
-					iNumOfMoves_48 = 0;
-					iNumOfMoves_49 = 0;
-					iNumOfMoves_50 = 0;
-
-					// Reset Timers
-					iTime_1 = 0.0f;
-					iTime_2 = 0.0f;
-					iTime_3 = 0.0f;
-					iTime_4 = 0.0f;
-					iTime_5 = 0.0f;
-					iTime_6 = 0.0f;
-					iTime_7 = 0.0f;
-					iTime_8 = 0.0f;
-					iTime_9 = 0.0f;
-					iTime_10 = 0.0f;
-					iTime_11 = 0.0f;
-					iTime_12 = 0.0f;
-					iTime_13 = 0.0f;
-					iTime_14 = 0.0f;
-					iTime_15 = 0.0f;
-					iTime_16 = 0.0f;
-					iTime_17 = 0.0f;
-					iTime_18 = 0.0f;
-					iTime_19 = 0.0f;
-					iTime_20 = 0.0f;
-					iTime_21 = 0.0f;
-					iTime_22 = 0.0f;
-					iTime_23 = 0.0f;
-					iTime_24 = 0.0f;
-					iTime_25 = 0.0f;
-					iTime_26 = 0.0f;
-					iTime_27 = 0.0f;
-					iTime_28 = 0.0f;
-					iTime_29 = 0.0f;
-					iTime_30 = 0.0f;
-					iTime_31 = 0.0f;
-					iTime_32 = 0.0f;
-					iTime_33 = 0.0f;
-					iTime_34 = 0.0f;
-					iTime_35 = 0.0f;
-					iTime_36 = 0.0f;
-					iTime_37 = 0.0f;
-					iTime_38 = 0.0f;
-					iTime_39 = 0.0f;
-					iTime_40 = 0.0f;
-					iTime_41 = 0.0f;
-					iTime_42 = 0.0f;
-					iTime_43 = 0.0f;
-					iTime_44 = 0.0f;
-					iTime_45 = 0.0f;
-					iTime_46 = 0.0f;
-					iTime_47 = 0.0f;
-					iTime_48 = 0.0f;
-					iTime_49 = 0.0f;
-					iTime_50 = 0.0f;
-
-					return true;
-				}
-			}
-
-			// lambda function for translating our 2D coordinates into 1D
-			auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; };
-
-			// movement logic
-			bool bPlayerMoved = false;
-			int iMovementSuceededOrFailed = -1; // -1 = no move, 0 = move failed, 1 = move succeeded
-			if (bPushing) // check if a push attempt is happening this frame
-			{
-				olc::vi2d vBlockPos = vPlayerPos; // 'cursor' to track attempted movement
-
-				bool bAllowPush = false;
-				bool bTest = true;
-
-				// test for ability to move in a specific direction
-				while (bTest)
-				{
-					if (vLevel[id(vBlockPos)] != nullptr) // check target block space for nullptr
-					{
-						if (vLevel[id(vBlockPos)]->Push((iDirPush + 2) % 4)) // call blocks push function to determine if it can be pushed in the direction specified
-						{
-							// if block is allowed to be pushed in that direction - move cursor that direction so we can check for collision in neighboring space
-							switch (iDirPush) // select neighbor
-							{
-							case NORTH: vBlockPos.y--; break;
-							case SOUTH: vBlockPos.y++; break;
-							case EAST: vBlockPos.x++; break;
-							case WEST: vBlockPos.x--; break;
-							}
-						}
-						else // block cant be pushed that way -- end testing
-						{
-							bPlayerMoved = true;
-							iMovementSuceededOrFailed = 0;
-							bTest = false;
-						}
-					}
-					else // target space was nullptr - player can move there. End testing
-					{
-						bPlayerMoved = true;
-						iMovementSuceededOrFailed = 1;
-						bAllowPush = true;
-						bTest = false;
-					}
-				}
-
-				if (bAllowPush) // if push is allowed - execute push logic
-				{
-					while (vBlockPos != vPlayerPos) // walk backwards until reaching player position from valid move location that cursor found, swapping block positions as needed
-					{
-						olc::vi2d vSourcePos = vBlockPos;
-						switch (iDirPush)
-						{
-						case NORTH: vSourcePos.y++; break;
-						case SOUTH: vSourcePos.y--; break;
-						case EAST: vSourcePos.x--; break;
-						case WEST: vSourcePos.x++; break;
-						}
-
-						if (vLevel[id(vSourcePos)] != nullptr) // check for nullptr
-						{
-							vLevel[id(vSourcePos)]->Move(); // call any custom move logic before actually excecuting move
-						}
-
-						std::swap(vLevel[id(vSourcePos)], vLevel[id(vBlockPos)]); // swap blocks
-						vBlockPos = vSourcePos; // increment 'cursor' backwards
-					}
-
-					// update player location after movement logic loop completes
-					switch (iDirPush)
-					{
-					case NORTH: vPlayerPos.y--; break;
-					case SOUTH: vPlayerPos.y++; break;
-					case EAST: vPlayerPos.x++; break;
-					case WEST: vPlayerPos.x--; break;
-					}
-				}
-			}
-
-			// Movement SFX
-			if (bPlayerMoved == true)
-			{
-				if (iMovementSuceededOrFailed == 0) // Movement Failed
-				{
-					audioEngine.PlayWaveform(&audioSlot_Movement_Fail, false, fAudioSpeed * 2.0f);
-				}
-				else if (iMovementSuceededOrFailed == 1) // Movement Succeeded
-				{
-					audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed * 2.0f);
-				}
-			}
-
-			// Move Counting
-			if (bPlayerMoved == true && iMovementSuceededOrFailed == 1)
-			{
-				switch (iCurLevel)
-				{
-				case 1:
-					iNumOfMoves_1++;
-					break;
-				case 2:
-					iNumOfMoves_2++;
-					break;
-				case 3:
-					iNumOfMoves_3++;
-					break;
-				case 4:
-					iNumOfMoves_4++; 
-					break;
-				case 5:
-					iNumOfMoves_5++;
-					break;
-				case 6:
-					iNumOfMoves_6++;
-					break;
-				case 7:
-					iNumOfMoves_7++;
-					break;
-				case 8:
-					iNumOfMoves_8++;
-					break;
-				case 9:
-					iNumOfMoves_8++;
-					break;
-				case 10:
-					iNumOfMoves_10++;
-					break;
-				case 11:
-					iNumOfMoves_11++;
-					break;
-				case 12:
-					iNumOfMoves_12++;
-					break;
-				case 13:
-					iNumOfMoves_13++;
-					break;
-				case 14:
-					iNumOfMoves_14++;
-					break;
-				case 15:
-					iNumOfMoves_15++;
-					break;
-				case 16:
-					iNumOfMoves_16++;
-					break;
-				case 17:
-					iNumOfMoves_17++;
-					break;
-				case 18:
-					iNumOfMoves_18++;
-					break;
-				case 19:
-					iNumOfMoves_19++;
-					break;
-				case 20:
-					iNumOfMoves_20++;
-					break;
-				case 21:
-					iNumOfMoves_21++;
-					break;
-				case 22:
-					iNumOfMoves_22++;
-					break;
-				case 23:
-					iNumOfMoves_23++;
-					break;
-				case 24:
-					iNumOfMoves_24++;
-					break;
-				case 25:
-					iNumOfMoves_25++;
-					break;
-				case 26:
-					iNumOfMoves_26++;
-					break;
-				case 27:
-					iNumOfMoves_27++;
-					break;
-				case 28:
-					iNumOfMoves_28++;
-					break;
-				case 29:
-					iNumOfMoves_29++;
-					break;
-				case 30:
-					iNumOfMoves_30++;
-					break;
-				case 31:
-					iNumOfMoves_31++;
-					break;
-				case 32:
-					iNumOfMoves_32++;
-					break;
-				case 33:
-					iNumOfMoves_33++;
-					break;
-				case 34:
-					iNumOfMoves_34++;
-					break;
-				case 35:
-					iNumOfMoves_35++;
-					break;
-				case 36:
-					iNumOfMoves_36++;
-					break;
-				case 37:
-					iNumOfMoves_37++;
-					break;
-				case 38:
-					iNumOfMoves_38++;
-					break;
-				case 39:
-					iNumOfMoves_39++;
-					break;
-				case 40:
-					iNumOfMoves_40++;
-					break;
-				case 41:
-					iNumOfMoves_41++;
-					break;
-				case 42:
-					iNumOfMoves_42++;
-					break;
-				case 43:
-					iNumOfMoves_43++;
-					break;
-				case 44:
-					iNumOfMoves_44++;
-					break;
-				case 45:
-					iNumOfMoves_45++;
-					break;
-				case 46:
-					iNumOfMoves_46++;
-					break;
-				case 47:
-					iNumOfMoves_47++;
-					break;
-				case 48:
-					iNumOfMoves_48++;
-					break;
-				case 49:
-					iNumOfMoves_49++;
-					break;
-				case 50:
-					iNumOfMoves_50++;
-					break;
-				default:
-					break;
-				}
-			}
-
-			// win condition checking 
-			int nGoals = 0;
-			for (auto& g : vGoals)
-			{
-				if (vLevel[id(g)] != nullptr)
-				{
-					nGoals++; // Increment Goals
-				}
-			}
-
-			// Draw Function
-			DrawLevel(iLevelSet);
-
-			// UI and Level Set Tracking
-			if (iCurLevel != -1) // UI for active gameplay
-			{
-				// Goal Tracking UI
-				DrawString(4, 4, "Goals: " + std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), olc::WHITE);
-
-				// Level Tracking UI
-				if (iCurLevel < 16)
-				{
-					iLevelSet = 0;
-					DrawString(128 + 20, 4, "Level: ", olc::WHITE);
-					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
-
-				}
-				else if (iCurLevel < 36)
-				{
-					iLevelSet = 1;
-					DrawString(128 + 20, 4, "Level: ", olc::WHITE);
-					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
-				}
-				else
-				{ 
-					iLevelSet = 2;
-					DrawString(128 + 20, 4, "Level: ", olc::WHITE);
-					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
-				}
-
-				if (bDebugMode) // Debug Mode Indicator
-				{
-					DrawString(0 + 17, 0 + 17, "DEBUG", olc::DARK_GREY);
-				}
-
-				// Move Number UI
-				switch (iCurLevel)
-				{
-				case 1:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_1), olc::WHITE);
-					break;
-				case 2:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_2), olc::WHITE);
-					break;
-				case 3:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_3), olc::WHITE);
-					break;
-				case 4:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_4), olc::WHITE);
-					break;
-				case 5:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_5), olc::WHITE);
-					break;
-				case 6:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_6), olc::WHITE);
-					break;
-				case 7:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_7), olc::WHITE);
-					break;
-				case 8:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_8), olc::WHITE);
-					break;
-				case 9:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_9), olc::WHITE);
-					break;
-				case 10:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_10), olc::WHITE);
-					break;
-				case 11:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_11), olc::WHITE);
-					break;
-				case 12:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_12), olc::WHITE);
-					break;
-				case 13:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_13), olc::WHITE);
-					break;
-				case 14:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_14), olc::WHITE);
-					break;
-				case 15:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_15), olc::WHITE);
-					break;
-				case 16:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_16), olc::WHITE);
-					break;
-				case 17:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_17), olc::WHITE);
-					break;
-				case 18:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_18), olc::WHITE);
-					break;
-				case 19:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_19), olc::WHITE);
-					break;
-				case 20:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_20), olc::WHITE);
-					break;
-				case 21:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_21), olc::WHITE);
-					break;
-				case 22:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_22), olc::WHITE);
-					break;
-				case 23:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_23), olc::WHITE);
-					break;
-				case 24:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_24), olc::WHITE);
-					break;
-				case 25:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_25), olc::WHITE);
-					break;
-				case 26:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_26), olc::WHITE);
-					break;
-				case 27:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_27), olc::WHITE);
-					break;
-				case 28:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_28), olc::WHITE);
-					break;
-				case 29:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_29), olc::WHITE);
-					break;
-				case 30:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_30), olc::WHITE);
-					break;
-				case 31:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_31), olc::WHITE);
-					break;
-				case 32:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_32), olc::WHITE);
-					break;
-				case 33:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_33), olc::WHITE);
-					break;
-				case 34:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_34), olc::WHITE);
-					break;
-				case 35:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_35), olc::WHITE);
-					break;
-				case 36:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_36), olc::WHITE);
-					break;
-				case 37:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_37), olc::WHITE);
-					break;
-				case 38:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_38), olc::WHITE);
-					break;
-				case 39:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_39), olc::WHITE);
-					break;
-				case 40:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_40), olc::WHITE);
-					break;
-				case 41:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_41), olc::WHITE);
-					break;
-				case 42:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_42), olc::WHITE);
-					break;
-				case 43:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_43), olc::WHITE);
-					break;
-				case 44:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_44), olc::WHITE);
-					break;
-				case 45:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_45), olc::WHITE);
-					break;
-				case 46:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_46), olc::WHITE);
-					break;
-				case 47:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_47), olc::WHITE);
-					break;
-				case 48:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_48), olc::WHITE);
-					break;
-				case 49:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_49), olc::WHITE);
-					break;
-				case 50:
-					DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_50), olc::WHITE);
-					break;
-				default:
-					break;
-				}
-			}
-			else				// UI for win conditions
-			{
-				// Win Screen Stuff
-				iLevelSet = -1;
-				audioEngine_Music.SetOutputVolume(0.0f);
-				DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", olc::WHITE);
-				DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
-				DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC for Main Menu", olc::WHITE);
-			}
-
-			// Special UI for Displaying Checkpoint Codes that can be inputted on Main Menu Level Select screen
-			if (iCurLevel == 16)
-			{
-				DrawString(148, 228, "Code: " + sMediumLevelCode, olc::WHITE);
-			}
-			else if (iCurLevel == 36)
-			{
-				DrawString(148, 228, "Code: " + sHardLevelCode, olc::WHITE);
-			}
-
-			// Win Tracking
-			if (nGoals >= vGoals.size() && iCurLevel != -1)
-			{
-				iCurLevel++;
-				LoadLevel(iCurLevel, false);
-			}
-			else if (bDebugMode && GetKey(olc::Key::N).bPressed) // Debug Mode Skip
-			{
-				iCurLevel++;
-				LoadLevel(iCurLevel, false);
-			}
-
-			return true;
-		}
-		else if (bPaused)
-		{
-			// Play SFX
-			if (bPauseJinglePlayed == false)
-			{
-				audioEngine.PlayWaveform(&audioSlot_PauseJingle, false, fAudioSpeed);
-				bPauseJinglePlayed = true;
-			}
-
-			// Pause Background Music
 			audioEngine_Music.SetOutputVolume(0.0f);
+		}
+		else
+		{
+			audioEngine_Music.SetOutputVolume(fMusicVolume);
+		}
 
-			// Check for user input to unpause or Quit
-			if (GetKey(olc::Key::ENTER).bPressed)										// Unpause
+		// Do StartUp Routine at beginning of game
+		if (!bGameStarted)
+		{
+			// Play the StartUP SFX one time
+			if (bDoStartUpJingle)
 			{
-				audioEngine.PlayWaveform(&audioSlot_UnPauseJingle, false, fAudioSpeed);	// Play UnPause Jingle SFX
-				audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
-				bPaused = false;														// Reset Flags
-				bPauseJinglePlayed = false;
+				// Play Game Start Up SFX
+				pwStart = audioEngine.PlayWaveform(&audioSlot_GameStartUp, false, fAudioSpeed);
+				fStartTime = fElapsedTime;
+				dDuration = pwStart->dDuration;
+				fTarget = fElapsedTime + dDuration;
+
+				// Set Flag
+				bDoStartUpJingle = false;
 			}
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Quit to Main Menu
-			{
-				audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
-				bPaused = false;														// Reset Pause Flags
-				bPauseJinglePlayed = false;
 
-				bMainMenu = true;														// Set Main Menu Flag
-				LoadLevel(52, false);
+			// Wait for StartUp SFX to finish, then set flags to stop Start Up Routine
+			fTimer += fElapsedTime;
+			if (fTimer >= fTarget)
+			{
+				// Set Flags
+				bGameStarted = true;
+				bDoBackgroundMusic = true;
+			}
+
+			return true;
+		}
+#pragma endregion
+
+		// Game Logic
+		if (bGameStarted)
+		{
+			// Main Menu Stuff
+			if (bMainMenu)
+			{
+				MainMenu();
 
 				return true;
 			}
 
-			// Clear screen to black before drawing each frame
-			Clear(olc::BLACK);
-
-			// Draw Pause Window
-			FillRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::DARK_BLUE);
-			DrawRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::WHITE);
-
-			// Get Timer and Movement Data
-			std::string sMovementUI;
-			std::string sTimerUI;
-			switch (iCurLevel)
+			if (!bPaused)
 			{
-			case 1:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_1);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_1);
-				break;
-			case 2:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_2);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_2);
-				break;
-			case 3:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_3);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_3);
-				break;
-			case 4:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_4);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_4);
-				break;
-			case 5:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_5);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_5);
-				break;
-			case 6:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_6);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_6);
-				break;
-			case 7:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_7);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_7);
-				break;
-			case 8:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_8);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_8);
-				break;
-			case 9:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_9);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_9);
-				break;
-			case 10:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_10);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_10);
-				break;
-			case 11:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_11);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_11);
-				break;
-			case 12:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_12);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_12);
-				break;
-			case 13:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_13);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_13);
-				break;
-			case 14:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_14);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_14);
-				break;
-			case 15:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_15);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_15);
-				break;
-			case 16:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_16);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_16);
-				break;
-			case 17:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_17);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_17);
-				break;
-			case 18:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_18);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_18);
-				break;
-			case 19:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_19);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_19);
-				break;
-			case 20:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_20);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_20);
-				break;
-			case 21:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_21);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_21);
-				break;
-			case 22:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_22);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_22);
-				break;
-			case 23:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_23);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_23);
-				break;
-			case 24:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_24);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_24);
-				break;
-			case 25:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_25);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_25);
-				break;
-			case 26:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_26);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_26);
-				break;
-			case 27:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_27);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_27);
-				break;
-			case 28:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_28);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_28);
-				break;
-			case 29:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_29);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_29);
-				break;
-			case 30:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_30);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_30);
-				break;
-			case 31:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_31);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_31);
-				break;
-			case 32:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_32);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_32);
-				break;
-			case 33:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_33);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_33);
-				break;
-			case 34:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_34);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_34);
-				break;
-			case 35:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_35);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_35);
-				break;
-			case 36:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_36);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_36);
-				break;
-			case 37:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_37);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_37);
-				break;
-			case 38:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_38);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_38);
-				break;
-			case 39:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_39);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_39);
-				break;
-			case 40:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_40);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_40);
-				break;
-			case 41:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_41);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_41);
-				break;
-			case 42:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_42);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_42);
-				break;
-			case 43:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_43);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_43);
-				break;
-			case 44:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_44);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_44);
-				break;
-			case 45:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_45);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_45);
-				break;
-			case 46:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_46);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_46);
-				break;
-			case 47:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_47);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_47);
-				break;
-			case 48:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_48);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_48);
-				break;
-			case 49:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_49);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_49);
-				break;
-			case 50:
-				sMovementUI = "Moves: " + std::to_string(iNumOfMoves_50);
-				sTimerUI = "Level Timer: " + std::to_string(iTime_50);
-				break;
-			default:
-				break;
+				// user input
+				bool bPushing = false;
+				int iDirPush = NORTH;
+				if (iCurLevel != -1) // disable most input on end screen
+				{
+					if (GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
+					{
+						iDirPush = 0;
+						bPushing = true;
+					}
+					if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
+					{
+						iDirPush = SOUTH;
+						bPushing = true;
+					}
+					if (GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
+					{
+						iDirPush = WEST;
+						bPushing = true;
+					}
+					if (GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
+					{
+						iDirPush = EAST;
+						bPushing = true;
+					}
+					if (GetKey(olc::Key::R).bPressed)
+					{
+						LoadLevel(iCurLevel, true);
+					}
+					if (GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
+					{
+						bPaused = true;	// Pause Game
+					}
+					if (GetKey(olc::Key::CTRL).bHeld && GetKey(olc::Key::ENTER).bPressed && GetKey(olc::Key::MINUS).bPressed) // DebugMode
+					{
+						if (bDebugMode)
+						{
+							bDebugMode = false;
+						}
+						else
+						{
+							bDebugMode = true;
+						}
+					}
+				}
+				else
+				{
+					if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed) // Win Screen ESC
+					{
+						audioEngine_Music.SetOutputVolume(fMusicVolume);	// Unmute Background Music
+						bMainMenu = true;									// Set Flag
+
+						// Reset Move Counters
+						iNumOfMoves_1 = 0;
+						iNumOfMoves_2 = 0;
+						iNumOfMoves_3 = 0;
+						iNumOfMoves_4 = 0;
+						iNumOfMoves_5 = 0;
+						iNumOfMoves_6 = 0;
+						iNumOfMoves_7 = 0;
+						iNumOfMoves_8 = 0;
+						iNumOfMoves_9 = 0;
+						iNumOfMoves_10 = 0;
+						iNumOfMoves_11 = 0;
+						iNumOfMoves_12 = 0;
+						iNumOfMoves_13 = 0;
+						iNumOfMoves_14 = 0;
+						iNumOfMoves_15 = 0;
+						iNumOfMoves_16 = 0;
+						iNumOfMoves_17 = 0;
+						iNumOfMoves_18 = 0;
+						iNumOfMoves_19 = 0;
+						iNumOfMoves_20 = 0;
+						iNumOfMoves_21 = 0;
+						iNumOfMoves_22 = 0;
+						iNumOfMoves_23 = 0;
+						iNumOfMoves_24 = 0;
+						iNumOfMoves_25 = 0;
+						iNumOfMoves_26 = 0;
+						iNumOfMoves_27 = 0;
+						iNumOfMoves_28 = 0;
+						iNumOfMoves_29 = 0;
+						iNumOfMoves_30 = 0;
+						iNumOfMoves_31 = 0;
+						iNumOfMoves_32 = 0;
+						iNumOfMoves_33 = 0;
+						iNumOfMoves_34 = 0;
+						iNumOfMoves_35 = 0;
+						iNumOfMoves_36 = 0;
+						iNumOfMoves_37 = 0;
+						iNumOfMoves_38 = 0;
+						iNumOfMoves_39 = 0;
+						iNumOfMoves_40 = 0;
+						iNumOfMoves_41 = 0;
+						iNumOfMoves_42 = 0;
+						iNumOfMoves_43 = 0;
+						iNumOfMoves_44 = 0;
+						iNumOfMoves_45 = 0;
+						iNumOfMoves_46 = 0;
+						iNumOfMoves_47 = 0;
+						iNumOfMoves_48 = 0;
+						iNumOfMoves_49 = 0;
+						iNumOfMoves_50 = 0;
+
+						// Reset Timers
+						iTime_1 = 0.0f;
+						iTime_2 = 0.0f;
+						iTime_3 = 0.0f;
+						iTime_4 = 0.0f;
+						iTime_5 = 0.0f;
+						iTime_6 = 0.0f;
+						iTime_7 = 0.0f;
+						iTime_8 = 0.0f;
+						iTime_9 = 0.0f;
+						iTime_10 = 0.0f;
+						iTime_11 = 0.0f;
+						iTime_12 = 0.0f;
+						iTime_13 = 0.0f;
+						iTime_14 = 0.0f;
+						iTime_15 = 0.0f;
+						iTime_16 = 0.0f;
+						iTime_17 = 0.0f;
+						iTime_18 = 0.0f;
+						iTime_19 = 0.0f;
+						iTime_20 = 0.0f;
+						iTime_21 = 0.0f;
+						iTime_22 = 0.0f;
+						iTime_23 = 0.0f;
+						iTime_24 = 0.0f;
+						iTime_25 = 0.0f;
+						iTime_26 = 0.0f;
+						iTime_27 = 0.0f;
+						iTime_28 = 0.0f;
+						iTime_29 = 0.0f;
+						iTime_30 = 0.0f;
+						iTime_31 = 0.0f;
+						iTime_32 = 0.0f;
+						iTime_33 = 0.0f;
+						iTime_34 = 0.0f;
+						iTime_35 = 0.0f;
+						iTime_36 = 0.0f;
+						iTime_37 = 0.0f;
+						iTime_38 = 0.0f;
+						iTime_39 = 0.0f;
+						iTime_40 = 0.0f;
+						iTime_41 = 0.0f;
+						iTime_42 = 0.0f;
+						iTime_43 = 0.0f;
+						iTime_44 = 0.0f;
+						iTime_45 = 0.0f;
+						iTime_46 = 0.0f;
+						iTime_47 = 0.0f;
+						iTime_48 = 0.0f;
+						iTime_49 = 0.0f;
+						iTime_50 = 0.0f;
+
+						return true;
+					}
+				}
+
+				// lambda function for translating our 2D coordinates into 1D
+				auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; };
+
+				// movement logic
+				bool bPlayerMoved = false;
+				int iMovementSuceededOrFailed = -1; // -1 = no move, 0 = move failed, 1 = move succeeded
+				if (bPushing) // check if a push attempt is happening this frame
+				{
+					olc::vi2d vBlockPos = vPlayerPos; // 'cursor' to track attempted movement
+
+					bool bAllowPush = false;
+					bool bTest = true;
+
+					// test for ability to move in a specific direction
+					while (bTest)
+					{
+						if (vLevel[id(vBlockPos)] != nullptr) // check target block space for nullptr
+						{
+							if (vLevel[id(vBlockPos)]->Push((iDirPush + 2) % 4)) // call blocks push function to determine if it can be pushed in the direction specified
+							{
+								// if block is allowed to be pushed in that direction - move cursor that direction so we can check for collision in neighboring space
+								switch (iDirPush) // select neighbor
+								{
+								case NORTH: vBlockPos.y--; break;
+								case SOUTH: vBlockPos.y++; break;
+								case EAST: vBlockPos.x++; break;
+								case WEST: vBlockPos.x--; break;
+								}
+							}
+							else // block cant be pushed that way -- end testing
+							{
+								bPlayerMoved = true;
+								iMovementSuceededOrFailed = 0;
+								bTest = false;
+							}
+						}
+						else // target space was nullptr - player can move there. End testing
+						{
+							bPlayerMoved = true;
+							iMovementSuceededOrFailed = 1;
+							bAllowPush = true;
+							bTest = false;
+						}
+					}
+
+					if (bAllowPush) // if push is allowed - execute push logic
+					{
+						while (vBlockPos != vPlayerPos) // walk backwards until reaching player position from valid move location that cursor found, swapping block positions as needed
+						{
+							olc::vi2d vSourcePos = vBlockPos;
+							switch (iDirPush)
+							{
+							case NORTH: vSourcePos.y++; break;
+							case SOUTH: vSourcePos.y--; break;
+							case EAST: vSourcePos.x--; break;
+							case WEST: vSourcePos.x++; break;
+							}
+
+							if (vLevel[id(vSourcePos)] != nullptr) // check for nullptr
+							{
+								vLevel[id(vSourcePos)]->Move(); // call any custom move logic before actually excecuting move
+							}
+
+							std::swap(vLevel[id(vSourcePos)], vLevel[id(vBlockPos)]); // swap blocks
+							vBlockPos = vSourcePos; // increment 'cursor' backwards
+						}
+
+						// update player location after movement logic loop completes
+						switch (iDirPush)
+						{
+						case NORTH: vPlayerPos.y--; break;
+						case SOUTH: vPlayerPos.y++; break;
+						case EAST: vPlayerPos.x++; break;
+						case WEST: vPlayerPos.x--; break;
+						}
+					}
+				}
+
+				// Movement SFX
+				if (bPlayerMoved == true)
+				{
+					if (iMovementSuceededOrFailed == 0) // Movement Failed
+					{
+						audioEngine.PlayWaveform(&audioSlot_Movement_Fail, false, fAudioSpeed * 2.0f);
+					}
+					else if (iMovementSuceededOrFailed == 1) // Movement Succeeded
+					{
+						audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed * 2.0f);
+					}
+				}
+
+				// Move Counting
+				if (bPlayerMoved == true && iMovementSuceededOrFailed == 1)
+				{
+					switch (iCurLevel)
+					{
+					case 1:
+						iNumOfMoves_1++;
+						break;
+					case 2:
+						iNumOfMoves_2++;
+						break;
+					case 3:
+						iNumOfMoves_3++;
+						break;
+					case 4:
+						iNumOfMoves_4++;
+						break;
+					case 5:
+						iNumOfMoves_5++;
+						break;
+					case 6:
+						iNumOfMoves_6++;
+						break;
+					case 7:
+						iNumOfMoves_7++;
+						break;
+					case 8:
+						iNumOfMoves_8++;
+						break;
+					case 9:
+						iNumOfMoves_8++;
+						break;
+					case 10:
+						iNumOfMoves_10++;
+						break;
+					case 11:
+						iNumOfMoves_11++;
+						break;
+					case 12:
+						iNumOfMoves_12++;
+						break;
+					case 13:
+						iNumOfMoves_13++;
+						break;
+					case 14:
+						iNumOfMoves_14++;
+						break;
+					case 15:
+						iNumOfMoves_15++;
+						break;
+					case 16:
+						iNumOfMoves_16++;
+						break;
+					case 17:
+						iNumOfMoves_17++;
+						break;
+					case 18:
+						iNumOfMoves_18++;
+						break;
+					case 19:
+						iNumOfMoves_19++;
+						break;
+					case 20:
+						iNumOfMoves_20++;
+						break;
+					case 21:
+						iNumOfMoves_21++;
+						break;
+					case 22:
+						iNumOfMoves_22++;
+						break;
+					case 23:
+						iNumOfMoves_23++;
+						break;
+					case 24:
+						iNumOfMoves_24++;
+						break;
+					case 25:
+						iNumOfMoves_25++;
+						break;
+					case 26:
+						iNumOfMoves_26++;
+						break;
+					case 27:
+						iNumOfMoves_27++;
+						break;
+					case 28:
+						iNumOfMoves_28++;
+						break;
+					case 29:
+						iNumOfMoves_29++;
+						break;
+					case 30:
+						iNumOfMoves_30++;
+						break;
+					case 31:
+						iNumOfMoves_31++;
+						break;
+					case 32:
+						iNumOfMoves_32++;
+						break;
+					case 33:
+						iNumOfMoves_33++;
+						break;
+					case 34:
+						iNumOfMoves_34++;
+						break;
+					case 35:
+						iNumOfMoves_35++;
+						break;
+					case 36:
+						iNumOfMoves_36++;
+						break;
+					case 37:
+						iNumOfMoves_37++;
+						break;
+					case 38:
+						iNumOfMoves_38++;
+						break;
+					case 39:
+						iNumOfMoves_39++;
+						break;
+					case 40:
+						iNumOfMoves_40++;
+						break;
+					case 41:
+						iNumOfMoves_41++;
+						break;
+					case 42:
+						iNumOfMoves_42++;
+						break;
+					case 43:
+						iNumOfMoves_43++;
+						break;
+					case 44:
+						iNumOfMoves_44++;
+						break;
+					case 45:
+						iNumOfMoves_45++;
+						break;
+					case 46:
+						iNumOfMoves_46++;
+						break;
+					case 47:
+						iNumOfMoves_47++;
+						break;
+					case 48:
+						iNumOfMoves_48++;
+						break;
+					case 49:
+						iNumOfMoves_49++;
+						break;
+					case 50:
+						iNumOfMoves_50++;
+						break;
+					default:
+						break;
+					}
+				}
+
+				// win condition checking 
+				int nGoals = 0;
+				for (auto& g : vGoals)
+				{
+					if (vLevel[id(g)] != nullptr)
+					{
+						nGoals++; // Increment Goals
+					}
+				}
+
+				// Draw Function
+				DrawLevel(iLevelSet);
+
+				// UI and Level Set Tracking
+				if (iCurLevel != -1) // UI for active gameplay
+				{
+					// Goal Tracking UI
+					DrawString(4, 4, "Goals: " + std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), olc::WHITE);
+
+					// Level Tracking UI
+					if (iCurLevel < 16)
+					{
+						iLevelSet = 0;
+						DrawString(128 + 20, 4, "Level: ", olc::WHITE);
+						DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
+
+					}
+					else if (iCurLevel < 36)
+					{
+						iLevelSet = 1;
+						DrawString(128 + 20, 4, "Level: ", olc::WHITE);
+						DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
+					}
+					else
+					{
+						iLevelSet = 2;
+						DrawString(128 + 20, 4, "Level: ", olc::WHITE);
+						DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
+					}
+
+					if (bDebugMode) // Debug Mode Indicator
+					{
+						DrawString(0 + 17, 0 + 17, "DEBUG", olc::DARK_GREY);
+					}
+
+					// Move Number UI
+					switch (iCurLevel)
+					{
+					case 1:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_1), olc::WHITE);
+						break;
+					case 2:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_2), olc::WHITE);
+						break;
+					case 3:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_3), olc::WHITE);
+						break;
+					case 4:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_4), olc::WHITE);
+						break;
+					case 5:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_5), olc::WHITE);
+						break;
+					case 6:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_6), olc::WHITE);
+						break;
+					case 7:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_7), olc::WHITE);
+						break;
+					case 8:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_8), olc::WHITE);
+						break;
+					case 9:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_9), olc::WHITE);
+						break;
+					case 10:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_10), olc::WHITE);
+						break;
+					case 11:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_11), olc::WHITE);
+						break;
+					case 12:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_12), olc::WHITE);
+						break;
+					case 13:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_13), olc::WHITE);
+						break;
+					case 14:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_14), olc::WHITE);
+						break;
+					case 15:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_15), olc::WHITE);
+						break;
+					case 16:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_16), olc::WHITE);
+						break;
+					case 17:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_17), olc::WHITE);
+						break;
+					case 18:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_18), olc::WHITE);
+						break;
+					case 19:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_19), olc::WHITE);
+						break;
+					case 20:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_20), olc::WHITE);
+						break;
+					case 21:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_21), olc::WHITE);
+						break;
+					case 22:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_22), olc::WHITE);
+						break;
+					case 23:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_23), olc::WHITE);
+						break;
+					case 24:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_24), olc::WHITE);
+						break;
+					case 25:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_25), olc::WHITE);
+						break;
+					case 26:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_26), olc::WHITE);
+						break;
+					case 27:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_27), olc::WHITE);
+						break;
+					case 28:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_28), olc::WHITE);
+						break;
+					case 29:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_29), olc::WHITE);
+						break;
+					case 30:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_30), olc::WHITE);
+						break;
+					case 31:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_31), olc::WHITE);
+						break;
+					case 32:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_32), olc::WHITE);
+						break;
+					case 33:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_33), olc::WHITE);
+						break;
+					case 34:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_34), olc::WHITE);
+						break;
+					case 35:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_35), olc::WHITE);
+						break;
+					case 36:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_36), olc::WHITE);
+						break;
+					case 37:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_37), olc::WHITE);
+						break;
+					case 38:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_38), olc::WHITE);
+						break;
+					case 39:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_39), olc::WHITE);
+						break;
+					case 40:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_40), olc::WHITE);
+						break;
+					case 41:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_41), olc::WHITE);
+						break;
+					case 42:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_42), olc::WHITE);
+						break;
+					case 43:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_43), olc::WHITE);
+						break;
+					case 44:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_44), olc::WHITE);
+						break;
+					case 45:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_45), olc::WHITE);
+						break;
+					case 46:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_46), olc::WHITE);
+						break;
+					case 47:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_47), olc::WHITE);
+						break;
+					case 48:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_48), olc::WHITE);
+						break;
+					case 49:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_49), olc::WHITE);
+						break;
+					case 50:
+						DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_50), olc::WHITE);
+						break;
+					default:
+						break;
+					}
+				}
+				else				// UI for win conditions
+				{
+					// Win Screen Stuff
+					iLevelSet = -1;
+					audioEngine_Music.SetOutputVolume(0.0f);
+					DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", olc::WHITE);
+					DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
+					DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC for Main Menu", olc::WHITE);
+				}
+
+				// Special UI for Displaying Checkpoint Codes that can be inputted on Main Menu Level Select screen
+				if (iCurLevel == 16)
+				{
+					DrawString(148, 228, "Code: " + sMediumLevelCode, olc::WHITE);
+				}
+				else if (iCurLevel == 36)
+				{
+					DrawString(148, 228, "Code: " + sHardLevelCode, olc::WHITE);
+				}
+
+				// Win Tracking
+				if (nGoals >= vGoals.size() && iCurLevel != -1)
+				{
+					iCurLevel++;
+					LoadLevel(iCurLevel, false);
+				}
+				else if (bDebugMode && GetKey(olc::Key::N).bPressed) // Debug Mode Skip
+				{
+					iCurLevel++;
+					LoadLevel(iCurLevel, false);
+				}
+
+				return true;
 			}
+			else if (bPaused)
+			{
+				// Play SFX
+				if (bPauseJinglePlayed == false)
+				{
+					audioEngine.PlayWaveform(&audioSlot_PauseJingle, false, fAudioSpeed);
+					bPauseJinglePlayed = true;
+				}
 
-			// Draw UI Elements
-			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", olc::WHITE);
-			DrawString(20, 45, "Stats for Current Level", olc::WHITE);
-			DrawString(20, 70, sTimerUI, olc::WHITE);
-			DrawString(20, 57, sMovementUI, olc::WHITE);
-			DrawString(20, 212, "Press Enter to Resume", olc::WHITE);
-			DrawString(20, 198, "Press ESC for Main Menu", olc::WHITE);
+				// Pause Background Music
+				audioEngine_Music.SetOutputVolume(0.0f);
 
-			return true;
+				// Check for user input to unpause or Quit
+				if (GetKey(olc::Key::ENTER).bPressed)										// Unpause
+				{
+					audioEngine.PlayWaveform(&audioSlot_UnPauseJingle, false, fAudioSpeed);	// Play UnPause Jingle SFX
+					audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
+					bPaused = false;														// Reset Flags
+					bPauseJinglePlayed = false;
+				}
+				if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Quit to Main Menu
+				{
+					audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
+					bPaused = false;														// Reset Pause Flags
+					bPauseJinglePlayed = false;
+
+					bMainMenu = true;														// Set Main Menu Flag
+					LoadLevel(52, false);
+
+					return true;
+				}
+
+				// Clear screen to black before drawing each frame
+				Clear(olc::BLACK);
+
+				// Draw Pause Window
+				FillRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::DARK_BLUE);
+				DrawRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::WHITE);
+
+				// Get Timer and Movement Data
+				std::string sMovementUI;
+				std::string sTimerUI;
+				switch (iCurLevel)
+				{
+				case 1:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_1);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_1);
+					break;
+				case 2:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_2);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_2);
+					break;
+				case 3:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_3);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_3);
+					break;
+				case 4:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_4);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_4);
+					break;
+				case 5:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_5);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_5);
+					break;
+				case 6:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_6);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_6);
+					break;
+				case 7:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_7);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_7);
+					break;
+				case 8:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_8);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_8);
+					break;
+				case 9:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_9);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_9);
+					break;
+				case 10:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_10);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_10);
+					break;
+				case 11:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_11);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_11);
+					break;
+				case 12:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_12);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_12);
+					break;
+				case 13:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_13);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_13);
+					break;
+				case 14:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_14);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_14);
+					break;
+				case 15:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_15);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_15);
+					break;
+				case 16:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_16);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_16);
+					break;
+				case 17:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_17);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_17);
+					break;
+				case 18:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_18);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_18);
+					break;
+				case 19:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_19);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_19);
+					break;
+				case 20:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_20);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_20);
+					break;
+				case 21:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_21);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_21);
+					break;
+				case 22:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_22);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_22);
+					break;
+				case 23:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_23);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_23);
+					break;
+				case 24:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_24);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_24);
+					break;
+				case 25:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_25);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_25);
+					break;
+				case 26:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_26);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_26);
+					break;
+				case 27:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_27);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_27);
+					break;
+				case 28:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_28);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_28);
+					break;
+				case 29:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_29);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_29);
+					break;
+				case 30:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_30);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_30);
+					break;
+				case 31:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_31);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_31);
+					break;
+				case 32:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_32);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_32);
+					break;
+				case 33:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_33);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_33);
+					break;
+				case 34:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_34);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_34);
+					break;
+				case 35:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_35);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_35);
+					break;
+				case 36:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_36);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_36);
+					break;
+				case 37:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_37);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_37);
+					break;
+				case 38:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_38);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_38);
+					break;
+				case 39:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_39);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_39);
+					break;
+				case 40:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_40);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_40);
+					break;
+				case 41:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_41);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_41);
+					break;
+				case 42:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_42);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_42);
+					break;
+				case 43:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_43);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_43);
+					break;
+				case 44:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_44);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_44);
+					break;
+				case 45:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_45);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_45);
+					break;
+				case 46:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_46);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_46);
+					break;
+				case 47:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_47);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_47);
+					break;
+				case 48:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_48);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_48);
+					break;
+				case 49:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_49);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_49);
+					break;
+				case 50:
+					sMovementUI = "Moves: " + std::to_string(iNumOfMoves_50);
+					sTimerUI = "Level Timer: " + std::to_string(iTime_50);
+					break;
+				default:
+					break;
+				}
+
+				// Draw UI Elements
+				DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", olc::WHITE);
+				DrawString(20, 45, "Stats for Current Level", olc::WHITE);
+				DrawString(20, 70, sTimerUI, olc::WHITE);
+				DrawString(20, 57, sMovementUI, olc::WHITE);
+				DrawString(20, 212, "Press Enter to Resume", olc::WHITE);
+				DrawString(20, 198, "Press ESC for Main Menu", olc::WHITE);
+
+				return true;
+			}
 		}
 	}
 };
