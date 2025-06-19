@@ -14,8 +14,7 @@
 // Level Completion timer logic
 // create code system to skip to checkpoint levels
 // 
-// Score Tracking UI - Gold Star, Silver Star,or Bronze Star
-// Score Tracking Screen at end of game - display moves used, time taken, and star level achieved for all 50 levels. Include PAR time and moves?
+// Score Tracking UI - Gold Star, Silver Star,or Bronze Star for level transition times
 // 
 // Fill out Levels!
 // 
@@ -24,10 +23,14 @@
 // High Score Screen
 //		- needs timer integration once timer functionality is implemented
 //		- needs file io
+//		- add star functionality after score tracking task complete
 // 
 // Win Screen logo for middle of win screen
-//
+// 
 // screenshot functionality
+//
+// Update Level Codes
+// SFX for level code succeed and fail
 
 // TODO_B wish list
 // animations for level transition
@@ -75,8 +78,8 @@ public:
 	int iNumOfLevels = 50;
 
 	// Codes for Skipping Levels
-	std::string sMediumLevelCode = "FWZHHITMPL"; // Skip to Level 16
-	std::string sHardLevelCode = "PZJNIWWMPX";   // Skip to Level 36
+	std::string sMediumLevelCode = "MEDIUM"; // Skip to Level 16
+	std::string sHardLevelCode = "HARD";   // Skip to Level 36
 
 	// Vector containing all levels
 	std::vector <std::string> vAllLevels;
@@ -1222,7 +1225,7 @@ public:
 
 	// Main Menu Flags
 	bool bMainMenu = true;
-	int iCurDisplay = -1; // - 1: main menu, 0: high score screen, 1: options screen
+	int iCurDisplay = -1; // - 1: main menu, 0: high score screen, 1: options screen, 2: Level Select Screen
 
 	// Page number variable used in some menus
 	int iPageNum = 1;
@@ -1232,6 +1235,9 @@ public:
 
 	// Variable storing current level set
 	int iLevelSet = 0; // -1 = menu, 0 = easy, 1 = medium, 2 = hard
+
+	// Text Input for Level Select
+	std::string sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
 
 #pragma endregion
 
@@ -1252,6 +1258,9 @@ public:
 	olc::sound::Wave audioSlot_LevelTransition;
 	olc::sound::Wave audioSlot_PauseJingle;
 	olc::sound::Wave audioSlot_UnPauseJingle;
+	olc::sound::Wave audioSlot_LevelCode_Succeed;
+	olc::sound::Wave audioSlot_LevelCode_Fail;
+
 	float fAudioSpeed = 1.0f;
 	float fMusicVolume = 0.5f;
 	float fSFXVolume = 1.0f;
@@ -1270,6 +1279,8 @@ public:
 	std::string sLevelTransition_1 = "SFX//LevelTransition_1.wav";	
 	std::string sPauseJingle_1 = "SFX//Pause_1.wav";
 	std::string sUnPauseJingle_1 = "SFX//Unpause_1.wav";
+	std::string sLevelCode_1 = "SFX//Silent.wav";						// todo
+	std::string sLevelCodeFail_1 = "SFX//Silent.wav";					// todo
 #pragma endregion
 
 	// Constructor
@@ -1306,6 +1317,8 @@ public:
 		audioSlot_LevelTransition.LoadAudioWaveform(sLevelTransition_1);
 		audioSlot_PauseJingle.LoadAudioWaveform(sPauseJingle_1);	
 		audioSlot_UnPauseJingle.LoadAudioWaveform(sUnPauseJingle_1);
+		audioSlot_LevelCode_Succeed.LoadAudioWaveform(sLevelCode_1);
+		audioSlot_LevelCode_Fail.LoadAudioWaveform(sLevelCodeFail_1);
 
 		// Set Volume					
 		audioEngine_Music.SetOutputVolume(fMusicVolume);
@@ -1405,17 +1418,14 @@ public:
 		{
 			if (iCurLevel == -1)
 			{
-				audioSlot_WinJingle.LoadAudioWaveform(sWinJingle_1);						// Load WinJingle SFX
 				audioEngine.PlayWaveform(&audioSlot_WinJingle, false, fAudioSpeed);			// Play SFX
 			}
 			else if (bWasRestart == true)
 			{
-				audioSlot_RestartLevel.LoadAudioWaveform(sRestartLevel_1);					// Load Restart SFX
 				audioEngine.PlayWaveform(&audioSlot_RestartLevel, false, fAudioSpeed);		// Play SFX
 			}
 			else
 			{
-				audioSlot_LevelTransition.LoadAudioWaveform(sLevelTransition_1);			// Load Level Load SFX
 				audioEngine.PlayWaveform(&audioSlot_LevelTransition, false, fAudioSpeed);	// Play SFX
 			}
 		}
@@ -1500,6 +1510,12 @@ public:
 		}
 	}
 
+	// Overridden Text Entry function for use in Level Select Menu
+	void OnTextEntryComplete(const std::string& sText) override 
+	{ 
+		sInputCode = sText;
+	}
+
 	// Called Every Frame while the Main Menu system is open
 	void MainMenu()
 	{
@@ -1509,7 +1525,7 @@ public:
 		{
 		case 0: // High Score Screen
 			// User Input:
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Close Menu
 			{
 				iPageNum = 1;
 				iCurDisplay = -1;
@@ -1723,6 +1739,83 @@ public:
 			DrawString((256 / 2) - 108, (240 / 2) + 82, "SFX: " +std::to_string(fSFXVolume), olc::WHITE);
 			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
 			break;
+		case 2: // Level Select Code Screen
+			// User Input
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Close Menu
+			{
+				sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+				iCurDisplay = -1;
+			}
+			if (GetKey(olc::Key::ENTER).bPressed && IsTextEntryEnabled() == false)		// Enable Text Entry
+			{
+				TextEntryEnable(true);
+			}
+
+			// Use Input Input, if player has inputted one
+			if (sInputCode != "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd")		// Some kind of user input has been detected in the string
+			{
+				if (sInputCode == sMediumLevelCode)
+				{
+					// Play Success SFX
+					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
+
+					// Set Level
+					iCurLevel = 16;
+
+					// Disable Text Entry
+					TextEntryEnable(false);
+
+					// Exit Menus, reset sInput string, Load Level						
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+					iCurDisplay = -1;
+					bMainMenu = false;
+					LoadLevel(iCurLevel, false);
+
+				}
+				else if (sInputCode == sHardLevelCode)
+				{
+					// Play Success SFX
+					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
+
+					// Set Level
+					iCurLevel = 36;
+
+					// Disable Text Entry
+					TextEntryEnable(false);
+
+					// Exit Menus, reset sInput string, Load Level
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+					iCurDisplay = -1;
+					bMainMenu = false;
+					LoadLevel(iCurLevel, false);
+				}
+				else
+				{
+					// Play Fail SFX
+					audioEngine.PlayWaveform(&audioSlot_LevelCode_Fail, false, fAudioSpeed);
+
+					// Disable Text Entry
+					TextEntryEnable(false);
+
+					// Reset sInput string
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+				}
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw UI
+			DrawString((this->ScreenWidth() / 2) - 50, (240 / 2) - 96, "LEVEL SELECT", olc::WHITE);
+			DrawString(20, 199, "Press Enter to Input Code", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
+			
+			// Text Entry UI
+			if (IsTextEntryEnabled() == true)
+			{
+				DrawString(65, 35, "Text Entry Mode", olc::YELLOW);
+			}
+			break;
 		default: // Main Menu
 			// User Input:
 			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)  // Close Game
@@ -1737,6 +1830,10 @@ public:
 			{
 				iCurDisplay = 1;
 			}
+			if (GetKey(olc::Key::L).bPressed)										 // Open Level Select Menu
+			{
+				iCurDisplay = 2;
+			}
 			if (GetKey(olc::Key::ENTER).bPressed)								    // Start Game
 			{
 				// Start Game
@@ -1750,7 +1847,8 @@ public:
 
 			// Draw UI
 			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "MAIN MENU", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 52, "Press Enter to Start Game", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 40, "Press Enter to Start Game", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 52, "Press L for Level Select", olc::WHITE);
 			DrawString((256 / 2) - 108, (240 / 2) + 65, "Press H to see High Scores", olc::WHITE);
 			DrawString((256 / 2) - 108, (240 / 2) + 78, "Press O for Options", olc::WHITE);
 			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Quit", olc::WHITE);
@@ -2443,6 +2541,16 @@ public:
 				DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", olc::WHITE);
 				DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
 				DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC for Main Menu", olc::WHITE);
+			}
+
+			// Special UI for Displaying Checkpoint Codes that can be inputted on Main Menu Level Select screen
+			if (iCurLevel == 16)
+			{
+				DrawString(148, 228, "Code: " + sMediumLevelCode, olc::WHITE);
+			}
+			else if (iCurLevel == 36)
+			{
+				DrawString(148, 228, "Code: " + sHardLevelCode, olc::WHITE);
 			}
 
 			// Win Tracking
