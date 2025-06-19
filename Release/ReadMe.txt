@@ -17,22 +17,22 @@ D / Right            : Move Right
 A / Left             : Move Left
 R	             : Restart Level
 ESC / P		     : Pause
-O		     : Options
-I		     : Score Screen
-C		     : Input Level Code
+
+Hold CTRL and press Enter & Minus at the same time to enter Debug Mode.
+While in Debug Mode press N to Skip Level.
 
 =======================================
 		Game Rules
 =======================================
-Move around the levels and push blocks onto the Win Circle Tiles. Once all Win Circles in a level have been covered, move onto the next one. Your player counts as a block!
-Can you beat all 50 levels? 
-
 Levels 1 through 15 are Easy.
 Levels 16 through 35 are Medium.
 Levels 36 through 50 are Hard.
-The Level Section of the UI denotes the difficulty in Green, Yellow, or Red for Easy, Medium, and Hard.
+Level Difficulty is indicated by the Color of the Wall Blocks.
+Keep an eye out for the Checkpoint Code in the bottom right corner as you beat each Level Set. 
+Input Checkpoint Codes from the Main Menu to return to a Level Set.
 
-The number of moves you make to beat each level and the time it takes you is recorded. Can you get the best time and move count for each one?
+The number of Moves you make to beat each Level and the Time it takes you is recorded. Can you get the best Time and Move count for each Level?
+Check the High Score screen from the Main Menu to see your Scores!
 
 Thank for playing and have fun!
 
@@ -43,5 +43,5 @@ Universal Block		(+) : Moves in all directions
 Horizontal Block	(-) : Moves side to side
 Vertical Block		(|) : Moves up and down
 Countdown Block		(5) : Moves in all directions, but only moves the number of times displayed on its face
-Win Tile		(o) : Tiles to be covered in order to beat each level
-Wall Block		(#) : Solid blocks that cannot be moved - treat as wall boundaries for level
+Win Tile		(o) : Cover these with Blocks!
+Wall Block		(#) : Solid Wall Blocks that cannot be moved
