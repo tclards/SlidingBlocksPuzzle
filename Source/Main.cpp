@@ -44,7 +44,7 @@
 // O - Options Menu (TODO)
 // I - Score Tracking Screen (TODO)
 // C - Cheat Code Skip (TODO)
-// CTRL + D - Enable Debug Mode
+// CTRL + ENTER and MINUS - Enable Debug Mode
 // N (While Debug Enabled) - Next Level
 
 // Created by Tyler Clardy in June 2025
@@ -410,7 +410,7 @@ public:
 		"#P+@...........#"
 		"#..............#"
 		"#..............#"
-		"#..............#"
+		"#...-.+.|.5....#"
 		"#..............#"
 		"#..............#"
 		"#..............#"
@@ -790,7 +790,7 @@ public:
 		"################"
 		"#P+@...........#"
 		"#..............#"
-		"#..............#"
+		"#...-.+.|.5....#"
 		"#..............#"
 		"#..............#"
 		"#..............#"
@@ -1855,7 +1855,7 @@ public:
 				{
 					bPaused = true;	// Pause Game
 				}
-				if (GetKey(olc::Key::CTRL).bHeld && GetKey(olc::Key::D).bPressed) // DebugMode
+				if (GetKey(olc::Key::CTRL).bHeld && GetKey(olc::Key::ENTER).bPressed && GetKey(olc::Key::MINUS).bPressed) // DebugMode
 				{
 					if (bDebugMode)
 					{
@@ -2438,6 +2438,7 @@ public:
 			else				// UI for win conditions
 			{
 				// Win Screen Stuff
+				iLevelSet = -1;
 				audioEngine_Music.SetOutputVolume(0.0f);
 				DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", olc::WHITE);
 				DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
