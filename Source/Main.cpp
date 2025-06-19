@@ -7,8 +7,6 @@
 #include "chrono"
 #include "iostream"
 
-// 1.20.50
-
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor
 
@@ -20,9 +18,6 @@
 // Score Tracking Screen at end of game - display moves used, time taken, and star level achieved for all 50 levels. Include PAR time and moves?
 // 
 // Fill out Levels!
-// 
-// Create Graphics for each Block Type. 
-//		- Tilable Background Sprite for empty space?
 // 
 // Options file io
 // 
@@ -40,6 +35,7 @@
 //		- SFX
 //		- Graphics
 // Door Blocks and Door Switch Tiles
+// Tilable Background Sprite for empty space?
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -1083,7 +1079,7 @@ public:
 
 		}
 
-		virtual void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin)
+		virtual void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet)
 		{
 
 		}
@@ -1100,9 +1096,23 @@ public:
 	};
 	struct block_solid : public block // solid immovable block -- ie walls
 	{
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
-			pge->FillRect(pos * size, size, olc::BLUE);
+			switch (iLevelSet)
+			{
+			case 0:		// easy
+				pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(1, 1) * size, size);
+				break;
+			case 1:		// medium
+				pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(2, 1) * size, size);
+				break;
+			case 2:		// hard
+				pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(3, 1) * size, size);
+				break;
+			default:	// menu
+				pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(0, 0) * size, size);
+				break;
+			}
 		}
 
 		bool Push(const int direction) override
@@ -1112,9 +1122,9 @@ public:
 	};
 	struct block_player : public block // player block
 	{
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
-			pge->FillRect(pos * size, size, olc::WHITE);
+			pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(0, 1) * size, size);
 		}
 
 		bool Push(const int direction) override
@@ -1124,9 +1134,9 @@ public:
 	};
 	struct block_simple : public block // block that moves in any direction
 	{
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
-			pge->FillRect(pos * size, size, olc::RED);
+			pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(1, 0) * size, size);
 		}
 
 		bool Push(const int direction) override
@@ -1136,9 +1146,9 @@ public:
 	};
 	struct block_horizontal : public block // block that moves side to side
 	{
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
-			pge->FillRect(pos * size, size, olc::GREEN);
+			pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(2, 0) * size, size);
 		}
 
 		bool Push(const int direction) override
@@ -1148,9 +1158,9 @@ public:
 	};
 	struct block_vertical : public block // block that moves up and down
 	{
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
-			pge->FillRect(pos * size, size, olc::YELLOW);
+			pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(3, 0) * size, size);
 		}
 
 		bool Push(const int direction) override
@@ -1167,9 +1177,9 @@ public:
 			iMoveCount = iNumOfMovesAllowed;
 		}
 
-		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin) override
+		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
-			pge->FillRect(pos * size, size, olc::CYAN);
+			pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(4, 0) * size, size);
 			pge->DrawString(pos * size + olc::vi2d(4, 4), std::to_string(iMoveCount), olc::BLACK);
 		}
 
@@ -1200,6 +1210,9 @@ public:
 	// vector holding player location
 	olc::vi2d vPlayerPos;
 
+	// Graphics
+	olc::Renderable gfxTiles;
+
 	// Variable tracking which level the player is on
 	int iCurLevel = 1;
 
@@ -1216,6 +1229,9 @@ public:
 
 	// Flag for Debug Testing Mode
 	bool bDebugMode = false;
+
+	// Variable storing current level set
+	int iLevelSet = 0; // -1 = menu, 0 = easy, 1 = medium, 2 = hard
 
 #pragma endregion
 
@@ -1487,6 +1503,8 @@ public:
 	// Called Every Frame while the Main Menu system is open
 	void MainMenu()
 	{
+		iLevelSet = -1;
+
 		switch (iCurDisplay)
 		{
 		case 0: // High Score Screen
@@ -1512,7 +1530,7 @@ public:
 			}
 
 			// Draw Blank Menu Level
-			DrawLevel();
+			DrawLevel(iLevelSet);
 
 			// Draw UI
 			DrawString((this->ScreenWidth() / 2) - 42, 24, "HIGH SCORES", olc::WHITE);
@@ -1692,7 +1710,7 @@ public:
 			audioEngine_Music.SetOutputVolume(fMusicVolume);
 
 			// Draw Blank Menu Level
-			DrawLevel();
+			DrawLevel(iLevelSet);
 
 			// Draw UI
 			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "OPTIONS", olc::WHITE);
@@ -1728,7 +1746,7 @@ public:
 			}
 
 			// Draw Blank Menu Level
-			DrawLevel();
+			DrawLevel(iLevelSet);
 
 			// Draw UI
 			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "MAIN MENU", olc::WHITE);
@@ -1741,7 +1759,7 @@ public:
 	}
 
 	// Draws the current level to the screen
-	void DrawLevel()
+	void DrawLevel(int iLevelSet)
 	{
 		// lambda function for translating our 2D coordinates into 1D
 		auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; };
@@ -1766,7 +1784,7 @@ public:
 				// check for nullptr, then draw
 				if (b)
 				{
-					b->DrawSelf(this, vBlockPos, vBlockSize);
+					b->DrawSelf(this, vBlockPos, vBlockSize, gfxTiles, iLevelSet);
 				}
 			}
 		}
@@ -1777,6 +1795,9 @@ public:
 	{
 		// Audio Loading
 		LoadAllAudio();
+
+		// Graphics Loading
+		gfxTiles.Load("Graphics//TileSheet.png");
 
 		// Level Loading
 		LoadAllLevels();													// Load ALL levels into memory
@@ -2223,9 +2244,9 @@ public:
 			}
 
 			// Draw Function
-			DrawLevel();
+			DrawLevel(iLevelSet);
 
-			// UI
+			// UI and Level Set Tracking
 			if (iCurLevel != -1) // UI for active gameplay
 			{
 				// Goal Tracking UI
@@ -2234,19 +2255,22 @@ public:
 				// Level Tracking UI
 				if (iCurLevel < 16)
 				{
+					iLevelSet = 0;
 					DrawString(128 + 20, 4, "Level: ", olc::WHITE);
-					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::GREEN);
+					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
 
 				}
 				else if (iCurLevel < 36)
 				{
+					iLevelSet = 1;
 					DrawString(128 + 20, 4, "Level: ", olc::WHITE);
-					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::YELLOW);
+					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
 				}
 				else
 				{ 
+					iLevelSet = 2;
 					DrawString(128 + 20, 4, "Level: ", olc::WHITE);
-					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::RED);
+					DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
 				}
 
 				if (bDebugMode) // Debug Mode Indicator
