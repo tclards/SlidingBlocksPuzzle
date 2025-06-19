@@ -4,11 +4,9 @@
 #define OLC_SOUNDWAVE
 #include "olcSoundWaveEngine.h"
 
-#include "chrono"
-#include "iostream"
-
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor
+// Level Code Succeed SFX not audible
 
 // TODO_A
 // Level Completion timer logic
@@ -25,9 +23,6 @@
 //		- add star functionality after score tracking task complete
 // 
 // Win Screen logo for middle of win screen
-// 
-// screenshot functionality
-//
 // 3bytes logo for startup routine
 
 // TODO_B wish list
@@ -37,6 +32,7 @@
 //		- Graphics
 // Door Blocks and Door Switch Tiles
 // Tilable Background Sprite for empty space?
+// screenshot functionality
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -1248,6 +1244,9 @@ public:
 
 	// Flag for Background Music
 	bool bDoBackgroundMusic = false;
+
+	// Speed for Start Up Jingle - This determines how long the Splash Screen is displayed
+	float fSplashScreenSpeed = 1.25f;
 #pragma endregion
 
 // Audio
@@ -1943,7 +1942,7 @@ public:
 			if (bDoStartUpJingle)
 			{
 				// Play Game Start Up SFX
-				pwStart = audioEngine.PlayWaveform(&audioSlot_GameStartUp, false, fAudioSpeed);
+				pwStart = audioEngine.PlayWaveform(&audioSlot_GameStartUp, false, fSplashScreenSpeed);
 				fStartTime = fElapsedTime;
 				dDuration = pwStart->dDuration;
 				fTarget = fElapsedTime + dDuration;
