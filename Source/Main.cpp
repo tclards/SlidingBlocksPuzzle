@@ -7,6 +7,7 @@
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor
 // Level Code Succeed SFX not audible
+// random crashes related to a nullptr in soundwaveengine
 
 // TODO_A
 // Level Completion timer logic
@@ -24,6 +25,7 @@
 // 
 // Win Screen logo for middle of win screen
 // 3bytes logo for startup routine
+// Update Pause Screen UI to match other menus
 
 // TODO_B wish list
 // animations for level transition
