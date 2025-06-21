@@ -4,6 +4,8 @@
 #define OLC_SOUNDWAVE
 #include "olcSoundWaveEngine.h"
 
+#include <fstream>
+
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor
 // Level Code Succeed SFX not audible
@@ -15,8 +17,6 @@
 // Score Tracking UI - Gold Star, Silver Star,or Bronze Star for level transition times
 // 
 // Fill out Levels!
-// 
-// Options file io
 // 
 // High Score Screen
 //		- needs timer integration once timer functionality is implemented
@@ -1226,6 +1226,10 @@ public:
 	// Page number variable used in some menus
 	int iPageNum = 1;
 
+	// Variables for checking success on file io operations
+	int iOptionsSave = 0;
+	int iOptionsLoad = 0;
+
 	// Flag for Debug Testing Mode
 	bool bDebugMode = false;
 
@@ -1308,6 +1312,73 @@ public:
 		audioEngine_Music.StopAll();
 		audioEngine.~WaveEngine();
 		audioEngine_Music.~WaveEngine();
+	}
+
+	// Function for loading options settings
+	int LoadOptions() // returns -1 for failure, or 1 for success
+	{
+		std::ifstream inOptions("Options.txt");
+
+		if (inOptions.is_open())
+		{
+			std::string sCurLine;
+			bool bSFX = false;
+			bool bMusic = false;
+
+			while (std::getline(inOptions, sCurLine))
+			{
+				if (bSFX == true)
+				{
+					fSFXVolume = std::stof(sCurLine);
+					bSFX = false;
+				}
+				else if (bMusic == true)
+				{
+					fMusicVolume = std::stof(sCurLine);
+					bMusic = false;
+				}
+
+				if (sCurLine == "{Volume_SFX}=")
+				{
+					bSFX = true;
+				}
+				else if (sCurLine == "{Volume_Music}=")
+				{
+					bMusic = true;
+				}
+			}
+
+			inOptions.close();
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+
+		return -1;
+	}
+
+	// Function for setting options settings
+	int SaveOptions() // returns -1 for failure, or 1 for success
+	{
+		std::ofstream outOptions("Options.txt");
+		outOptions.clear();
+
+		if (outOptions.is_open())
+		{
+			outOptions << "{Volume_SFX}=\n" << fSFXVolume << "\n";
+			outOptions << "{Volume_Music}=\n" << fMusicVolume;
+
+			outOptions.close();
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+
+		return -1;
 	}
 
 	// Function to load all audio into memory
@@ -1696,6 +1767,9 @@ public:
 			// User Input:
 			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
 			{
+				// Save Changes
+				iOptionsSave = SaveOptions();
+
 				iCurDisplay = -1;
 			}
 			if (GetKey(olc::Key::D).bPressed)		// Increase SFX Volume
@@ -1961,6 +2035,9 @@ public:
 				bGameStarted = true;
 				bDoBackgroundMusic = true;
 			}
+
+			// Load Options
+			iOptionsLoad = LoadOptions();
 
 			return true;
 		}
