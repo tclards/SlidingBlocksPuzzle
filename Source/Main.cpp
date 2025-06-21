@@ -1,9 +1,7 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
-
 #define OLC_SOUNDWAVE
 #include "olcSoundWaveEngine.h"
-
 #include <fstream>
 
 // TODO_BUGS
@@ -14,14 +12,10 @@
 // TODO_A
 // Level Completion timer logic
 // 
-// Score Tracking UI - Gold Star, Silver Star,or Bronze Star for level transition times
-// 
 // Fill out Levels!
 // 
 // High Score Screen
 //		- needs timer integration once timer functionality is implemented
-//		- needs file io
-//		- add star functionality after score tracking task complete
 // 
 // Win Screen logo for middle of win screen
 // 3bytes logo for startup routine
@@ -35,6 +29,7 @@
 // Door Blocks and Door Switch Tiles
 // Tilable Background Sprite for empty space?
 // screenshot functionality
+// Score Tracking UI - Gold Star, Silver Star,or Bronze Star for level transition times
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -45,6 +40,7 @@
 // C - Cheat Code Skip (TODO)
 // CTRL + ENTER and MINUS - Enable Debug Mode
 // N (While Debug Enabled) - Next Level
+// H (While Debug Enabled) - Reset High Scores
 
 // Created by Tyler Clardy in June 2025
 // Thanks to oneLoneCoder for the PixelGameEngine and SoundWaveEngine, as well as the inspiration for the start of the project. You rock, Javid!
@@ -1229,6 +1225,12 @@ public:
 	// Variables for checking success on file io operations
 	int iOptionsSave = 0;
 	int iOptionsLoad = 0;
+	int iHighScoreSave = 0;
+	int iHighScoreLoad = 0;
+
+	// vector storing High Scores
+	std::vector<int> vHighScore_Moves = {0};
+	std::vector<float> vHighScore_Time = {0};
 
 	// Flag for Debug Testing Mode
 	bool bDebugMode = false;
@@ -1381,6 +1383,195 @@ public:
 		return -1;
 	}
 
+	// Function for loading High Scores
+	// Populates the vHighScore_Moves and vHighScore_Time vectors with data
+	int LoadHighScores() // returns -1 for failure, or 1 for success
+	{
+		// Open Streams
+		std::ifstream inHighScores_Moves("HighScores_Moves.txt");
+		std::ifstream inHighScores_Time("HighScores_Time.txt");
+
+		// Check for streams opening correctly
+		if (inHighScores_Moves.is_open() && inHighScores_Time.is_open())
+		{
+			// Clear vectors
+			vHighScore_Moves.clear();
+			vHighScore_Time.clear();
+
+			std::string sCurLine;
+			int iLineCount = 0;
+
+			// read move data into vector
+			while (std::getline(inHighScores_Moves, sCurLine))
+			{
+				vHighScore_Moves.push_back(std::stoi(sCurLine));
+			}
+
+			iLineCount = 0;
+
+			// read time data into vector
+			while (std::getline(inHighScores_Time, sCurLine))
+			{
+				vHighScore_Time.push_back(std::stof(sCurLine));
+			}
+
+			// close streams
+			inHighScores_Moves.close();
+			inHighScores_Time.close();
+
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+
+		return -1;
+	}
+
+	// Checks if new Time score is better or worse than saved one, then saves to vector if better
+	void internalHighScoreUtility_Moves()
+	{
+		if (vHighScore_Moves[0] > iNumOfMoves_1 && iNumOfMoves_1 != 0) vHighScore_Moves[0] = iNumOfMoves_1;
+		if (vHighScore_Moves[1] > iNumOfMoves_2 && iNumOfMoves_2 != 0) vHighScore_Moves[1] = iNumOfMoves_2;
+		if (vHighScore_Moves[2] > iNumOfMoves_3 && iNumOfMoves_3 != 0) vHighScore_Moves[2] = iNumOfMoves_3;
+		if (vHighScore_Moves[3] > iNumOfMoves_4 && iNumOfMoves_4 != 0) vHighScore_Moves[3] = iNumOfMoves_4;
+		if (vHighScore_Moves[4] > iNumOfMoves_5 && iNumOfMoves_5 != 0) vHighScore_Moves[4] = iNumOfMoves_5;
+		if (vHighScore_Moves[5] > iNumOfMoves_6 && iNumOfMoves_6 != 0) vHighScore_Moves[5] = iNumOfMoves_6;
+		if (vHighScore_Moves[6] > iNumOfMoves_7 && iNumOfMoves_7 != 0) vHighScore_Moves[6] = iNumOfMoves_7;
+		if (vHighScore_Moves[7] > iNumOfMoves_8 && iNumOfMoves_8 != 0) vHighScore_Moves[7] = iNumOfMoves_8;
+		if (vHighScore_Moves[8] > iNumOfMoves_9 && iNumOfMoves_9 != 0) vHighScore_Moves[8] = iNumOfMoves_9;
+		if (vHighScore_Moves[9] > iNumOfMoves_10 && iNumOfMoves_10 != 0) vHighScore_Moves[9] = iNumOfMoves_10;
+		if (vHighScore_Moves[10] > iNumOfMoves_11 && iNumOfMoves_11 != 0) vHighScore_Moves[10] = iNumOfMoves_11;
+		if (vHighScore_Moves[11] > iNumOfMoves_12 && iNumOfMoves_12 != 0) vHighScore_Moves[11] = iNumOfMoves_12;
+		if (vHighScore_Moves[12] > iNumOfMoves_13 && iNumOfMoves_13 != 0) vHighScore_Moves[12] = iNumOfMoves_13;
+		if (vHighScore_Moves[13] > iNumOfMoves_14 && iNumOfMoves_14 != 0) vHighScore_Moves[13] = iNumOfMoves_14;
+		if (vHighScore_Moves[14] > iNumOfMoves_15 && iNumOfMoves_15 != 0) vHighScore_Moves[14] = iNumOfMoves_15;
+		if (vHighScore_Moves[15] > iNumOfMoves_16 && iNumOfMoves_16 != 0) vHighScore_Moves[15] = iNumOfMoves_16;
+		if (vHighScore_Moves[16] > iNumOfMoves_17 && iNumOfMoves_17 != 0) vHighScore_Moves[16] = iNumOfMoves_17;
+		if (vHighScore_Moves[17] > iNumOfMoves_18 && iNumOfMoves_18 != 0) vHighScore_Moves[17] = iNumOfMoves_18;
+		if (vHighScore_Moves[18] > iNumOfMoves_19 && iNumOfMoves_19 != 0) vHighScore_Moves[18] = iNumOfMoves_19;
+		if (vHighScore_Moves[19] > iNumOfMoves_20 && iNumOfMoves_20 != 0) vHighScore_Moves[19] = iNumOfMoves_20;
+		if (vHighScore_Moves[20] > iNumOfMoves_21 && iNumOfMoves_21 != 0) vHighScore_Moves[20] = iNumOfMoves_21;
+		if (vHighScore_Moves[21] > iNumOfMoves_22 && iNumOfMoves_22 != 0) vHighScore_Moves[21] = iNumOfMoves_22;
+		if (vHighScore_Moves[22] > iNumOfMoves_23 && iNumOfMoves_23 != 0) vHighScore_Moves[22] = iNumOfMoves_23;
+		if (vHighScore_Moves[23] > iNumOfMoves_24 && iNumOfMoves_24 != 0) vHighScore_Moves[23] = iNumOfMoves_24;
+		if (vHighScore_Moves[24] > iNumOfMoves_25 && iNumOfMoves_25 != 0) vHighScore_Moves[24] = iNumOfMoves_25;
+		if (vHighScore_Moves[25] > iNumOfMoves_26 && iNumOfMoves_26 != 0) vHighScore_Moves[25] = iNumOfMoves_26;
+		if (vHighScore_Moves[26] > iNumOfMoves_27 && iNumOfMoves_27 != 0) vHighScore_Moves[26] = iNumOfMoves_27;
+		if (vHighScore_Moves[27] > iNumOfMoves_28 && iNumOfMoves_28 != 0) vHighScore_Moves[27] = iNumOfMoves_28;
+		if (vHighScore_Moves[28] > iNumOfMoves_29 && iNumOfMoves_29 != 0) vHighScore_Moves[28] = iNumOfMoves_29;
+		if (vHighScore_Moves[29] > iNumOfMoves_30 && iNumOfMoves_30 != 0) vHighScore_Moves[29] = iNumOfMoves_30;
+		if (vHighScore_Moves[30] > iNumOfMoves_31 && iNumOfMoves_31 != 0) vHighScore_Moves[30] = iNumOfMoves_31;
+		if (vHighScore_Moves[31] > iNumOfMoves_32 && iNumOfMoves_32 != 0) vHighScore_Moves[31] = iNumOfMoves_32;
+		if (vHighScore_Moves[32] > iNumOfMoves_33 && iNumOfMoves_33 != 0) vHighScore_Moves[32] = iNumOfMoves_33;
+		if (vHighScore_Moves[33] > iNumOfMoves_34 && iNumOfMoves_34 != 0) vHighScore_Moves[33] = iNumOfMoves_34;
+		if (vHighScore_Moves[34] > iNumOfMoves_35 && iNumOfMoves_35 != 0) vHighScore_Moves[34] = iNumOfMoves_35;
+		if (vHighScore_Moves[35] > iNumOfMoves_36 && iNumOfMoves_36 != 0) vHighScore_Moves[35] = iNumOfMoves_36;
+		if (vHighScore_Moves[36] > iNumOfMoves_37 && iNumOfMoves_37 != 0) vHighScore_Moves[36] = iNumOfMoves_37;
+		if (vHighScore_Moves[37] > iNumOfMoves_38 && iNumOfMoves_38 != 0) vHighScore_Moves[37] = iNumOfMoves_38;
+		if (vHighScore_Moves[38] > iNumOfMoves_39 && iNumOfMoves_39 != 0) vHighScore_Moves[38] = iNumOfMoves_39;
+		if (vHighScore_Moves[39] > iNumOfMoves_40 && iNumOfMoves_40 != 0) vHighScore_Moves[39] = iNumOfMoves_40;
+		if (vHighScore_Moves[40] > iNumOfMoves_41 && iNumOfMoves_41 != 0) vHighScore_Moves[40] = iNumOfMoves_41;
+		if (vHighScore_Moves[41] > iNumOfMoves_42 && iNumOfMoves_42 != 0) vHighScore_Moves[41] = iNumOfMoves_42;
+		if (vHighScore_Moves[42] > iNumOfMoves_43 && iNumOfMoves_43 != 0) vHighScore_Moves[42] = iNumOfMoves_43;
+		if (vHighScore_Moves[43] > iNumOfMoves_44 && iNumOfMoves_44 != 0) vHighScore_Moves[43] = iNumOfMoves_44;
+		if (vHighScore_Moves[44] > iNumOfMoves_45 && iNumOfMoves_45 != 0) vHighScore_Moves[44] = iNumOfMoves_45;
+		if (vHighScore_Moves[45] > iNumOfMoves_46 && iNumOfMoves_46 != 0) vHighScore_Moves[45] = iNumOfMoves_46;
+		if (vHighScore_Moves[46] > iNumOfMoves_47 && iNumOfMoves_47 != 0) vHighScore_Moves[46] = iNumOfMoves_47;
+		if (vHighScore_Moves[47] > iNumOfMoves_48 && iNumOfMoves_48 != 0) vHighScore_Moves[47] = iNumOfMoves_48;
+		if (vHighScore_Moves[48] > iNumOfMoves_49 && iNumOfMoves_49 != 0) vHighScore_Moves[48] = iNumOfMoves_49;
+		if (vHighScore_Moves[49] > iNumOfMoves_50 && iNumOfMoves_50 != 0) vHighScore_Moves[49] = iNumOfMoves_50;
+	}
+
+	// Checks if new Time score is better or worse than saved one, then saves to vector if better
+	void internalHighScoreUtility_Time()
+	{
+		if (vHighScore_Time[0] > iTime_1 && iTime_1 != 0) vHighScore_Time[0] = iTime_1;
+		if (vHighScore_Time[1] > iTime_2 && iTime_2 != 0) vHighScore_Time[1] = iTime_2;
+		if (vHighScore_Time[2] > iTime_3 && iTime_3 != 0) vHighScore_Time[2] = iTime_3;
+		if (vHighScore_Time[3] > iTime_4 && iTime_4 != 0) vHighScore_Time[3] = iTime_4;
+		if (vHighScore_Time[4] > iTime_5 && iTime_5 != 0) vHighScore_Time[4] = iTime_5;
+		if (vHighScore_Time[5] > iTime_6 && iTime_6 != 0) vHighScore_Time[5] = iTime_6;
+		if (vHighScore_Time[6] > iTime_7 && iTime_7 != 0) vHighScore_Time[6] = iTime_7;
+		if (vHighScore_Time[7] > iTime_8 && iTime_8 != 0) vHighScore_Time[7] = iTime_8;
+		if (vHighScore_Time[8] > iTime_9 && iTime_9 != 0) vHighScore_Time[8] = iTime_9;
+		if (vHighScore_Time[9] > iTime_10 && iTime_10 != 0) vHighScore_Time[9] = iTime_10;
+		if (vHighScore_Time[10] > iTime_11 && iTime_11 != 0) vHighScore_Time[10] = iTime_11;
+		if (vHighScore_Time[11] > iTime_12 && iTime_12 != 0) vHighScore_Time[11] = iTime_12;
+		if (vHighScore_Time[12] > iTime_13 && iTime_13 != 0) vHighScore_Time[12] = iTime_13;
+		if (vHighScore_Time[13] > iTime_14 && iTime_14 != 0) vHighScore_Time[13] = iTime_14;
+		if (vHighScore_Time[14] > iTime_15 && iTime_15 != 0) vHighScore_Time[14] = iTime_15;
+		if (vHighScore_Time[15] > iTime_16 && iTime_16 != 0) vHighScore_Time[15] = iTime_16;
+		if (vHighScore_Time[16] > iTime_17 && iTime_17 != 0) vHighScore_Time[16] = iTime_17;
+		if (vHighScore_Time[17] > iTime_18 && iTime_18 != 0) vHighScore_Time[17] = iTime_18;
+		if (vHighScore_Time[18] > iTime_19 && iTime_19 != 0) vHighScore_Time[18] = iTime_19;
+		if (vHighScore_Time[19] > iTime_20 && iTime_20 != 0) vHighScore_Time[19] = iTime_20;
+		if (vHighScore_Time[20] > iTime_21 && iTime_21 != 0) vHighScore_Time[20] = iTime_21;
+		if (vHighScore_Time[21] > iTime_22 && iTime_22 != 0) vHighScore_Time[21] = iTime_22;
+		if (vHighScore_Time[22] > iTime_23 && iTime_23 != 0) vHighScore_Time[22] = iTime_23;
+		if (vHighScore_Time[23] > iTime_24 && iTime_24 != 0) vHighScore_Time[23] = iTime_24;
+		if (vHighScore_Time[24] > iTime_25 && iTime_25 != 0) vHighScore_Time[24] = iTime_25;
+		if (vHighScore_Time[25] > iTime_26 && iTime_26 != 0) vHighScore_Time[25] = iTime_26;
+		if (vHighScore_Time[26] > iTime_27 && iTime_27 != 0) vHighScore_Time[26] = iTime_27;
+		if (vHighScore_Time[27] > iTime_28 && iTime_28 != 0) vHighScore_Time[27] = iTime_28;
+		if (vHighScore_Time[28] > iTime_29 && iTime_29 != 0) vHighScore_Time[28] = iTime_29;
+		if (vHighScore_Time[29] > iTime_30 && iTime_30 != 0) vHighScore_Time[29] = iTime_30;
+		if (vHighScore_Time[30] > iTime_31 && iTime_31 != 0) vHighScore_Time[30] = iTime_31;
+		if (vHighScore_Time[31] > iTime_32 && iTime_32 != 0) vHighScore_Time[31] = iTime_32;
+		if (vHighScore_Time[32] > iTime_33 && iTime_33 != 0) vHighScore_Time[32] = iTime_33;
+		if (vHighScore_Time[33] > iTime_34 && iTime_34 != 0) vHighScore_Time[33] = iTime_34;
+		if (vHighScore_Time[34] > iTime_35 && iTime_35 != 0) vHighScore_Time[34] = iTime_35;
+		if (vHighScore_Time[35] > iTime_36 && iTime_36 != 0) vHighScore_Time[35] = iTime_36;
+		if (vHighScore_Time[36] > iTime_37 && iTime_37 != 0) vHighScore_Time[36] = iTime_37;
+		if (vHighScore_Time[37] > iTime_38 && iTime_38 != 0) vHighScore_Time[37] = iTime_38;
+		if (vHighScore_Time[38] > iTime_39 && iTime_39 != 0) vHighScore_Time[38] = iTime_39;
+		if (vHighScore_Time[39] > iTime_40 && iTime_40 != 0) vHighScore_Time[39] = iTime_40;
+		if (vHighScore_Time[40] > iTime_41 && iTime_41 != 0) vHighScore_Time[40] = iTime_41;
+		if (vHighScore_Time[41] > iTime_42 && iTime_42 != 0) vHighScore_Time[41] = iTime_42;
+		if (vHighScore_Time[42] > iTime_43 && iTime_43 != 0) vHighScore_Time[42] = iTime_43;
+		if (vHighScore_Time[43] > iTime_44 && iTime_44 != 0) vHighScore_Time[43] = iTime_44;
+		if (vHighScore_Time[44] > iTime_45 && iTime_45 != 0) vHighScore_Time[44] = iTime_45;
+		if (vHighScore_Time[45] > iTime_46 && iTime_46 != 0) vHighScore_Time[45] = iTime_46;
+		if (vHighScore_Time[46] > iTime_47 && iTime_47 != 0) vHighScore_Time[46] = iTime_47;
+		if (vHighScore_Time[47] > iTime_48 && iTime_48 != 0) vHighScore_Time[47] = iTime_48;
+		if (vHighScore_Time[48] > iTime_49 && iTime_49 != 0) vHighScore_Time[48] = iTime_49;
+		if (vHighScore_Time[49] > iTime_50 && iTime_50 != 0) vHighScore_Time[49] = iTime_50;
+	}
+
+	// Function for saving High Scores
+	int SaveHighScores() // returns -1 for failure, or 1 for success
+	{
+		std::ofstream outHighScores_Moves("HighScores_Moves.txt");
+		std::ofstream outHighScores_Time("HighScores_Time.txt");
+		outHighScores_Moves.clear();
+		outHighScores_Time.clear();
+
+		if (outHighScores_Moves.is_open() && outHighScores_Time.is_open())
+		{
+			for (int i = 0; i < vHighScore_Moves.size(); i++)
+			{
+				outHighScores_Moves << vHighScore_Moves[i] << "\n";
+			}
+
+			for (int i = 0; i < vHighScore_Time.size(); i++)
+			{
+				outHighScores_Time << vHighScore_Time[i] << "\n";
+			}
+
+			outHighScores_Moves.close();
+			outHighScores_Time.close();
+
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+
+		return -1;
+	}
+
 	// Function to load all audio into memory
 	void LoadAllAudio()
 	{
@@ -1469,9 +1660,223 @@ public:
 		vAllLevels.push_back("End");
 	}
 
+	// utility function to reset move and time tracking var for a single level
+	void ResetLevelScore()
+	{
+		switch (iCurLevel)
+		{
+		case 1:
+			iNumOfMoves_1 = 0;
+			iTime_1 = 0;
+			break;
+		case 2:
+			iNumOfMoves_2 = 0;
+			iTime_2 = 0;
+			break;
+		case 3:
+			iNumOfMoves_3 = 0;
+			iTime_3 = 0;
+			break;
+		case 4:
+			iNumOfMoves_4 = 0;
+			iTime_4 = 0;
+			break;
+		case 5:
+			iNumOfMoves_5 = 0;
+			iTime_5 = 0;
+			break;
+		case 6:
+			iNumOfMoves_6 = 0;
+			iTime_6 = 0;
+			break;
+		case 7:
+			iNumOfMoves_7 = 0;
+			iTime_7 = 0;
+			break;
+		case 8:
+			iNumOfMoves_8 = 0;
+			iTime_8 = 0;
+			break;
+		case 9:
+			iNumOfMoves_9 = 0;
+			iTime_9 = 0;
+			break;
+		case 10:
+			iNumOfMoves_10 = 0;
+			iTime_10 = 0;
+			break;
+		case 11:
+			iNumOfMoves_11 = 0;
+			iTime_11 = 0;
+			break;
+		case 12:
+			iNumOfMoves_12 = 0;
+			iTime_12 = 0;
+			break;
+		case 13:
+			iNumOfMoves_13 = 0;
+			iTime_13 = 0;
+			break;
+		case 14:
+			iNumOfMoves_14 = 0;
+			iTime_14 = 0;
+			break;
+		case 15:
+			iNumOfMoves_15 = 0;
+			iTime_15 = 0;
+			break;
+		case 16:
+			iNumOfMoves_16 = 0;
+			iTime_16 = 0;
+			break;
+		case 17:
+			iNumOfMoves_17 = 0;
+			iTime_17 = 0;
+			break;
+		case 18:
+			iNumOfMoves_18 = 0;
+			iTime_18 = 0;
+			break;
+		case 19:
+			iNumOfMoves_19 = 0;
+			iTime_19 = 0;
+			break;
+		case 20:
+			iNumOfMoves_20 = 0;
+			iTime_20 = 0;
+			break;
+		case 21:
+			iNumOfMoves_21 = 0;
+			iTime_21 = 0;
+			break;
+		case 22:
+			iNumOfMoves_22 = 0;
+			iTime_22 = 0;
+			break;
+		case 23:
+			iNumOfMoves_23 = 0;
+			iTime_23 = 0;
+			break;
+		case 24:
+			iNumOfMoves_24 = 0;
+			iTime_24 = 0;
+			break;
+		case 25:
+			iNumOfMoves_25 = 0;
+			iTime_25 = 0;
+			break;
+		case 26:
+			iNumOfMoves_26 = 0;
+			iTime_26 = 0;
+			break;
+		case 27:
+			iNumOfMoves_27 = 0;
+			iTime_27 = 0;
+			break;
+		case 28:
+			iNumOfMoves_28 = 0;
+			iTime_28 = 0;
+			break;
+		case 29:
+			iNumOfMoves_29 = 0;
+			iTime_29 = 0;
+			break;
+		case 30:
+			iNumOfMoves_30 = 0;
+			iTime_30 = 0;
+			break;
+		case 31:
+			iNumOfMoves_31 = 0;
+			iTime_31 = 0;
+			break;
+		case 32:
+			iNumOfMoves_32 = 0;
+			iTime_32 = 0;
+			break;
+		case 33:
+			iNumOfMoves_33 = 0;
+			iTime_33 = 0;
+			break;
+		case 34:
+			iNumOfMoves_34 = 0;
+			iTime_34 = 0;
+			break;
+		case 35:
+			iNumOfMoves_35 = 0;
+			iTime_35 = 0;
+			break;
+		case 36:
+			iNumOfMoves_36 = 0;
+			iTime_36 = 0;
+			break;
+		case 37:
+			iNumOfMoves_37 = 0;
+			iTime_37 = 0;
+			break;
+		case 38:
+			iNumOfMoves_38 = 0;
+			iTime_38 = 0;
+			break;
+		case 39:
+			iNumOfMoves_39 = 0;
+			iTime_39 = 0;
+			break;
+		case 40:
+			iNumOfMoves_40 = 0;
+			iTime_40 = 0;
+			break;
+		case 41:
+			iNumOfMoves_41 = 0;
+			iTime_41 = 0;
+			break;
+		case 42:
+			iNumOfMoves_42 = 0;
+			iTime_42 = 0;
+			break;
+		case 43:
+			iNumOfMoves_43 = 0;
+			iTime_43 = 0;
+			break;
+		case 44:
+			iNumOfMoves_44 = 0;
+			iTime_44 = 0;
+			break;
+		case 45:
+			iNumOfMoves_45 = 0;
+			iTime_45 = 0;
+			break;
+		case 46:
+			iNumOfMoves_46 = 0;
+			iTime_46 = 0;
+			break;
+		case 47:
+			iNumOfMoves_47 = 0;
+			iTime_47 = 0;
+			break;
+		case 48:
+			iNumOfMoves_48 = 0;
+			iTime_48 = 0;
+			break;
+		case 49:
+			iNumOfMoves_49 = 0;
+			iTime_49 = 0;
+			break;
+		case 50:
+			iNumOfMoves_50 = 0;
+			iTime_50 = 0;
+			break;
+		default:
+			break;
+		}
+
+		internalHighScoreUtility_Moves();
+		internalHighScoreUtility_Time();
+	}
+
 	// Function for loading a level from string template
 	void LoadLevel(int n, bool bWasRestart)
 	{
+
 		// Clear existing level data
 		vLevel.clear();
 		vGoals.clear();
@@ -1603,7 +2008,6 @@ public:
 	// Called Every Frame while the Main Menu system is open
 	void MainMenu()
 	{
-
 		iLevelSet = -1;
 
 		switch (iCurDisplay)
@@ -1645,119 +2049,119 @@ public:
 			{
 			case 1:
 				DrawString(20, 33, "Level 1:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_1) + " Time: ", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[0]) + " Time: ", olc::WHITE);
 				DrawString(20, 53, "Level 2:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_2) + " Time: ", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[1]) + " Time: ", olc::WHITE);
 				DrawString(20, 73, "Level 3:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_3) + " Time: ", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[2]) + " Time: ", olc::WHITE);
 				DrawString(20, 93, "Level 4:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_4) + " Time: ", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[3]) + " Time: ", olc::WHITE);
 				DrawString(20, 113, "Level 5:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_5) + " Time: ", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[4]) + " Time: ", olc::WHITE);
 				DrawString(20, 133, "Level 6:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_6) + " Time: ", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[5]) + " Time: ", olc::WHITE);
 				DrawString(20, 153, "Level 7:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_7) + " Time: ", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[6]) + " Time: ", olc::WHITE);
 				break;
 			case 2:
 				DrawString(20, 33, "Level 8:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_8) + " Time: ", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[7]) + " Time: ", olc::WHITE);
 				DrawString(20, 53, "Level 9:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_9) + " Time: ", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[8]) + " Time: ", olc::WHITE);
 				DrawString(20, 73, "Level 10:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_10) + " Time: ", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[9]) + " Time: ", olc::WHITE);
 				DrawString(20, 93, "Level 11:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_11) + " Time: ", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[10]) + " Time: ", olc::WHITE);
 				DrawString(20, 113, "Level 12:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_12) + " Time: ", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[11]) + " Time: ", olc::WHITE);
 				DrawString(20, 133, "Level 13:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_13) + " Time: ", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[12]) + " Time: ", olc::WHITE);
 				DrawString(20, 153, "Level 14:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_14) + " Time: ", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[13]) + " Time: ", olc::WHITE);
 				break;
 			case 3:
 				DrawString(20, 33, "Level 15:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_15) + " Time: ", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[14]) + " Time: ", olc::WHITE);
 				DrawString(20, 53, "Level 16:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_16) + " Time: ", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[15]) + " Time: ", olc::WHITE);
 				DrawString(20, 73, "Level 17:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_17) + " Time: ", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[16]) + " Time: ", olc::WHITE);
 				DrawString(20, 93, "Level 18:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_18) + " Time: ", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[17]) + " Time: ", olc::WHITE);
 				DrawString(20, 113, "Level 19:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_19) + " Time: ", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[18]) + " Time: ", olc::WHITE);
 				DrawString(20, 133, "Level 20:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_20) + " Time: ", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[19]) + " Time: ", olc::WHITE);
 				DrawString(20, 153, "Level 21:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_21) + " Time: ", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[20]) + " Time: ", olc::WHITE);
 				break;
 			case 4:
 				DrawString(20, 33, "Level 22:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_22) + " Time: ", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[21]) + " Time: ", olc::WHITE);
 				DrawString(20, 53, "Level 23:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_23) + " Time: ", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[22]) + " Time: ", olc::WHITE);
 				DrawString(20, 73, "Level 24:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_24) + " Time: ", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[23]) + " Time: ", olc::WHITE);
 				DrawString(20, 93, "Level 25:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_25) + " Time: ", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[24]) + " Time: ", olc::WHITE);
 				DrawString(20, 113, "Level 26:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_26) + " Time: ", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[25]) + " Time: ", olc::WHITE);
 				DrawString(20, 133, "Level 27:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_27) + " Time: ", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[26]) + " Time: ", olc::WHITE);
 				DrawString(20, 153, "Level 28:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_28) + " Time: ", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[27]) + " Time: ", olc::WHITE);
 				break;
 			case 5:
 				DrawString(20, 33, "Level 29:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_29) + " Time: ", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[28]) + " Time: ", olc::WHITE);
 				DrawString(20, 53, "Level 30:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_30) + " Time: ", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[29]) + " Time: ", olc::WHITE);
 				DrawString(20, 73, "Level 31:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_31) + " Time: ", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[30]) + " Time: ", olc::WHITE);
 				DrawString(20, 93, "Level 32:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_32) + " Time: ", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[31]) + " Time: ", olc::WHITE);
 				DrawString(20, 113, "Level 33:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_33) + " Time: ", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[32]) + " Time: ", olc::WHITE);
 				DrawString(20, 133, "Level 34:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_34) + " Time: ", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[33]) + " Time: ", olc::WHITE);
 				DrawString(20, 153, "Level 35:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_35) + " Time: ", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[34]) + " Time: ", olc::WHITE);
 				break;
 			case 6:
 				DrawString(20, 33, "Level 36:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_36) + " Time: ", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[35]) + " Time: ", olc::WHITE);
 				DrawString(20, 53, "Level 37:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_37) + " Time: ", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[36]) + " Time: ", olc::WHITE);
 				DrawString(20, 73, "Level 38:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_38) + " Time: ", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[37]) + " Time: ", olc::WHITE);
 				DrawString(20, 93, "Level 39:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_39) + " Time: ", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[38]) + " Time: ", olc::WHITE);
 				DrawString(20, 113, "Level 40:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_40) + " Time: ", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[39]) + " Time: ", olc::WHITE);
 				DrawString(20, 133, "Level 41:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_41) + " Time: ", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[40]) + " Time: ", olc::WHITE);
 				DrawString(20, 153, "Level 42:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_42) + " Time: ", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[41]) + " Time: ", olc::WHITE);
 				break;
 			case 7:
 				DrawString(20, 33, "Level 43:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_43) + " Time: ", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[42]) + " Time: ", olc::WHITE);
 				DrawString(20, 53, "Level 44:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(iNumOfMoves_44) + " Time: ", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[43]) + " Time: ", olc::WHITE);
 				DrawString(20, 73, "Level 45:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(iNumOfMoves_45) + " Time: ", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[44]) + " Time: ", olc::WHITE);
 				DrawString(20, 93, "Level 46:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(iNumOfMoves_46) + " Time: ", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[45]) + " Time: ", olc::WHITE);
 				DrawString(20, 113, "Level 47:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(iNumOfMoves_47) + " Time: ", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[46]) + " Time: ", olc::WHITE);
 				DrawString(20, 133, "Level 48:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(iNumOfMoves_48) + " Time: ", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[47]) + " Time: ", olc::WHITE);
 				DrawString(20, 153, "Level 49:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(iNumOfMoves_49) + " Time: ", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[48]) + " Time: ", olc::WHITE);
 				break;
 			case 8:
 				DrawString(20, 33, "Level 50:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(iNumOfMoves_50) + " Time: ", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[49]) + " Time: ", olc::WHITE);
 				break;
 			default:
 				break;
@@ -1908,6 +2312,9 @@ public:
 			// User Input:
 			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)  // Close Game
 			{
+				internalHighScoreUtility_Time();
+				internalHighScoreUtility_Moves();
+				SaveHighScores();
 				this->~Puzzle();
 			}
 			if (GetKey(olc::Key::H).bPressed)								    	// Open High Score Menu
@@ -2039,6 +2446,9 @@ public:
 			// Load Options
 			iOptionsLoad = LoadOptions();
 
+			// Load High Scores
+			iHighScoreLoad = LoadHighScores();
+
 			return true;
 		}
 #pragma endregion
@@ -2083,6 +2493,7 @@ public:
 					}
 					if (GetKey(olc::Key::R).bPressed)
 					{
+						ResetLevelScore();
 						LoadLevel(iCurLevel, true);
 					}
 					if (GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
@@ -2692,6 +3103,10 @@ public:
 				// Win Tracking
 				if (nGoals >= vGoals.size() && iCurLevel != -1)
 				{
+					// Update High Score vectors
+					internalHighScoreUtility_Moves();
+					internalHighScoreUtility_Time();
+
 					iCurLevel++;
 					LoadLevel(iCurLevel, false);
 				}
@@ -2699,6 +3114,19 @@ public:
 				{
 					iCurLevel++;
 					LoadLevel(iCurLevel, false);
+				}
+				else if (bDebugMode && GetKey(olc::Key::H).bPressed) // debug mode score reset
+				{
+					for (int i = 0; i < vHighScore_Moves.size(); i++)
+					{
+						vHighScore_Moves[i] = 1000;
+					}
+					for (int i = 0; i < vHighScore_Time.size(); i++)
+					{
+						vHighScore_Time[i] = 10000;
+					}
+
+					int iSave = SaveHighScores();
 				}
 
 				return true;
@@ -2728,6 +3156,9 @@ public:
 					audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
 					bPaused = false;														// Reset Pause Flags
 					bPauseJinglePlayed = false;
+
+					ResetLevelScore();														// Reset Score for current level
+					SaveHighScores();														// Save HighScores
 
 					bMainMenu = true;														// Set Main Menu Flag
 					LoadLevel(52, false);
