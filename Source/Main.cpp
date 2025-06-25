@@ -14,8 +14,8 @@
 // 
 // Fill out Levels!
 // Win Screen logo for middle of win screen
-// 3bytes logo for startup routine
 // Update Pause Screen UI to match other menus
+// update level codes
 
 // TODO_B wish list
 // animations for level transition
@@ -1203,6 +1203,8 @@ public:
 
 	// Graphics
 	olc::Renderable gfxTiles;
+	olc::Renderable gfxWin;
+	olc::Renderable gfxSplash;
 
 	// Variable tracking which level the player is on
 	int iCurLevel = 1;
@@ -2587,6 +2589,8 @@ public:
 
 		// Graphics Loading
 		gfxTiles.Load("Graphics//TileSheet.png");
+		gfxSplash.Load("Graphics//SplashScreen.png");
+		gfxWin.Load("Graphics//TileSheet.png");
 
 		// Level Loading
 		LoadAllLevels();																// Load ALL levels into memory
@@ -2629,6 +2633,9 @@ public:
 				// Set Flag
 				bDoStartUpJingle = false;
 			}
+
+			// Draw Splash Screen
+			DrawSprite(olc::vi2d(0, 0), gfxSplash.Sprite());
 
 			// Wait for StartUp SFX to finish, then set flags to stop Start Up Routine
 			fTimer += fElapsedTime;
@@ -3759,6 +3766,7 @@ public:
 int main()
 {
 	Puzzle demo;
+	// 1024 x 960
 	if (demo.Construct(256, 240, 4, 4))
 		demo.Start();
 	return 0;
