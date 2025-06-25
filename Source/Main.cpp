@@ -13,8 +13,6 @@
 // TODO_A
 // 
 // Fill out Levels!
-// Win Screen logo for middle of win screen
-// Update Pause Screen UI to match other menus
 // update level codes
 
 // TODO_B wish list
@@ -1206,6 +1204,9 @@ public:
 	olc::Renderable gfxWin;
 	olc::Renderable gfxSplash;
 
+	// Flag for enabling and disabling input
+	bool bEnableInput = true;
+
 	// Variable tracking which level the player is on
 	int iCurLevel = 1;
 
@@ -1229,6 +1230,9 @@ public:
 	// Variables storing total High Score Values for display in main menu
 	float fTotal_HS = 0;
 	int iTotal_HS = 0;
+
+	// Time Variable for Win Screen 
+	float fTime_WinScreen = 0.0f;
 
 	// vector storing High Scores
 	std::vector<int> vHighScore_Moves = {0};
@@ -2590,10 +2594,10 @@ public:
 		// Graphics Loading
 		gfxTiles.Load("Graphics//TileSheet.png");
 		gfxSplash.Load("Graphics//SplashScreen.png");
-		gfxWin.Load("Graphics//TileSheet.png");
+		gfxWin.Load("Graphics//WinScreen.png"); 
 
 		// Level Loading
-		LoadAllLevels();																// Load ALL levels into memory
+		LoadAllLevels();
 
 		// Load Blank Menu Level
 		LoadLevel(iCurLevel, false);
@@ -2674,36 +2678,36 @@ public:
 				int iDirPush = NORTH;
 				if (iCurLevel != -1) // disable most input on end screen
 				{
-					if (GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
+					if (bEnableInput && GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
 					{
 						iDirPush = 0;
 						bPushing = true;
 					}
-					if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
+					if (bEnableInput && GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
 					{
 						iDirPush = SOUTH;
 						bPushing = true;
 					}
-					if (GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
+					if (bEnableInput && GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
 					{
 						iDirPush = WEST;
 						bPushing = true;
 					}
-					if (GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
+					if (bEnableInput && GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
 					{
 						iDirPush = EAST;
 						bPushing = true;
 					}
-					if (GetKey(olc::Key::R).bPressed)
+					if (bEnableInput && GetKey(olc::Key::R).bPressed)
 					{
 						ResetLevelScore();
 						LoadLevel(iCurLevel, true);
 					}
-					if (GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
+					if (bEnableInput && GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
 					{
 						bPaused = true;	// Pause Game
 					}
-					if (GetKey(olc::Key::CTRL).bHeld && GetKey(olc::Key::ENTER).bPressed && GetKey(olc::Key::MINUS).bPressed) // DebugMode
+					if (bEnableInput && GetKey(olc::Key::CTRL).bHeld && GetKey(olc::Key::ENTER).bPressed && GetKey(olc::Key::MINUS).bPressed) // DebugMode
 					{
 						if (bDebugMode)
 						{
@@ -2717,8 +2721,10 @@ public:
 				}
 				else
 				{
-					if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed) // Win Screen ESC
+					// Win Screen ESC
+					if (bEnableInput && GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed) 
 					{
+						fTime_WinScreen = 0.0f;
 						audioEngine_Music.SetOutputVolume(fMusicVolume);	// Unmute Background Music
 						bMainMenu = true;									// Set Flag
 
@@ -3443,11 +3449,21 @@ public:
 				else				// UI for win conditions
 				{
 					// Win Screen Stuff
-					iLevelSet = -1;
-					audioEngine_Music.SetOutputVolume(0.0f);
-					DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", olc::WHITE);
-					DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
-					DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC for Main Menu", olc::WHITE);
+					fTime_WinScreen += fElapsedTime;
+					bEnableInput = false;
+					if (fTime_WinScreen < 4.0f) // after 4 seconds remove splash, draw UI, and re-enable input
+					{
+						DrawSprite(olc::vi2d(0, 0), gfxWin.Sprite());
+					}
+					else
+					{
+						bEnableInput = true;
+						iLevelSet = -1;
+						audioEngine_Music.SetOutputVolume(0.0f);
+						DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", olc::WHITE);
+						DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
+						DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC for Main Menu", olc::WHITE);
+					}
 				}
 
 				// Special UI for Displaying Checkpoint Codes that can be inputted on Main Menu Level Select screen
@@ -3472,12 +3488,12 @@ public:
 					iCurLevel++;
 					LoadLevel(iCurLevel, false);
 				}
-				else if (bDebugMode && GetKey(olc::Key::N).bPressed) // Debug Mode Skip
+				else if (bEnableInput && bDebugMode && GetKey(olc::Key::N).bPressed) // Debug Mode Skip
 				{
 					iCurLevel++;
 					LoadLevel(iCurLevel, false);
 				}
-				else if (bDebugMode && GetKey(olc::Key::H).bPressed) // debug mode score reset
+				else if (bEnableInput && bDebugMode && GetKey(olc::Key::H).bPressed) // debug mode score reset
 				{
 					for (int i = 0; i < vHighScore_Moves.size(); i++)
 					{
