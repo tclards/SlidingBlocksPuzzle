@@ -17,7 +17,8 @@
 // Teleport Tile 
 //		- SFX
 //		- Graphics
-// Door Blocks and Door Switch Tiles
+// Door Open and close SFX
+// win tile and door switch sfx
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -29,6 +30,7 @@
 // CTRL + ENTER and MINUS - Enable Debug Mode
 // N (While Debug Enabled) - Next Level
 // H (While Debug Enabled) - Reset High Scores
+// V (While Debug Enabled) - Open & Close Doors
 
 // Created by Tyler Clardy in June 2025
 // Thanks to oneLoneCoder for the PixelGameEngine and SoundWaveEngine, as well as the inspiration for the start of the project. You rock, Javid!
@@ -51,8 +53,11 @@ public:
 	// #		= solid immovable wall block
 	// integer 	= countdown block, any direction but limited number of movements as defined by integer (1 - 9)
 	// @		= level completion tiles
+	// D		= door
+	// S		= door switch
 
 	// Only currently supporting up to 9 win tiles per level
+	// Only currently supporting up to 9 door switches per level
 
 	// internal use, manually set, variable to track how many levels exist
 	int iNumOfLevels = 50;
@@ -107,15 +112,15 @@ public:
 		"#P.............#"
 		"#..............#"
 		"##.##########.##"
-		"#..............#"
+		"#.....-..-.....#"
 		"#..............#"
 		"#.|...+.++...|.#"
-		"#..............#"
+		"#.............S#"
 		"#.....@@@@.....#"
-		"#..............#"
+		"#.............S#"
 		"#.....____.....#"
 		"#.2..........3.#"
-		"#..............#"
+		"#######DD#######"
 		"#..............#"
 		"################";
 
@@ -1187,6 +1192,12 @@ public:
 	// Vector containing level goals
 	std::vector<olc::vi2d> vGoals;
 
+	// Vector containing door positions
+	std::vector<olc::vi2d> vDoors_pos;
+
+	// Vector containing door switches
+	std::vector<olc::vi2d> vSwitches;
+
 	// Vector of unique pointers to the blocks making up a level
 	std::vector<std::unique_ptr<block>> vLevel;
 
@@ -1200,6 +1211,9 @@ public:
 
 	// Flag for enabling and disabling input
 	bool bEnableInput = true;
+
+	// Flag for controlling door behaivor
+	bool bDoorsOpen = false;
 
 	// Variable tracking which level the player is on
 	int iCurLevel = 1;
@@ -1898,10 +1912,11 @@ public:
 	// Function for loading a level from string template
 	void LoadLevel(int n, bool bWasRestart)
 	{
-
 		// Clear existing level data
 		vLevel.clear();
 		vGoals.clear();
+		vDoors_pos.clear();
+		vSwitches.clear();
 
 		// reset audio
 		audioEngine.StopAll();
@@ -1994,6 +2009,14 @@ public:
 					break;
 				case '@':
 					vGoals.push_back({ x,y });
+					vLevel.emplace_back(nullptr);
+					break;
+				case 'D':
+					vDoors_pos.push_back({ x,y });
+					vLevel.emplace_back(nullptr);
+					break;
+				case 'S':
+					vSwitches.push_back({ x,y });
 					vLevel.emplace_back(nullptr);
 					break;
 				default:
@@ -2418,12 +2441,61 @@ public:
 
 		// draw logic
 		olc::vi2d vBlockPos = { 0,0 };
+		
+		// door drawing
+		for (int i = 0; i < vDoors_pos.size(); i++)
+		{
+			switch (iLevelSet)
+			{
+			case 0:		// easy
+				if (bDoorsOpen)
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize);
+				}
+				else
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 1) * vBlockSize, vBlockSize);
+				}
+				break;
+			case 1:		// medium
+				if (bDoorsOpen)
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 2) * vBlockSize, vBlockSize);
+				}
+				else
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
+				}
+				break;
+			case 2:		// hard
+				if (bDoorsOpen)
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 2) * vBlockSize, vBlockSize);
+				}
+				else
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 2) * vBlockSize, vBlockSize);
+				}
+				break;
+			default:
+				break;
+			}
+		}
 
-		for (auto& g : vGoals) // win condition drawing
+		// win condition drawing
+		for (auto& g : vGoals)
 		{
 			FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
 		}
-		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++) // block drawing
+
+		// door switch drawing
+		for (auto& d : vSwitches)
+		{
+			FillCircle(d * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
+		}
+
+		// block drawing
+		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++) 
 		{
 			for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
 			{
@@ -2848,6 +2920,19 @@ public:
 
 						return true;
 					}
+					
+					// Debug Mode Door Open/Close
+					if (bDebugMode && GetKey(olc::Key::V).bPressed)
+					{
+						if (bDoorsOpen)
+						{
+							bDoorsOpen = false;
+						}
+						else
+						{
+							bDoorsOpen = true;
+						}
+					}
 				}
 
 				// lambda function for translating our 2D coordinates into 1D
@@ -2886,12 +2971,41 @@ public:
 								bTest = false;
 							}
 						}
-						else // target space was nullptr - player can move there. End testing
+						else // target space was nullptr
 						{
-							bPlayerMoved = true;
-							iMovementSuceededOrFailed = 1;
-							bAllowPush = true;
-							bTest = false;
+							// check target space against all door locations
+							bool bTargetIsDoor = false;
+							for (auto& d : vDoors_pos)
+							{
+								if (vBlockPos == d)
+								{
+									bTargetIsDoor = true;
+								}
+							}
+
+							if (bTargetIsDoor)	// Target Space is door
+							{
+								if (!bDoorsOpen) // doors are closed - player cannot move there. End testing
+								{
+									bPlayerMoved = true;
+									iMovementSuceededOrFailed = 0;
+									bTest = false;
+								}
+								else			// doors are open - player can move there. End testing
+								{
+									bPlayerMoved = true;
+									iMovementSuceededOrFailed = 1;
+									bAllowPush = true;
+									bTest = false;
+								}
+							}
+							else				// Target space is not a door - player can move there. End testing
+							{
+								bPlayerMoved = true;
+								iMovementSuceededOrFailed = 1;
+								bAllowPush = true;
+								bTest = false;
+							}
 						}
 					}
 
@@ -3108,6 +3222,16 @@ public:
 					if (vLevel[id(g)] != nullptr)
 					{
 						nGoals++; // Increment Goals
+					}
+				}
+
+				// door switch checking
+				int nSwitches = 0;
+				for (auto& s : vSwitches)
+				{
+					if (vLevel[id(s)] != nullptr)
+					{
+						nSwitches++; // Increment Goals
 					}
 				}
 
@@ -3460,7 +3584,7 @@ public:
 						break;
 					}
 				}
-				else				// UI for win conditions
+				else // UI for win conditions
 				{
 					// Win Screen Stuff
 					fTime_WinScreen += fElapsedTime;
@@ -3488,6 +3612,16 @@ public:
 				else if (iCurLevel == 36)
 				{
 					DrawString(148, 228, "Code: " + sHardLevelCode, olc::WHITE);
+				}
+
+				// door switch tracking
+				if (nSwitches >= vSwitches.size() && iCurLevel != -1)
+				{
+					bDoorsOpen = true;
+				}
+				else
+				{
+					bDoorsOpen = false;
 				}
 
 				// Win Tracking
