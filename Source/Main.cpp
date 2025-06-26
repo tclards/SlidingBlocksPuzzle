@@ -16,7 +16,7 @@
 // update level skip codes
 // Teleport Tile 
 //		- SFX
-//		- Graphics
+//		- logic
 // Door Open and close SFX
 // win tile and door switch sfx
 
@@ -55,9 +55,14 @@ public:
 	// @		= level completion tiles
 	// D		= door
 	// S		= door switch
+	// B		= Teleport Blue
+	// O		= Teleport Orange
 
 	// Only currently supporting up to 9 win tiles per level
 	// Only currently supporting up to 9 door switches per level
+	// Only currently supporting 1 set of teleport tiles per level - ie 1 'O' and 1 'B'
+
+	// Once ALL door switches are covered ALL doors in the level will open
 
 	// internal use, manually set, variable to track how many levels exist
 	int iNumOfLevels = 50;
@@ -121,7 +126,7 @@ public:
 		"#.....____.....#"
 		"#.2..........3.#"
 		"#######DD#######"
-		"#..............#"
+		"#B............O#"
 		"################";
 
 	float iTime_2 = 0.0f;
@@ -1201,6 +1206,20 @@ public:
 	// Vector of unique pointers to the blocks making up a level
 	std::vector<std::unique_ptr<block>> vLevel;
 
+	// Variables holding the teleport tile locations for any loaded level
+	olc::vi2d vTele_Blue;
+	olc::vi2d vTele_Orange;
+
+	// Bool indicating if a level has teleports
+	bool bLevelHasTeleports = false;
+
+	// int determining the facing of the teleport graphics. 0 through 3 indicating the 4 ways
+	int iTele_Facing = 0;
+
+	// Timer for executing teleport rotate
+	float fTele_GFX_Flip = 0.0f;
+	float fTele_RotateSpeed = 0.35f;
+
 	// vector holding player location
 	olc::vi2d vPlayerPos;
 
@@ -1350,6 +1369,25 @@ public:
 		ss << std::fixed << std::setprecision(2) << fIn;
 
 		return ss.str();
+	}
+
+	// Utility function for rotating teleport tiles
+	void DoTeleportFlipCheck(float fElapsedTime)
+	{
+		fTele_GFX_Flip += fElapsedTime;
+
+		// if timing threshold has been reached, reset timer and execute rotate operation
+		if (fTele_GFX_Flip >= fTele_RotateSpeed)
+		{
+			fTele_GFX_Flip = 0.0f;
+
+			iTele_Facing++;
+
+			if (iTele_Facing == 4) // clamp values to the range of 0 - 4
+			{
+				iTele_Facing = 0;
+			}
+		}
 	}
 
 	// Function for loading options settings
@@ -1917,6 +1955,7 @@ public:
 		vGoals.clear();
 		vDoors_pos.clear();
 		vSwitches.clear();
+		bLevelHasTeleports = false;
 
 		// reset audio
 		audioEngine.StopAll();
@@ -2017,6 +2056,16 @@ public:
 					break;
 				case 'S':
 					vSwitches.push_back({ x,y });
+					vLevel.emplace_back(nullptr);
+					break;
+				case 'B':
+					vTele_Blue = { x,y };
+					bLevelHasTeleports = true;
+					vLevel.emplace_back(nullptr);
+					break;
+				case 'O':
+					vTele_Orange = { x,y };
+					bLevelHasTeleports = true;
 					vLevel.emplace_back(nullptr);
 					break;
 				default:
@@ -2438,9 +2487,6 @@ public:
 
 		// Clear screen to black before drawing each frame
 		Clear(olc::BLACK);
-
-		// draw logic
-		olc::vi2d vBlockPos = { 0,0 };
 		
 		// door drawing
 		for (int i = 0; i < vDoors_pos.size(); i++)
@@ -2494,7 +2540,32 @@ public:
 			FillCircle(d * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
 		}
 
+		// teleport drawing
+		if (bLevelHasTeleports)
+		{
+			switch (iTele_Facing)
+			{
+			case 0:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 4) * vBlockSize, vBlockSize);
+				break;
+			case 1:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 4) * vBlockSize, vBlockSize);
+				break;
+			case 2:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize);
+				break;
+			case 3:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize);
+				break;
+			}
+		}
+
 		// block drawing
+		olc::vi2d vBlockPos = { 0,0 };
 		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++) 
 		{
 			for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
@@ -3237,6 +3308,12 @@ public:
 
 				// Draw Function
 				DrawLevel(iLevelSet);
+
+				// teleport checking
+				if (bLevelHasTeleports)
+				{
+					DoTeleportFlipCheck(fElapsedTime);
+				}
 
 				// UI and Level Set Tracking
 				if (iCurLevel != -1) // UI for active gameplay
