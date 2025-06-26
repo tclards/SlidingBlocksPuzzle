@@ -8,10 +8,12 @@
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor
 // Level Code Succeed SFX not audible
-// random crashes related to a nullptr in soundwaveengine
+// random crashes related to a nullptr in soundwaveengine, usually while player is moving
+// level timer UI clips with level checkpoint UI
 
 // TODO_A
 // 
+// change debug H to level scores not high scores
 // Fill out Levels!
 // update level skip codes
 // Teleport Tile 
