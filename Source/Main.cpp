@@ -1233,6 +1233,7 @@ public:
 
 	// Flag for controlling door behaivor
 	bool bDoorsOpen = false;
+	bool bDoors_DebugForceOpen = false;
 
 	// Variable tracking which level the player is on
 	int iCurLevel = 1;
@@ -2875,6 +2876,17 @@ public:
 							bDebugMode = true;
 						}
 					}
+					if (bEnableInput && bDebugMode && GetKey(olc::Key::V).bPressed) // Debug Mode Door Open/Close
+					{
+						if (bDoors_DebugForceOpen)
+						{
+							bDoors_DebugForceOpen = false;
+						}
+						else
+						{
+							bDoors_DebugForceOpen = true;
+						}
+					}
 				}
 				else
 				{
@@ -2990,19 +3002,6 @@ public:
 						iTime_50 = 0.0f;
 
 						return true;
-					}
-					
-					// Debug Mode Door Open/Close
-					if (bDebugMode && GetKey(olc::Key::V).bPressed)
-					{
-						if (bDoorsOpen)
-						{
-							bDoorsOpen = false;
-						}
-						else
-						{
-							bDoorsOpen = true;
-						}
 					}
 				}
 
@@ -3699,6 +3698,10 @@ public:
 				else
 				{
 					bDoorsOpen = false;
+				}
+				if (bDoors_DebugForceOpen)
+				{
+					bDoorsOpen = true;
 				}
 
 				// Win Tracking
