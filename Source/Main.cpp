@@ -18,8 +18,6 @@
 // Fill out Levels!
 // 
 // update level skip codes
-// 
-// audio balancing
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -3415,6 +3413,22 @@ public:
 				{
 					audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
 				}
+				else if (nGoals != 0 && nGoals == nGoals_Previous && bPlayerMoved)
+				{
+					bool bDoEdgeCaseButtonSFX = false;
+					for (auto& g : vGoals)
+					{
+						if (vPlayerPos == g) // Player moved from one switch onto another - play both SFX
+						{
+							bDoEdgeCaseButtonSFX = true;
+						}
+					}
+					if (bDoEdgeCaseButtonSFX)
+					{
+						audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
+						audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+					}
+				}
 
 				// door switch checking
 				int nSwitches_Previous = nSwitches; // take current switch count before updating number for this frame
@@ -3433,6 +3447,22 @@ public:
 				else if (nSwitches < nSwitches_Previous) // a previously covered switch has been uncovered this frame - play sfx
 				{
 					audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
+				}
+				else if (nSwitches != 0 && nSwitches == nSwitches_Previous && bPlayerMoved)
+				{
+					bool bDoEdgeCaseButtonSFX = false;
+					for (auto& s : vSwitches)
+					{
+						if (vPlayerPos == s) // Player moved from one switch onto another - play both SFX
+						{
+							bDoEdgeCaseButtonSFX = true;
+						}
+					}
+					if (bDoEdgeCaseButtonSFX)
+					{
+						audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
+						audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+					}
 				}
 
 				// Draw Function
