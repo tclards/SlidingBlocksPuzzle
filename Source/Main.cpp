@@ -19,7 +19,7 @@
 // 
 // update level skip codes
 // 
-// win tile and door switch sfx
+// audio balancing
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -64,6 +64,8 @@ public:
 	// Only currently supporting 1 set of teleport tiles per level - ie 1 'O' and 1 'B'
 
 	// Once ALL door switches are covered ALL doors in the level will open
+
+	// Teleporters accept Players but not blocks, and work both ways; i.eorange to blue and ALSO blue to orange
 
 	// internal use, manually set, variable to track how many levels exist
 	int iNumOfLevels = 50;
@@ -1235,6 +1237,14 @@ public:
 	float fTele_GFX_Flip = 0.0f;
 	float fTele_RotateSpeed = 0.35f;
 
+	// Variables for Button Click SFX
+	bool bPlayButtonSFX_1 = false;
+	bool bPlayButtonSFX_2 = false;
+
+	// Variables for switch tracking - door switches and win tiles
+	int nSwitches = 0;
+	int nGoals = 0;
+
 	// vector holding player location
 	olc::vi2d vPlayerPos;
 
@@ -1330,6 +1340,8 @@ public:
 	olc::sound::Wave audioSlot_DoorClose;
 	olc::sound::Wave audioSlot_Teleport_Fail;
 	olc::sound::Wave audioSlot_Teleport_Succeed;
+	olc::sound::Wave audioSlot_ButtonClick_1;
+	olc::sound::Wave audioSlot_ButtonClick_2;
 
 	float fAudioSpeed = 1.0f;
 	float fMusicVolume = 0.3f;
@@ -1356,6 +1368,8 @@ public:
 	std::string sDoorClose_1 = "SFX//door_Close.wav";
 	std::string sTeleport_1 = "SFX//teleport_Succeed.wav";
 	std::string sTeleportFailure_1 = "SFX//teleport_Fail.wav";
+	std::string sButtonClick_1 = "SFX//buttonClick.wav";
+	std::string sButtonClick_2 = "SFX//buttonClick_2.wav";
 #pragma endregion
 
 	// Constructor
@@ -1696,6 +1710,8 @@ public:
 		audioSlot_DoorClose.LoadAudioWaveform(sDoorClose_1);
 		audioSlot_Teleport_Succeed.LoadAudioWaveform(sTeleport_1);
 		audioSlot_Teleport_Fail.LoadAudioWaveform(sTeleportFailure_1);
+		audioSlot_ButtonClick_1.LoadAudioWaveform(sButtonClick_1);
+		audioSlot_ButtonClick_2.LoadAudioWaveform(sButtonClick_2);
 
 		// Set Volume					
 		audioEngine_Music.SetOutputVolume(fMusicVolume);
@@ -3382,23 +3398,41 @@ public:
 				}
 
 				// win condition checking 
-				int nGoals = 0;
+				int nGoals_Previous = nGoals; // take current switch count before updating number for this frame
+				nGoals = 0;
 				for (auto& g : vGoals)
 				{
 					if (vLevel[id(g)] != nullptr)
 					{
 						nGoals++; // Increment Goals
 					}
+				} // Button SFX:
+				if (nGoals > nGoals_Previous) // a new switch has been covered this frame - play sfx
+				{
+					audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+				}
+				else if (nGoals < nGoals_Previous) // a previously covered switch has been uncovered this frame - play sfx
+				{
+					audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
 				}
 
 				// door switch checking
-				int nSwitches = 0;
+				int nSwitches_Previous = nSwitches; // take current switch count before updating number for this frame
+				nSwitches = 0;
 				for (auto& s : vSwitches)
 				{
 					if (vLevel[id(s)] != nullptr)
 					{
 						nSwitches++; // Increment Goals
 					}
+				} // Buton SFX:
+				if (nSwitches > nSwitches_Previous) // a new switch has been covered this frame - play sfx
+				{
+					audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+				}
+				else if (nSwitches < nSwitches_Previous) // a previously covered switch has been uncovered this frame - play sfx
+				{
+					audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
 				}
 
 				// Draw Function

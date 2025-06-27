@@ -1,4 +1,4 @@
 {Volume_SFX}=
 1
 {Volume_Music}=
-0.1
+0
