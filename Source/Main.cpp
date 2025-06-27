@@ -1329,6 +1329,8 @@ public:
 	olc::sound::Wave audioSlot_GameStartUp;
 	olc::sound::Wave audioSlot_DoorOpen;
 	olc::sound::Wave audioSlot_DoorClose;
+	olc::sound::Wave audioSlot_Teleport_Fail;
+	olc::sound::Wave audioSlot_Teleport_Succeed;
 
 	float fAudioSpeed = 1.0f;
 	float fMusicVolume = 0.3f;
@@ -1353,6 +1355,8 @@ public:
 	std::string sGameStartUp = "SFX//GameStartup_1.wav";
 	std::string sDoorOpen_1 = "SFX//door_Open.wav";
 	std::string sDoorClose_1 = "SFX//door_Close.wav";
+	std::string sTeleport_1 = "SFX//teleport_Succeed.wav";
+	std::string sTeleportFailure_1 = "SFX//teleport_Fail.wav";
 #pragma endregion
 
 	// Constructor
@@ -1691,6 +1695,8 @@ public:
 		audioSlot_GameStartUp.LoadAudioWaveform(sGameStartUp);
 		audioSlot_DoorOpen.LoadAudioWaveform(sDoorOpen_1);
 		audioSlot_DoorClose.LoadAudioWaveform(sDoorClose_1);
+		audioSlot_Teleport_Succeed.LoadAudioWaveform(sTeleport_1);
+		audioSlot_Teleport_Fail.LoadAudioWaveform(sTeleportFailure_1);
 
 		// Set Volume					
 		audioEngine_Music.SetOutputVolume(fMusicVolume);
@@ -3036,6 +3042,7 @@ public:
 				bool bPlayerMoved = false;
 				bool bTeleported = false;
 				int iCursorTracker = 0;
+				int iTeleportSucceededOrFailed = -1; // -1, no tele attempt, 0 = tele failed, 1 = tele succeeded
 				int iMovementSuceededOrFailed = -1; // -1 = no move, 0 = move failed, 1 = move succeeded
 				if (bPushing) // check if a push attempt is happening this frame
 				{
@@ -3115,6 +3122,7 @@ public:
 									if (!bTeleAllowed) // Teleport is not allowed - Player cannot move there. End testing
 									{
 										bPlayerMoved = true;
+										iTeleportSucceededOrFailed = 0;
 										iMovementSuceededOrFailed = 0;
 										bTest = false;
 									}
@@ -3122,6 +3130,7 @@ public:
 									{
 										bTeleported = true;
 										bPlayerMoved = true;
+										iTeleportSucceededOrFailed = 1;
 										iMovementSuceededOrFailed = 1;
 										bAllowPush = true;
 										bTest = false;
@@ -3172,16 +3181,28 @@ public:
 				}
 #pragma endregion
 
-				// Movement SFX
+				// Movement & Teleport SFX
 				if (bPlayerMoved == true)
 				{
-					if (iMovementSuceededOrFailed == 0) // Movement Failed
+					if (iTeleportSucceededOrFailed == -1) // no teleport, just regular movement
 					{
-						audioEngine.PlayWaveform(&audioSlot_Movement_Fail, false, fAudioSpeed * 2.0f);
+						// normal move SFX
+						if (iMovementSuceededOrFailed == 0) // Movement Failed
+						{
+							audioEngine.PlayWaveform(&audioSlot_Movement_Fail, false, fAudioSpeed * 2.0f);
+						}
+						else if (iMovementSuceededOrFailed == 1) // Movement Succeeded
+						{
+							audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed * 2.0f);
+						}
 					}
-					else if (iMovementSuceededOrFailed == 1) // Movement Succeeded
+					else if (iTeleportSucceededOrFailed == 0) // teleport failed
 					{
-						audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed * 2.0f);
+						audioEngine.PlayWaveform(&audioSlot_Teleport_Fail, false, fAudioSpeed);
+					}
+					else if (iTeleportSucceededOrFailed == 1) // teleport succeeded
+					{
+						audioEngine.PlayWaveform(&audioSlot_Teleport_Succeed, false, fAudioSpeed);
 					}
 				}
 
