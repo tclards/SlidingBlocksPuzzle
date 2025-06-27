@@ -14,11 +14,10 @@
 // TODO_A
 // 
 // change debug H to level scores not high scores
+// 
 // Fill out Levels!
+// 
 // update level skip codes
-// Teleport Tile 
-//		- SFX
-//		- logic
 // 
 // win tile and door switch sfx
 
@@ -3149,33 +3148,49 @@ public:
 
 					if (bAllowPush) // if push is allowed - execute push logic
 					{
-						while (vBlockPos != vPlayerPos) // walk backwards until reaching player position from valid move location that cursor found, swapping block positions as needed
+						if (bTeleported) // teleport movement
 						{
-							olc::vi2d vSourcePos = vBlockPos;
+							if (vBlockPos == vTele_Blue)
+							{
+								std::swap(vLevel[id(vTele_Orange)], vLevel[id(vPlayerPos)]);
+								vPlayerPos = vTele_Orange;
+							}
+							else if (vBlockPos == vTele_Orange)
+							{
+								std::swap(vLevel[id(vTele_Blue)], vLevel[id(vPlayerPos)]);
+								vPlayerPos = vTele_Blue;
+							}
+						}
+						else // normal movement
+						{
+							while (vBlockPos != vPlayerPos) // walk backwards until reaching player position from valid move location that cursor found, swapping block positions as needed
+							{
+								olc::vi2d vSourcePos = vBlockPos;
+								switch (iDirPush)
+								{
+								case NORTH: vSourcePos.y++; break;
+								case SOUTH: vSourcePos.y--; break;
+								case EAST: vSourcePos.x--; break;
+								case WEST: vSourcePos.x++; break;
+								}
+
+								if (vLevel[id(vSourcePos)] != nullptr) // check for nullptr
+								{
+									vLevel[id(vSourcePos)]->Move(); // call any custom move logic before actually excecuting move
+								}
+
+								std::swap(vLevel[id(vSourcePos)], vLevel[id(vBlockPos)]); // swap blocks
+								vBlockPos = vSourcePos; // increment 'cursor' backwards
+							}
+
+							// update player location after movement logic loop completes
 							switch (iDirPush)
 							{
-							case NORTH: vSourcePos.y++; break;
-							case SOUTH: vSourcePos.y--; break;
-							case EAST: vSourcePos.x--; break;
-							case WEST: vSourcePos.x++; break;
+							case NORTH: vPlayerPos.y--; break;
+							case SOUTH: vPlayerPos.y++; break;
+							case EAST: vPlayerPos.x++; break;
+							case WEST: vPlayerPos.x--; break;
 							}
-
-							if (vLevel[id(vSourcePos)] != nullptr) // check for nullptr
-							{
-								vLevel[id(vSourcePos)]->Move(); // call any custom move logic before actually excecuting move
-							}
-
-							std::swap(vLevel[id(vSourcePos)], vLevel[id(vBlockPos)]); // swap blocks
-							vBlockPos = vSourcePos; // increment 'cursor' backwards
-						}
-
-						// update player location after movement logic loop completes
-						switch (iDirPush)
-						{
-						case NORTH: vPlayerPos.y--; break;
-						case SOUTH: vPlayerPos.y++; break;
-						case EAST: vPlayerPos.x++; break;
-						case WEST: vPlayerPos.x--; break;
 						}
 					}
 				}
