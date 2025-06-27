@@ -7,12 +7,9 @@
 
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor
-// Level Code Succeed SFX not audible
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
-// debug open doors causing crash in audio engine
 
 // TODO_A
-// 
 // Fill out Levels!
 // Add decal to main menu? or color coding for menu UI? Something to make it look nicer - ask the guys for advice
 
@@ -3434,72 +3431,78 @@ public:
 				}
 
 				// win condition checking 
-				int nGoals_Previous = nGoals; // take current switch count before updating number for this frame
-				nGoals = 0;
-				for (auto& g : vGoals)
+				if (vGoals.size() != 0)
 				{
-					if (vLevel[id(g)] != nullptr)
-					{
-						nGoals++; // Increment Goals
-					}
-				} // Button SFX:
-				if (nGoals > nGoals_Previous) // a new switch has been covered this frame - play sfx
-				{
-					audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
-				}
-				else if (nGoals < nGoals_Previous) // a previously covered switch has been uncovered this frame - play sfx
-				{
-					audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
-				}
-				else if (nGoals != 0 && nGoals == nGoals_Previous && bPlayerMoved)
-				{
-					bool bDoEdgeCaseButtonSFX = false;
+					int nGoals_Previous = nGoals; // take current switch count before updating number for this frame
+					nGoals = 0;
 					for (auto& g : vGoals)
 					{
-						if (vPlayerPos == g) // Player moved from one switch onto another - play both SFX
+						if (vLevel[id(g)] != nullptr)
 						{
-							bDoEdgeCaseButtonSFX = true;
+							nGoals++; // Increment Goals
 						}
+					} // Button SFX:
+					if (nGoals > nGoals_Previous) // a new switch has been covered this frame - play sfx
+					{
+						audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
 					}
-					if (bDoEdgeCaseButtonSFX)
+					else if (nGoals < nGoals_Previous) // a previously covered switch has been uncovered this frame - play sfx
 					{
 						audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
-						audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+					}
+					else if (nGoals != 0 && nGoals == nGoals_Previous && bPlayerMoved)
+					{
+						bool bDoEdgeCaseButtonSFX = false;
+						for (auto& g : vGoals)
+						{
+							if (vPlayerPos == g) // Player moved from one switch onto another - play both SFX
+							{
+								bDoEdgeCaseButtonSFX = true;
+							}
+						}
+						if (bDoEdgeCaseButtonSFX)
+						{
+							audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
+							audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+						}
 					}
 				}
 
 				// door switch checking
-				int nSwitches_Previous = nSwitches; // take current switch count before updating number for this frame
-				nSwitches = 0;
-				for (auto& s : vSwitches)
+				if (vSwitches.size() != 0)
 				{
-					if (vLevel[id(s)] != nullptr)
-					{
-						nSwitches++; // Increment Goals
-					}
-				} // Buton SFX:
-				if (nSwitches > nSwitches_Previous) // a new switch has been covered this frame - play sfx
-				{
-					audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
-				}
-				else if (nSwitches < nSwitches_Previous) // a previously covered switch has been uncovered this frame - play sfx
-				{
-					audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
-				}
-				else if (nSwitches != 0 && nSwitches == nSwitches_Previous && bPlayerMoved)
-				{
-					bool bDoEdgeCaseButtonSFX = false;
+					int nSwitches_Previous = nSwitches; // take current switch count before updating number for this frame
+					nSwitches = 0;
 					for (auto& s : vSwitches)
 					{
-						if (vPlayerPos == s) // Player moved from one switch onto another - play both SFX
+						if (vLevel[id(s)] != nullptr)
 						{
-							bDoEdgeCaseButtonSFX = true;
+							nSwitches++; // Increment Goals
 						}
+					} // Buton SFX:
+					if (nSwitches > nSwitches_Previous) // a new switch has been covered this frame - play sfx
+					{
+						audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
 					}
-					if (bDoEdgeCaseButtonSFX)
+					else if (nSwitches < nSwitches_Previous) // a previously covered switch has been uncovered this frame - play sfx
 					{
 						audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
-						audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+					}
+					else if (nSwitches != 0 && nSwitches == nSwitches_Previous && bPlayerMoved)
+					{
+						bool bDoEdgeCaseButtonSFX = false;
+						for (auto& s : vSwitches)
+						{
+							if (vPlayerPos == s) // Player moved from one switch onto another - play both SFX
+							{
+								bDoEdgeCaseButtonSFX = true;
+							}
+						}
+						if (bDoEdgeCaseButtonSFX)
+						{
+							audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
+							audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+						}
 					}
 				}
 
@@ -3889,27 +3892,35 @@ public:
 				}
 
 				// door switch tracking
-				if (nSwitches >= vSwitches.size() && iCurLevel != -1)
+				if (vSwitches.size() != 0)
 				{
-					if (bDoorsOpen == false) // play SFX on toggle
+					if (bDoors_DebugForceOpen)
 					{
-						audioEngine.PlayWaveform(&audioSlot_DoorOpen, false, fAudioSpeed);
-					}
+						if (bDoorsOpen == false) // play SFX on toggle
+						{
+							audioEngine.PlayWaveform(&audioSlot_DoorOpen, false, fAudioSpeed);
+						}
 
-					bDoorsOpen = true;
-				}
-				else
-				{
-					if (bDoorsOpen == true) // play SFX on toggle
+						bDoorsOpen = true;
+					}
+					else if (nSwitches >= vSwitches.size() && iCurLevel != -1)
 					{
-						audioEngine.PlayWaveform(&audioSlot_DoorClose, false, fAudioSpeed);
-					}
+						if (bDoorsOpen == false) // play SFX on toggle
+						{
+							audioEngine.PlayWaveform(&audioSlot_DoorOpen, false, fAudioSpeed);
+						}
 
-					bDoorsOpen = false;
-				}
-				if (bDoors_DebugForceOpen)
-				{
-					bDoorsOpen = true;
+						bDoorsOpen = true;
+					}
+					else
+					{
+						if (bDoorsOpen == true) // play SFX on toggle
+						{
+							audioEngine.PlayWaveform(&audioSlot_DoorClose, false, fAudioSpeed);
+						}
+
+						bDoorsOpen = false;
+					}
 				}
 
 				// Win Tracking
