@@ -1069,9 +1069,11 @@ public:
 #pragma region Block Types
 	struct block // basic block definition
 	{
+		bool bCanTeleport = false;
+
 		block()
 		{
-
+			
 		}
 
 		virtual void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet)
@@ -1091,6 +1093,8 @@ public:
 	};
 	struct block_solid : public block // solid immovable block -- ie walls
 	{
+		bool bCanTeleport = false;
+
 		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
 			switch (iLevelSet)
@@ -1117,6 +1121,8 @@ public:
 	};
 	struct block_player : public block // player block
 	{
+		bool bCanTeleport = true;
+
 		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
 			pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(0, 1) * size, size);
@@ -1129,6 +1135,8 @@ public:
 	};
 	struct block_simple : public block // block that moves in any direction
 	{
+		bool bCanTeleport = false;
+
 		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
 			pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(1, 0) * size, size);
@@ -1141,6 +1149,8 @@ public:
 	};
 	struct block_horizontal : public block // block that moves side to side
 	{
+		bool bCanTeleport = false;
+
 		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
 			pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(2, 0) * size, size);
@@ -1153,6 +1163,8 @@ public:
 	};
 	struct block_vertical : public block // block that moves up and down
 	{
+		bool bCanTeleport = false;
+
 		void DrawSelf(olc::PixelGameEngine* pge, const olc::vi2d& pos, olc::vi2d& size, const olc::Renderable& skin, int iLevelSet) override
 		{
 			pge->DrawPartialSprite(pos * size, skin.Sprite(), olc::vi2d(3, 0) * size, size);
@@ -1165,6 +1177,8 @@ public:
 	};
 	struct block_countdown : public block // block that a specific number of times in any direction
 	{
+		bool bCanTeleport = false;
+
 		int iMoveCount = 0; // number of moves the countdown block can move
 
 		block_countdown(int iNumOfMovesAllowed)
@@ -3017,8 +3031,11 @@ public:
 				// lambda function for translating our 2D coordinates into 1D
 				auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; };
 
-				// movement logic
+// movement logic
+#pragma region Movement
 				bool bPlayerMoved = false;
+				bool bTeleported = false;
+				int iCursorTracker = 0;
 				int iMovementSuceededOrFailed = -1; // -1 = no move, 0 = move failed, 1 = move succeeded
 				if (bPushing) // check if a push attempt is happening this frame
 				{
@@ -3037,10 +3054,10 @@ public:
 								// if block is allowed to be pushed in that direction - move cursor that direction so we can check for collision in neighboring space
 								switch (iDirPush) // select neighbor
 								{
-								case NORTH: vBlockPos.y--; break;
-								case SOUTH: vBlockPos.y++; break;
-								case EAST: vBlockPos.x++; break;
-								case WEST: vBlockPos.x--; break;
+								case NORTH: vBlockPos.y--; iCursorTracker++; break;
+								case SOUTH: vBlockPos.y++; iCursorTracker++; break;
+								case EAST: vBlockPos.x++; iCursorTracker++; break;
+								case WEST: vBlockPos.x--; iCursorTracker++; break;
 								}
 							}
 							else // block cant be pushed that way -- end testing
@@ -3078,12 +3095,45 @@ public:
 									bTest = false;
 								}
 							}
-							else				// Target space is not a door - player can move there. End testing
+							else				// Target space is not a door - check for teleport 
 							{
-								bPlayerMoved = true;
-								iMovementSuceededOrFailed = 1;
-								bAllowPush = true;
-								bTest = false;
+								bool bTargetIsTeleporter = false;
+								if (vBlockPos == vTele_Blue || vBlockPos == vTele_Orange)
+								{
+									bTargetIsTeleporter = true;
+								}
+
+								if (bTargetIsTeleporter) 
+								{
+									// check if player - blocks cannot teleport, but player can
+									bool bTeleAllowed = false;
+									if (iCursorTracker == 1)
+									{
+										bTeleAllowed = true;
+									}
+
+									if (!bTeleAllowed) // Teleport is not allowed - Player cannot move there. End testing
+									{
+										bPlayerMoved = true;
+										iMovementSuceededOrFailed = 0;
+										bTest = false;
+									}
+									else // teleport is allowed - player can move there. End testing
+									{
+										bTeleported = true;
+										bPlayerMoved = true;
+										iMovementSuceededOrFailed = 1;
+										bAllowPush = true;
+										bTest = false;
+									}
+								}
+								else // target space was nullptr and did not contain a door or teleporter - player can move there. End testing
+								{
+									bPlayerMoved = true;
+									iMovementSuceededOrFailed = 1;
+									bAllowPush = true;
+									bTest = false;
+								}
 							}
 						}
 					}
@@ -3120,6 +3170,7 @@ public:
 						}
 					}
 				}
+#pragma endregion
 
 				// Movement SFX
 				if (bPlayerMoved == true)
