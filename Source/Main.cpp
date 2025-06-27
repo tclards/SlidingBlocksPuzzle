@@ -10,10 +10,9 @@
 // Level Code Succeed SFX not audible
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
 // level timer UI clips with level checkpoint UI
+// debug open doors causing crash in audio engine
 
 // TODO_A
-// 
-// change debug H to level scores not high scores
 // 
 // Fill out Levels!
 // 
@@ -28,7 +27,7 @@
 // C - Cheat Code Skip 
 // CTRL + ENTER and MINUS - Enable Debug Mode
 // N (While Debug Enabled) - Next Level
-// H (While Debug Enabled) - Reset High Scores
+// H (While Debug Enabled) - Reset Level Scores - Timer and Moves
 // V (While Debug Enabled) - Open & Close Doors
 
 // Created by Tyler Clardy in June 2025
@@ -3893,20 +3892,7 @@ public:
 				}
 				else if (bEnableInput && bDebugMode && GetKey(olc::Key::H).bPressed) // debug mode score reset
 				{
-					for (int i = 0; i < vHighScore_Moves.size(); i++)
-					{
-						vHighScore_Moves[i] = 1000;
-					}
-					for (int i = 0; i < vHighScore_Time.size(); i++)
-					{
-						vHighScore_Time[i] = 10000;
-					}
-
-					fTotal_HS = 500000.0f;
-					iTotal_HS = 50000;
-
-					int iSave = SaveHighScores();
-					int iLoad = LoadHighScores();
+					ResetLevelScore();
 				}
 
 				RecordLevelTimePerFrame(fElapsedTime);
