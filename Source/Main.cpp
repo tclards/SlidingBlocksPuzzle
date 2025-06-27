@@ -9,16 +9,12 @@
 // Crash on closing program - seemingly related to audio engine wave deconstructor
 // Level Code Succeed SFX not audible
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
-// level timer UI clips with level checkpoint UI
 // debug open doors causing crash in audio engine
 
 // TODO_A
 // 
 // Fill out Levels!
-// 
-// Add decal to main menu?
-// 
-// update level skip codes
+// Add decal to main menu? or color coding for menu UI? Something to make it look nicer - ask the guys for advice
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -70,8 +66,8 @@ public:
 	int iNumOfLevels = 50;
 
 	// Codes for Skipping Levels
-	std::string sMediumLevelCode = "MEDIUM"; // Skip to Level 16
-	std::string sHardLevelCode = "HARD";   // Skip to Level 36
+	std::string sMediumLevelCode = "M1b3z"; // Skip to Level 16
+	std::string sHardLevelCode = "Hx2p1";   // Skip to Level 36
 
 	// Vector containing all levels
 	std::vector <std::string> vAllLevels;
@@ -3545,7 +3541,7 @@ public:
 
 					if (bDebugMode) // Debug Mode Indicator
 					{
-						DrawString(0 + 17, 0 + 17, "DEBUG", olc::DARK_GREY);
+						DrawString(17, 17, "DEBUG", olc::DARK_GREY);
 					}
 
 					// Move Number UI
@@ -3885,11 +3881,11 @@ public:
 				// Special UI for Displaying Checkpoint Codes that can be inputted on Main Menu Level Select screen
 				if (iCurLevel == 16)
 				{
-					DrawString(148, 228, "Code: " + sMediumLevelCode, olc::WHITE);
+					DrawString(148, 17, "Code: " + sMediumLevelCode, olc::WHITE);
 				}
 				else if (iCurLevel == 36)
 				{
-					DrawString(148, 228, "Code: " + sHardLevelCode, olc::WHITE);
+					DrawString(148, 17, "Code: " + sHardLevelCode, olc::WHITE);
 				}
 
 				// door switch tracking

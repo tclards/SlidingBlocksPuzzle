@@ -1,25 +1,29 @@
 =======================================
 		READ ME
 =======================================
-
 "Block Map"
 
-Tyler Clardy
+3bytes Studio
 2025
+
+=======================================
+		Credits
+=======================================
+Programming: 		Tyler Clardy
+Art Design:		Tyler Clardy
+Sound Design:		Tyler Clardy
+Level Design: 		Tyler Clardy, James Norman, Aaron McBroom
+Promotional Materials:	Tyler Clardy
 
 =======================================
 		Controls
 =======================================
-
 W / Up	   	     : Move Up
 S / Down	     : Move Down
 D / Right            : Move Right
 A / Left             : Move Left
 R	             : Restart Level
 ESC / P		     : Pause
-
-Hold CTRL and press Enter & Minus at the same time to enter Debug Mode.
-While in Debug Mode press N to Skip Level.
 
 =======================================
 		Game Rules
@@ -45,3 +49,13 @@ Vertical Block		(|) : Moves up and down
 Countdown Block		(5) : Moves in all directions, but only moves the number of times displayed on its face
 Win Tile		(o) : Cover these with Blocks!
 Wall Block		(#) : Solid Wall Blocks that cannot be moved
+
+=======================================
+		Cheats
+=======================================
+Hold CTRL and press Enter & Minus at the same time to enter Debug Mode.
+While in Debug Mode press N to Skip Level, V to force Open Doors, and H to reset Level Timer and Move Counter.
+
+Level Codes:
+Medium - M1b3z
+Hard   - Hx2p1 
