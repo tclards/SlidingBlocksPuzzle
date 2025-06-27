@@ -19,7 +19,7 @@
 // Teleport Tile 
 //		- SFX
 //		- logic
-// Door Open and close SFX
+// 
 // win tile and door switch sfx
 
 // Controls:
@@ -1313,6 +1313,8 @@ public:
 	olc::sound::Wave audioSlot_LevelCode_Succeed;
 	olc::sound::Wave audioSlot_LevelCode_Fail;
 	olc::sound::Wave audioSlot_GameStartUp;
+	olc::sound::Wave audioSlot_DoorOpen;
+	olc::sound::Wave audioSlot_DoorClose;
 
 	float fAudioSpeed = 1.0f;
 	float fMusicVolume = 0.3f;
@@ -1335,6 +1337,8 @@ public:
 	std::string sLevelCode_1 = "SFX//InputCode_Succeed_1.wav";		
 	std::string sLevelCodeFail_1 = "SFX//InputCode_Fail_1.wav";	
 	std::string sGameStartUp = "SFX//GameStartup_1.wav";
+	std::string sDoorOpen_1 = "SFX//door_Open.wav";
+	std::string sDoorClose_1 = "SFX//door_Close.wav";
 #pragma endregion
 
 	// Constructor
@@ -1671,6 +1675,8 @@ public:
 		audioSlot_LevelCode_Succeed.LoadAudioWaveform(sLevelCode_1);
 		audioSlot_LevelCode_Fail.LoadAudioWaveform(sLevelCodeFail_1);
 		audioSlot_GameStartUp.LoadAudioWaveform(sGameStartUp);
+		audioSlot_DoorOpen.LoadAudioWaveform(sDoorOpen_1);
+		audioSlot_DoorClose.LoadAudioWaveform(sDoorClose_1);
 
 		// Set Volume					
 		audioEngine_Music.SetOutputVolume(fMusicVolume);
@@ -1959,6 +1965,7 @@ public:
 		vDoors_pos.clear();
 		vSwitches.clear();
 		bLevelHasTeleports = false;
+		bDoorsOpen = false;
 
 		// reset audio
 		audioEngine.StopAll();
@@ -3695,10 +3702,20 @@ public:
 				// door switch tracking
 				if (nSwitches >= vSwitches.size() && iCurLevel != -1)
 				{
+					if (bDoorsOpen == false) // play SFX on toggle
+					{
+						audioEngine.PlayWaveform(&audioSlot_DoorOpen, false, fAudioSpeed);
+					}
+
 					bDoorsOpen = true;
 				}
 				else
 				{
+					if (bDoorsOpen == true) // play SFX on toggle
+					{
+						audioEngine.PlayWaveform(&audioSlot_DoorClose, false, fAudioSpeed);
+					}
+
 					bDoorsOpen = false;
 				}
 				if (bDoors_DebugForceOpen)
