@@ -16,6 +16,8 @@
 // 
 // Fill out Levels!
 // 
+// Add decal to main menu?
+// 
 // update level skip codes
 
 // Controls:
@@ -1266,7 +1268,7 @@ public:
 
 	// Main Menu Flags
 	bool bMainMenu = true;
-	int iCurDisplay = -1; // - 1: main menu, 0: high score screen, 1: options screen, 2: Level Select Screen
+	int iCurDisplay = -1; // - 1: main menu, 0: high score screen, 1: options screen, 2: Level Select Screen, 3: Credits Screen
 
 	// Page number variable used in some menus
 	int iPageNum = 1;
@@ -2478,6 +2480,42 @@ public:
 				DrawString(65, 35, "Text Entry Mode", olc::YELLOW);
 			}
 			break;
+		case 3: // Credits Screen
+			// User Input:
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
+			{
+				// Save Changes
+				iOptionsSave = SaveOptions();
+
+				iCurDisplay = -1;
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw UI
+			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "CREDITS", olc::WHITE);
+
+			DrawString(20, 35, "Programming:", olc::YELLOW);
+			DrawString(20, 45, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 60, "Art Design:", olc::GREEN);
+			DrawString(20, 70, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 85, "Sound Design:", olc::RED);
+			DrawString(20, 95, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 110, "Level Design:", olc::MAGENTA);
+			DrawString(20, 120, "Tyler Clardy", olc::WHITE);
+			DrawString(20, 130, "James Norman", olc::WHITE);
+			DrawString(20, 140, "Aaron McBroom", olc::WHITE);
+
+			DrawString(20, 155, "Promotional Materials:", olc::BLUE);
+			DrawString(20, 165, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 200, "3bytes Studio 2025", olc::CYAN);
+			DrawString(20, 212, "Press ESC to Close", olc::WHITE);
+			break;
 		default: // Main Menu
 			// User Input:
 			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)  // Close Game
@@ -2499,6 +2537,10 @@ public:
 			{
 				iCurDisplay = 2;
 			}
+			if (GetKey(olc::Key::C).bPressed)										 // Open Credits Menu
+			{
+				iCurDisplay = 3;
+			}
 			if (GetKey(olc::Key::ENTER).bPressed)								    // Start Game
 			{
 				// Start Game
@@ -2511,12 +2553,13 @@ public:
 			DrawLevel(iLevelSet);
 
 			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "MAIN MENU", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 40, "Press Enter to Start Game", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 52, "Press L for Level Select", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 65, "Press H to see High Scores", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 78, "Press O for Options", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Quit", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 42, 24, "MAIN MENU", olc::WHITE);
+			DrawString(20, 148, "Press Enter to Start Game", olc::WHITE);
+			DrawString(20, 160, "Press L for Level Select", olc::WHITE);
+			DrawString(20, 172, "Press H to see High Scores", olc::WHITE);
+			DrawString(20, 185, "Press O for Options", olc::WHITE);
+			DrawString(20, 198, "Press C for Credits", olc::WHITE);
+			DrawString(20, 210, "Press ESC to Quit", olc::WHITE);
 			break;
 		}
 	}
