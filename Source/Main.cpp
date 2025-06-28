@@ -29,6 +29,8 @@
 //		- graphics
 //		- animation
 // Update Player Sprite
+// add SFX for cursor select 
+// add SFX for cursor enter
 
 // TODO_C - Feature Wishlist
 // add level selector properly? with level locking system
@@ -37,6 +39,7 @@
 //		- easy
 //		- medium
 //		- hard
+// Rework movement SFX to make unique SFX for each block type
 // Add background decals to clear screen to instead of black
 
 // TODO_D - Prerelease Steps
@@ -47,17 +50,15 @@
 // QA Test on multiple machines
 #pragma endregion
 
-// Controls:
-// WASD or Arrow Keys to move Player Block
-// R Key to Restart Level in case of softlock
-// ESC or P to Pause
-// O - Options Menu 
-// I - Score Tracking Screen 
-// C - Cheat Code Skip 
+// Controls
+#pragma region Controls
+// WASD or Arrow Keys to move Player Block or Make Selection in Menus
+// ENTER to Choose Menu Option
 // CTRL + ENTER and MINUS - Enable Debug Mode
 // N (While Debug Enabled) - Next Level
 // H (While Debug Enabled) - Reset Level Scores - Timer and Moves
 // V (While Debug Enabled) - Open & Close Doors
+#pragma endregion
 
 // Created by Tyler Clardy in June 2025
 // Thanks to oneLoneCoder for the PixelGameEngine and SoundWaveEngine, as well as the inspiration for the start of the project. You rock, Javid!
