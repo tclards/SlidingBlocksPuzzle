@@ -8,6 +8,7 @@
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor - low priority: does not matter in release mode7
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
+// startup SFX jingle not affected by fileio options
 
 // TODO_A
 // Fill out Levels!
@@ -1248,6 +1249,7 @@ public:
 	olc::Renderable gfxTiles;
 	olc::Renderable gfxWin;
 	olc::Renderable gfxSplash;
+	olc::Renderable gfxCursors;
 
 	// Flag for enabling and disabling input
 	bool bEnableInput = true;
@@ -1258,6 +1260,12 @@ public:
 
 	// Variable tracking which level the player is on
 	int iCurLevel = 1;
+
+	// Variables used for main menu cursor/selection system
+	int iMenuSelectCursor_main = 0; // 0 - Start Game, 1 - Level Select, 2 - High Scores, 3 - Options, 4 - Credits, 5, Quit Game
+	float fCursorBlinkTimer = 0.0f;
+	float fCursorBlinkSpeed = 0.5f; // Timing for cursor blink
+	bool bCursorBlink = false;
 
 	// Flags for pausing game
 	bool bPaused = false;
@@ -2141,7 +2149,7 @@ public:
 	}
 
 	// Called Every Frame while the Main Menu system is open
-	void MainMenu()
+	void MainMenu(float fElapsedTime)
 	{
 		iLevelSet = -1;
 
@@ -2515,67 +2523,146 @@ public:
 			break;
 		default: // Main Menu
 			// User Input:
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)  // Close Game
+			if (GetKey(olc::Key::UP).bPressed || GetKey(olc::Key::W).bPressed)
 			{
-				internalHighScoreUtility_Time();
-				internalHighScoreUtility_Moves();
-				SaveHighScores();
-				this->~Puzzle();
+				iMenuSelectCursor_main--;
+				if (iMenuSelectCursor_main < 0)
+				{
+					iMenuSelectCursor_main = 5;
+				}
 			}
-			if (GetKey(olc::Key::H).bPressed)								    	// Open High Score Menu
+			if (GetKey(olc::Key::DOWN).bPressed || GetKey(olc::Key::S).bPressed)
 			{
-				iCurDisplay = 0;
+				iMenuSelectCursor_main++;
+				if (iMenuSelectCursor_main > 5)
+				{
+					iMenuSelectCursor_main = 0;
+				}
 			}
-			if (GetKey(olc::Key::O).bPressed)								    	// Open Options Menu
+			if (GetKey(olc::Key::ENTER).bPressed)
 			{
-				iCurDisplay = 1;
-			}
-			if (GetKey(olc::Key::L).bPressed)										 // Open Level Select Menu
-			{
-				iCurDisplay = 2;
-			}
-			if (GetKey(olc::Key::C).bPressed)										 // Open Credits Menu
-			{
-				iCurDisplay = 3;
-			}
-			if (GetKey(olc::Key::ENTER).bPressed)								    // Start Game
-			{
-				// Start Game
-				bMainMenu = false;													// Set Flag to close Main Menu System
-				iCurLevel = 1;
-				LoadLevel(iCurLevel, false);										// Load First Level
+				switch (iMenuSelectCursor_main)
+				{
+				case 0: // Start Game
+					bMainMenu = false;			
+					iCurLevel = 1;
+					LoadLevel(iCurLevel, false);
+					break;
+				case 1: // Level Select
+					iCurDisplay = 2;
+					break;
+				case 2: // High Scores
+					iCurDisplay = 0;
+					break;
+				case 3: // Options
+					iCurDisplay = 1;
+					break;
+				case 4: // Credits
+					iCurDisplay = 3;
+					break;
+				case 5: // Quit Game
+					internalHighScoreUtility_Time();
+					internalHighScoreUtility_Moves();
+					SaveHighScores();
+					this->~Puzzle();
+					break;
+				default:
+					break;
+				}
+
+				iMenuSelectCursor_main = 0;
 			}
 
 			// Draw Blank Menu Level
 			DrawLevel(iLevelSet);
 
 			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 77, 24, "I N C R E M E N T O", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 77, 38, "I N C R E M E N T O", olc::WHITE);
 
-			DrawString((this->ScreenWidth() / 2) - 37, 38, "MAIN MENU", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 26, 60, "Press:", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 73, 72, "Enter to", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 2, 72, "Start Game", olc::CYAN);
+			DrawString((this->ScreenWidth() / 2) - 37, 53, "MAIN MENU", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 40, 76, "Start Game", olc::CYAN); 
+			DrawString((this->ScreenWidth() / 2) - 48, 88, "Level Select", olc::YELLOW); 
+			DrawString((this->ScreenWidth() / 2) - 44, 100, "High Scores", olc::MAGENTA); 
+			DrawString((this->ScreenWidth() / 2) - 28, 112, "Options", olc::BLUE); 
+			DrawString((this->ScreenWidth() / 2) - 28, 124, "Credits", olc::GREEN); 
+			DrawString((this->ScreenWidth() / 2) - 15, 136, "Quit", olc::RED); 
+			
+			// Draw cursor 
+			DoCursorBlink(fElapsedTime); // update cursor blink variables
 
-			DrawString((this->ScreenWidth() / 2) - 67, 84, "L for", olc::WHITE); // todo
-			DrawString((this->ScreenWidth() / 2) - 23, 84, "Level Select", olc::YELLOW);
+			// debug
+			bCursorBlink = false;
 
+			if (!bCursorBlink) // only draw cursor on frames where cursor blink is toggled false
+			{
+				olc::vi2d vCursorPos_R = { 0,0 };
+				olc::vi2d vCursorPos_L = { 0,0 };
 
-			DrawString((this->ScreenWidth() / 2) - 67, 96, "H for", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 23, 96, "High Scores", olc::MAGENTA);
-
-			DrawString((this->ScreenWidth() / 2) - 67, 108, "O for", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 23, 108, "Options", olc::BLUE);
-
-
-			DrawString((this->ScreenWidth() / 2) - 67, 120, "C for", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 23, 120, "Credits", olc::GREEN);
-
-
-			DrawString((this->ScreenWidth() / 2) - 67, 132, "ESC to", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 23, 132, "Quit", olc::RED);
+				switch (iMenuSelectCursor_main)
+				{
+				case 0: // Start Game
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 40, 71 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 57, 71 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 0) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize); // L
+					break;
+				case 1: // Level Select
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 48, 83 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 65, 83 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L
+					break;
+				case 2: // High Scores
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 45, 95 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 61, 95 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize); // L
+					break;
+				case 3: // Options
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 107 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 107 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize); // L
+					break;
+				case 4: // Credits
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 119 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 119 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L
+					break;
+				case 5: // Quit Game
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 18, 131 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 34, 131 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(2, 0) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(3, 0) * vBlockSize, vBlockSize); // L
+					break;
+				default:
+					break;
+				}
+			}
 
 			break;
+		}
+	}
+
+	// Utility function controlling blink effect on menu selection cursor
+	void DoCursorBlink(float fElapsedTime)
+	{
+		fCursorBlinkTimer += fElapsedTime;
+
+		if (fCursorBlinkTimer >= fCursorBlinkSpeed) // Enough time has passed - toggle flag for cursor blink
+		{
+			fCursorBlinkTimer = 0.0f; // reset timer
+
+			// toggle flag
+			if (bCursorBlink == true)
+			{
+				bCursorBlink = false;
+			}
+			else
+			{
+				bCursorBlink = true;
+			}
 		}
 	}
 
@@ -2852,6 +2939,7 @@ public:
 		gfxTiles.Load("Graphics//TileSheet.png");
 		gfxSplash.Load("Graphics//SplashScreen.png");
 		gfxWin.Load("Graphics//WinScreen.png"); 
+		gfxCursors.Load("Graphics//Cursors.png");
 
 		// Level Loading
 		LoadAllLevels();
@@ -2923,7 +3011,7 @@ public:
 			// Main Menu Stuff
 			if (bMainMenu)
 			{
-				MainMenu();
+				MainMenu(fElapsedTime);
 
 				return true;
 			}
