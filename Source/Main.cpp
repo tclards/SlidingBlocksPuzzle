@@ -5,21 +5,47 @@
 #include <fstream>
 #include <cmath>
 
+// Todo List
+#pragma region TODO LIST
 // TODO_BUGS
-// Crash on closing program - seemingly related to audio engine wave deconstructor - low priority: does not matter in release mode7
+// Crash on closing program - seemingly related to audio engine wave deconstructor - low priority: does not matter in release mode
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
 // startup SFX jingle not affected by fileio options
+// weirdness with cursor on main menu - caught on camera. repeatable?
 
-// TODO_A
+// TODO_A - Finish Game
 // Fill out Levels!
+
+// TODO_B - Rework & Polish
 // add color to main menu sub menus
 //		- High Scores
 //		- level select
 //		- options
-// Change/Decide On game Name - then update main and readme, as well as exe output
-// Update portal graphics
+// Update Name
+//		- main 
+//		- readme
+//		- exe output
+// Update portal
+//		- graphics
+//		- animation
+// Update Player Sprite
+
+// TODO_C - Feature Wishlist
+// add level selector properly? with level locking system
+// Rework sound design to create unified theme & replace placeholdersfx
+// Create special effect for loading into the first level of a level set
+//		- easy
+//		- medium
+//		- hard
+// Add background decals to clear screen to instead of black
+
+// TODO_D - Prerelease Steps
 // create promotional materials
+//		- Trailer
+//		- Showcases
 // create itch.io page
+// QA Test on multiple machines
+#pragma endregion
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
