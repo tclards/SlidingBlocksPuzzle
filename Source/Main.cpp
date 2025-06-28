@@ -1264,8 +1264,14 @@ public:
 	// Variables used for main menu cursor/selection system
 	int iMenuSelectCursor_main = 0; // 0 - Start Game, 1 - Level Select, 2 - High Scores, 3 - Options, 4 - Credits, 5, Quit Game
 	float fCursorBlinkTimer = 0.0f;
-	float fCursorBlinkSpeed = 0.5f; // Timing for cursor blink
+	float fCursorBlinkSpeed = 0.4f; // Timing for cursor blink
 	bool bCursorBlink = false;
+	bool bDoCursorBlink = true;
+
+	// Variables for Main Menu Game Title Visual Effect
+	int iTitleSwitch = 0; // 0 to 5
+	float fTitleSwitchTimer = 0.0f;
+	float fTitleSwitchSpeed = 0.2f;
 
 	// Flags for pausing game
 	bool bPaused = false;
@@ -2577,21 +2583,17 @@ public:
 			DrawLevel(iLevelSet);
 
 			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 77, 38, "I N C R E M E N T O", olc::WHITE);
-
-			DrawString((this->ScreenWidth() / 2) - 37, 53, "MAIN MENU", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 40, 76, "Start Game", olc::CYAN); 
-			DrawString((this->ScreenWidth() / 2) - 48, 88, "Level Select", olc::YELLOW); 
-			DrawString((this->ScreenWidth() / 2) - 44, 100, "High Scores", olc::MAGENTA); 
-			DrawString((this->ScreenWidth() / 2) - 28, 112, "Options", olc::BLUE); 
-			DrawString((this->ScreenWidth() / 2) - 28, 124, "Credits", olc::GREEN); 
-			DrawString((this->ScreenWidth() / 2) - 15, 136, "Quit", olc::RED); 
+			DoGameTitle(fElapsedTime);
+			DrawString((this->ScreenWidth() / 2) - 36, 51, "MAIN MENU", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 40, 73, "Start Game", olc::CYAN); 
+			DrawString((this->ScreenWidth() / 2) - 48, 85, "Level Select", olc::YELLOW); 
+			DrawString((this->ScreenWidth() / 2) - 44, 97, "High Scores", olc::MAGENTA); 
+			DrawString((this->ScreenWidth() / 2) - 28, 109, "Options", olc::BLUE); 
+			DrawString((this->ScreenWidth() / 2) - 28, 121, "Credits", olc::GREEN); 
+			DrawString((this->ScreenWidth() / 2) - 15, 133, "Quit", olc::RED); 
 			
 			// Draw cursor 
 			DoCursorBlink(fElapsedTime); // update cursor blink variables
-
-			// debug
-			bCursorBlink = false;
 
 			if (!bCursorBlink) // only draw cursor on frames where cursor blink is toggled false
 			{
@@ -2601,38 +2603,38 @@ public:
 				switch (iMenuSelectCursor_main)
 				{
 				case 0: // Start Game
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 40, 71 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 57, 71 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 40, 68 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 57, 68 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 0) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize); // L
 					break;
 				case 1: // Level Select
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 48, 83 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 65, 83 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 48, 80 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 65, 80 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L
 					break;
 				case 2: // High Scores
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 45, 95 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 61, 95 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 45, 92 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 61, 92 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize); // L
 					break;
 				case 3: // Options
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 107 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 107 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 104 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 104 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize); // L
 					break;
 				case 4: // Credits
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 119 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 119 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 116 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 116 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L
 					break;
 				case 5: // Quit Game
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 18, 131 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 34, 131 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 18, 128 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 34, 128 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(2, 0) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(3, 0) * vBlockSize, vBlockSize); // L
 					break;
@@ -2648,22 +2650,118 @@ public:
 	// Utility function controlling blink effect on menu selection cursor
 	void DoCursorBlink(float fElapsedTime)
 	{
-		fCursorBlinkTimer += fElapsedTime;
-
-		if (fCursorBlinkTimer >= fCursorBlinkSpeed) // Enough time has passed - toggle flag for cursor blink
+		// Check flag
+		if (bDoCursorBlink)
 		{
-			fCursorBlinkTimer = 0.0f; // reset timer
+			fCursorBlinkTimer += fElapsedTime;
 
-			// toggle flag
-			if (bCursorBlink == true)
+			if (fCursorBlinkTimer >= fCursorBlinkSpeed) // Enough time has passed - toggle flag for cursor blink
 			{
-				bCursorBlink = false;
-			}
-			else
-			{
-				bCursorBlink = true;
+				fCursorBlinkTimer = 0.0f; // reset timer
+
+				// toggle flag
+				if (bCursorBlink == true)
+				{
+					bCursorBlink = false;
+				}
+				else
+				{
+					bCursorBlink = true;
+				}
 			}
 		}
+	}
+
+	// Utility function for Main Menu - Game Title Visual Effect
+	void DoGameTitle(float fElapsedTime)
+	{
+		olc::Pixel p_0;
+		olc::Pixel p_1;
+		olc::Pixel p_2;
+		olc::Pixel p_3;
+		olc::Pixel p_4;
+		olc::Pixel p_5;
+
+		// Check timer
+		fTitleSwitchTimer += fElapsedTime;
+		if (fTitleSwitchTimer >= fTitleSwitchSpeed)
+		{
+			fTitleSwitchTimer = 0.0f;
+
+			iTitleSwitch++;
+
+			if (iTitleSwitch > 5)
+			{
+				iTitleSwitch = 0;
+			}
+		}
+
+		// Color Picking
+		switch (iTitleSwitch)
+		{
+		case 0:
+			p_0 = olc::CYAN;
+			p_1 = olc::YELLOW;
+			p_2 = olc::MAGENTA;
+			p_3 = olc::BLUE;
+			p_4 = olc::GREEN;
+			p_5 = olc::RED;
+			break;
+		case 1:
+			p_0 = olc::RED;
+			p_1 = olc::CYAN;
+			p_2 = olc::YELLOW;
+			p_3 = olc::MAGENTA;
+			p_4 = olc::BLUE;
+			p_5 = olc::GREEN;
+			break;
+		case 2:
+			p_0 = olc::GREEN;
+			p_1 = olc::RED;
+			p_2 = olc::CYAN;
+			p_3 = olc::YELLOW;
+			p_4 = olc::MAGENTA;
+			p_5 = olc::BLUE;
+			break;
+		case 3:
+			p_0 = olc::BLUE;
+			p_1 = olc::GREEN;
+			p_2 = olc::RED;
+			p_3 = olc::CYAN;
+			p_4 = olc::YELLOW;
+			p_5 = olc::MAGENTA;
+			break;
+		case 4:
+			p_0 = olc::MAGENTA;
+			p_1 = olc::BLUE;
+			p_2 = olc::GREEN;
+			p_3 = olc::RED;
+			p_4 = olc::CYAN;
+			p_5 = olc::YELLOW;
+			break;
+		case 5:
+			p_0 = olc::YELLOW;
+			p_1 = olc::MAGENTA;
+			p_2 = olc::BLUE;
+			p_3 = olc::GREEN;
+			p_4 = olc::RED;
+			p_5 = olc::CYAN;
+			break;
+		default:
+			break;
+		}
+
+		// Draw Title
+		DrawString(((this->ScreenWidth() / 2) - 77) + 5, 34, "I", p_0);
+		DrawString(((this->ScreenWidth() / 2) - 63) + 5, 34, "N", p_1);
+		DrawString(((this->ScreenWidth() / 2) - 48) + 5, 34, "C", p_2);
+		DrawString(((this->ScreenWidth() / 2) - 33) + 5, 34, "R", p_3);
+		DrawString(((this->ScreenWidth() / 2) - 18) + 5, 34, "E", p_4);
+		DrawString(((this->ScreenWidth() / 2) - 3) + 5, 34, "M", p_5);
+		DrawString(((this->ScreenWidth() / 2) + 12) + 5, 34, "E", p_0);
+		DrawString(((this->ScreenWidth() / 2) + 27) + 5, 34, "N", p_1);
+		DrawString(((this->ScreenWidth() / 2) + 42) + 5, 34, "T", p_2);
+		DrawString(((this->ScreenWidth() / 2) + 57) + 5, 34, "0", p_3);
 	}
 
 	// Draws the current level to the screen
