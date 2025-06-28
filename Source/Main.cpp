@@ -12,7 +12,10 @@
 
 // TODO_A
 // Fill out Levels!
-// Overhaul Main Menu visuals - including adding color to sub menus
+// add color to main menu sub menus
+//		- High Scores
+//		- level select
+//		- options
 // Change/Decide On game Name - then update main and readme, as well as exe output
 // Update portal graphics
 // create promotional materials
@@ -1250,6 +1253,7 @@ public:
 	olc::Renderable gfxWin;
 	olc::Renderable gfxSplash;
 	olc::Renderable gfxCursors;
+	olc::Renderable gfxMenuScene;
 
 	// Flag for enabling and disabling input
 	bool bEnableInput = true;
@@ -1264,14 +1268,27 @@ public:
 	// Variables used for main menu cursor/selection system
 	int iMenuSelectCursor_main = 0; // 0 - Start Game, 1 - Level Select, 2 - High Scores, 3 - Options, 4 - Credits, 5, Quit Game
 	float fCursorBlinkTimer = 0.0f;
-	float fCursorBlinkSpeed = 0.4f; // Timing for cursor blink
+	float fCursorBlinkSpeed = 0.5f; // Timing for cursor blink
 	bool bCursorBlink = false;
-	bool bDoCursorBlink = true;
+	bool bDoCursorBlink = true; // debug variable for disabling cursor blink
 
 	// Variables for Main Menu Game Title Visual Effect
 	int iTitleSwitch = 0; // 0 to 5
 	float fTitleSwitchTimer = 0.0f;
 	float fTitleSwitchSpeed = 0.2f;
+
+	// Variables for Main Menu Scene
+	bool bRestartScene = false;
+	int iMenuSceneState = -3; // -1 to 32
+	float fMenuSceneTimer = 0.0f; // timer variables for speed of menu scene playback
+	float fMenuSceneSpeed = 0.4f;
+	float fMenuSceneRestartEffectTimer = 0.0f; // timer variables for how long to do restart scene effect
+	float fMenuSceneRestartEffectTimerSpeed = 2.1f;
+	float fSceneEffectTimer = 0.0f; // timer variables for actual blink effect
+	float fSceneEffectSpeed = 0.35f;
+	float fSceneFreezeTimer = 0.0f; // timer variables for freeze at end of restart effect
+	float fSceneFreezeSpeed = 1.5f;
+	bool bSceneEffect = false;
 
 	// Flags for pausing game
 	bool bPaused = false;
@@ -1395,6 +1412,21 @@ public:
 		audioEngine_Music.StopAll();
 		audioEngine.~WaveEngine();
 		audioEngine_Music.~WaveEngine();
+	}
+
+	// utility function for exiting main menu - reset all variables
+	void ResetMainMenu()
+	{
+		iMenuSelectCursor_main = 0;
+		bCursorBlink = false;
+		iTitleSwitch = 0;
+		iMenuSceneState = -3;
+		fMenuSceneTimer = 0.0f;
+		fMenuSceneRestartEffectTimer = 0.0f;
+		fSceneEffectTimer = 0.0f;
+		fSceneFreezeTimer = 0.0f;
+		bRestartScene = false;
+		bSceneEffect = false;
 	}
 
 	// Utility function to truncate a float to 2 decimal places 
@@ -2531,6 +2563,9 @@ public:
 			// User Input:
 			if (GetKey(olc::Key::UP).bPressed || GetKey(olc::Key::W).bPressed)
 			{
+				bCursorBlink = false;
+				fCursorBlinkTimer = 0.0f;
+
 				iMenuSelectCursor_main--;
 				if (iMenuSelectCursor_main < 0)
 				{
@@ -2539,6 +2574,9 @@ public:
 			}
 			if (GetKey(olc::Key::DOWN).bPressed || GetKey(olc::Key::S).bPressed)
 			{
+				bCursorBlink = false;
+				fCursorBlinkTimer = 0.0f;
+
 				iMenuSelectCursor_main++;
 				if (iMenuSelectCursor_main > 5)
 				{
@@ -2550,23 +2588,34 @@ public:
 				switch (iMenuSelectCursor_main)
 				{
 				case 0: // Start Game
+					ResetMainMenu();
 					bMainMenu = false;			
 					iCurLevel = 1;
 					LoadLevel(iCurLevel, false);
 					break;
 				case 1: // Level Select
+					ResetMainMenu();
+					iMenuSelectCursor_main = 1;
 					iCurDisplay = 2;
 					break;
 				case 2: // High Scores
+					ResetMainMenu();
+					iMenuSelectCursor_main = 2;
 					iCurDisplay = 0;
 					break;
 				case 3: // Options
+					ResetMainMenu();
+					iMenuSelectCursor_main = 3;
 					iCurDisplay = 1;
 					break;
 				case 4: // Credits
+					ResetMainMenu();
+					iMenuSelectCursor_main = 4;
 					iCurDisplay = 3;
 					break;
 				case 5: // Quit Game
+					ResetMainMenu();
+					iMenuSelectCursor_main = 5;
 					internalHighScoreUtility_Time();
 					internalHighScoreUtility_Moves();
 					SaveHighScores();
@@ -2575,8 +2624,6 @@ public:
 				default:
 					break;
 				}
-
-				iMenuSelectCursor_main = 0;
 			}
 
 			// Draw Blank Menu Level
@@ -2585,12 +2632,12 @@ public:
 			// Draw UI
 			DoGameTitle(fElapsedTime);
 			DrawString((this->ScreenWidth() / 2) - 36, 51, "MAIN MENU", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 40, 73, "Start Game", olc::CYAN); 
-			DrawString((this->ScreenWidth() / 2) - 48, 85, "Level Select", olc::YELLOW); 
-			DrawString((this->ScreenWidth() / 2) - 44, 97, "High Scores", olc::MAGENTA); 
-			DrawString((this->ScreenWidth() / 2) - 28, 109, "Options", olc::BLUE); 
-			DrawString((this->ScreenWidth() / 2) - 28, 121, "Credits", olc::GREEN); 
-			DrawString((this->ScreenWidth() / 2) - 15, 133, "Quit", olc::RED); 
+			DrawString((this->ScreenWidth() / 2) - 40, 68, "Start Game", olc::CYAN); 
+			DrawString((this->ScreenWidth() / 2) - 48, 80, "Level Select", olc::YELLOW); 
+			DrawString((this->ScreenWidth() / 2) - 44, 92, "High Scores", olc::MAGENTA); 
+			DrawString((this->ScreenWidth() / 2) - 28, 104, "Options", olc::BLUE); 
+			DrawString((this->ScreenWidth() / 2) - 28, 116, "Credits", olc::GREEN); 
+			DrawString((this->ScreenWidth() / 2) - 15, 128, "Quit", olc::RED); 
 			
 			// Draw cursor 
 			DoCursorBlink(fElapsedTime); // update cursor blink variables
@@ -2603,38 +2650,38 @@ public:
 				switch (iMenuSelectCursor_main)
 				{
 				case 0: // Start Game
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 40, 68 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 57, 68 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 40, 63 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 57, 63 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 0) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize); // L
 					break;
 				case 1: // Level Select
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 48, 80 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 65, 80 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 48, 75 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 65, 75 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L
 					break;
 				case 2: // High Scores
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 45, 92 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 61, 92 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 45, 87 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 61, 87 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize); // L
 					break;
 				case 3: // Options
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 104 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 104 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 99 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 99 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize); // L
 					break;
 				case 4: // Credits
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 116 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 116 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 111 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 111 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L
 					break;
 				case 5: // Quit Game
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 18, 128 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 34, 128 };
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 18, 123 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 34, 123 };
 					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(2, 0) * vBlockSize, vBlockSize); // R
 					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(3, 0) * vBlockSize, vBlockSize); // L
 					break;
@@ -2642,6 +2689,9 @@ public:
 					break;
 				}
 			}
+
+			// Draw game scene loop
+			DoMainMenuGameScene(fElapsedTime);
 
 			break;
 		}
@@ -2669,6 +2719,344 @@ public:
 					bCursorBlink = true;
 				}
 			}
+		}
+	}
+
+	// Utility function for drawing the game scene loop in the main menu
+	void DoMainMenuGameScene(float fElapsedTime)
+	{
+		// Timer for scene game state
+		fMenuSceneTimer += fElapsedTime;
+		if (fMenuSceneTimer >= fMenuSceneSpeed && !bRestartScene)
+		{
+			fMenuSceneTimer = 0.0f;
+
+			iMenuSceneState++;
+			if (iMenuSceneState >= 32)
+			{
+				bRestartScene = true;
+			}
+		}
+
+		// Do Restart Sequence
+		if (bRestartScene)
+		{
+			// wait for timer to end, then 
+			fMenuSceneRestartEffectTimer += fElapsedTime;
+			if (fMenuSceneRestartEffectTimer >= fMenuSceneRestartEffectTimerSpeed)
+			{
+				// do freeze effect
+				bSceneEffect = false;
+
+				// wait for freeze timer before doing reset
+				fSceneFreezeTimer += fElapsedTime;
+				if (fSceneFreezeTimer >= fSceneFreezeSpeed)
+				{
+					// reset restart flag
+					bRestartScene = false;
+
+					// reset scene effect flag
+					bSceneEffect = false;
+
+					// reset timers
+					fSceneFreezeTimer = 0.0f;
+					fMenuSceneRestartEffectTimer = 0.0f;
+					fSceneEffectTimer = 0.0f;
+
+					// do restart
+					iMenuSceneState = -3;
+				}
+			}
+			else
+			{
+				// do effect
+				fSceneEffectTimer += fElapsedTime;
+				if (fSceneEffectTimer >= fSceneEffectSpeed)
+				{
+					// reset timer
+					fSceneEffectTimer = 0.0f;
+
+					// toggle flag
+					if (bSceneEffect == false)
+					{
+						bSceneEffect = true;
+					}
+					else if (bSceneEffect == true)
+					{
+						bSceneEffect = false;
+					}
+				}
+			}
+		}
+
+		// debug
+		/*DrawString(17, 17, std::to_string(iMenuSceneState), olc::DARK_GREY);
+		if (GetKey(olc::Key::RIGHT).bPressed)
+		{
+			iMenuSceneState++;
+			if (iMenuSceneState > 32)
+			{
+				iMenuSceneState = 32;
+			}
+		}
+		if (GetKey(olc::Key::LEFT).bPressed)
+		{
+			iMenuSceneState--;
+			if (iMenuSceneState < -1)
+			{
+				iMenuSceneState = -1;
+			}
+		}*/
+
+		olc::vi2d vPos_Vertical = { 176, 176 }; 
+		olc::vi2d vPos_Player = { 48, 160 }; 
+		olc::vi2d vPos_Horizontal = { 112, 192 }; 
+		olc::vi2d vPos_Omni = { 208, 176 }; 
+		olc::vi2d vPos_Countdown = { 80, 160 }; 
+		int iCountdownNum = 2;
+
+		// update positions
+		if (iMenuSceneState != -1)
+		{
+			if (iMenuSceneState >= 20) // vertical block 
+			{
+				vPos_Vertical.y = 160;
+			}
+			if (iMenuSceneState == 25) // horizontal block
+			{
+				vPos_Horizontal.x = 96;
+			}
+			else if (iMenuSceneState == 26)
+			{
+				vPos_Horizontal.x = 80;
+			}
+			else if (iMenuSceneState > 26)
+			{
+				vPos_Horizontal.x = 64;
+			}
+			if (iMenuSceneState >= 4) // omni block
+			{
+				vPos_Omni.y = 160;
+			}
+			if (iMenuSceneState >= 11) // Countdown block
+			{
+				vPos_Countdown.x = 96;
+				iCountdownNum = 1;
+			}
+			switch (iMenuSceneState) // Player
+			{
+			case 0:
+				vPos_Player = { 32, 160 };
+				break;
+			case 1:
+				vPos_Player = { 32, 176 };
+				break;
+			case 2:
+				vPos_Player = { 32, 192 }; // on top of blue portal
+				break;
+			case 3:
+				vPos_Player = { 208, 192 }; // on top of orange portal
+				break;
+			case 4:
+				vPos_Player = { 208, 176 };
+				break;
+			case 5:
+				vPos_Player = { 208, 192 }; // on top of orange portal
+				break;
+			case 6:
+				vPos_Player = { 32, 192 }; // on top of blue portal
+				break;
+			case 7:
+				vPos_Player = { 32, 176 };
+				break;
+			case 8:
+				vPos_Player = { 32, 160 };
+				break;
+			case 9:
+				vPos_Player = { 48, 160 };
+				break;
+			case 10:
+				vPos_Player = { 64, 160 }; // on top of door
+				break;
+			case 11:
+				vPos_Player = { 80, 160 }; // pushing countdown
+				break;
+			case 12:
+				vPos_Player = { 80, 176 };
+				break;
+			case 13:
+				vPos_Player = { 96, 176 };
+				break;
+			case 14:
+				vPos_Player = { 112, 176 };
+				break;
+			case 15:
+				vPos_Player = { 128, 176 };
+				break;
+			case 16:
+				vPos_Player = { 144, 176 };
+				break;
+			case 17:
+				vPos_Player = { 144, 192 };
+				break;
+			case 18:
+				vPos_Player = { 160, 192 };
+				break;
+			case 19:
+				vPos_Player = { 176, 192 };
+				break;
+			case 20:
+				vPos_Player = { 176, 176 }; // pushing vertical block
+				break;
+			case 21:
+				vPos_Player = { 176, 192 }; //
+				break;
+			case 22:
+				vPos_Player = { 160, 192 };
+				break;
+			case 23:
+				vPos_Player = { 144, 192 }; 
+				break;
+			case 24:
+				vPos_Player = { 128, 192 };
+				break;
+			case 25:
+				vPos_Player = { 112, 192 };
+				break;
+			case 26:
+				vPos_Player = { 96, 192 };
+				break;
+			case 27:
+				vPos_Player = { 80, 192 };
+				break;
+			case 28:
+				vPos_Player = { 80, 176 };
+				break;
+			case 29:
+				vPos_Player = { 80, 160 };
+				break;
+			case 30:
+				vPos_Player = { 64, 160 };
+				break;
+			case 31:
+				vPos_Player = { 48, 160 };
+				break;
+			case 32:
+				vPos_Player = { 32, 160 };
+				break;
+			default:
+				break;
+			}
+		}
+
+		// DRAW SCENE:
+		if (!bSceneEffect)
+		{
+			// WALLS:
+		// Left Wall
+			DrawPartialSprite({ 16, 192 }, gfxMenuScene.Sprite(), olc::vi2d(1, 2)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 16, 176 }, gfxMenuScene.Sprite(), olc::vi2d(1, 2)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 16, 160 }, gfxMenuScene.Sprite(), olc::vi2d(1, 2)* vBlockSize, vBlockSize);
+
+			// Right Wall
+			DrawPartialSprite({ 224, 192 }, gfxMenuScene.Sprite(), olc::vi2d(1, 1)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 224, 176 }, gfxMenuScene.Sprite(), olc::vi2d(1, 1)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 224, 160 }, gfxMenuScene.Sprite(), olc::vi2d(1, 1)* vBlockSize, vBlockSize);
+
+			// Top
+			DrawPartialSprite({ 32, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 48, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 64, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 80, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 96, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 112, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 128, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 144, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 160, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 176, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 192, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 208, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
+
+			// Bottom
+			DrawPartialSprite({ 32, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 48, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 64, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 80, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 96, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 112, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 128, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 144, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 160, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 176, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 192, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 208, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
+
+			// Corners
+			DrawPartialSprite({ 224, 208 }, gfxMenuScene.Sprite(), olc::vi2d(3, 1)* vBlockSize, vBlockSize); // bottom right
+			DrawPartialSprite({ 16, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 4)* vBlockSize, vBlockSize); // top left
+			DrawPartialSprite({ 16, 208 }, gfxMenuScene.Sprite(), olc::vi2d(4, 1)* vBlockSize, vBlockSize); // bottom left
+			DrawPartialSprite({ 224, 144 }, gfxMenuScene.Sprite(), olc::vi2d(3, 3)* vBlockSize, vBlockSize); // top right
+
+			// Interior
+			DrawPartialSprite({ 192, 160 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize); // interior wall 1 (next to orange portal)
+			DrawPartialSprite({ 192, 176 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 192, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize);
+
+			DrawPartialSprite({ 48, 176 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize); // Interior wall 2 (next to blue portal)
+			DrawPartialSprite({ 48, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize);
+			DrawPartialSprite({ 64, 176 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize);
+
+			// SCENE Static:
+			// Portals
+			DoTeleportFlipCheck(fElapsedTime);
+			switch (iTele_Facing)
+			{
+			case 0:
+				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(3, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(3, 4) * vBlockSize, vBlockSize);
+				break;
+			case 1:
+				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 4) * vBlockSize, vBlockSize);
+				break;
+			case 2:
+				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize);
+				break;
+			case 3:
+				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize);
+				break;
+			}
+			// Door Switch
+			olc::vi2d vDoorSwitch_MenuScene = { 208, 160 };
+			FillCircle(vDoorSwitch_MenuScene + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
+			// Win Tiles
+			olc::vi2d vWinTile_MenuScene_1 = { 64, 192 };
+			olc::vi2d vWinTile_MenuScene_2 = { 176, 160 };
+			olc::vi2d vWinTile_MenuScene_3 = { 32, 160 };
+			FillCircle(vWinTile_MenuScene_1 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+			FillCircle(vWinTile_MenuScene_2 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+			FillCircle(vWinTile_MenuScene_3 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+
+			// SCENE NonStatic
+			// Door
+			if (iMenuSceneState >= 4) // open
+			{
+				DrawPartialSprite({ 64, 160 }, gfxTiles.Sprite(), olc::vi2d(2, 2) * vBlockSize, vBlockSize);
+			}
+			else // closed
+			{
+				DrawPartialSprite({ 64, 160 }, gfxTiles.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
+			}
+			// "PLAYER"
+			DrawPartialSprite(vPos_Player, gfxTiles.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize);
+			// Blocks
+			DrawPartialSprite(vPos_Vertical, gfxTiles.Sprite(), olc::vi2d(3, 0) * vBlockSize, vBlockSize); // vertical block
+			DrawPartialSprite(vPos_Horizontal, gfxTiles.Sprite(), olc::vi2d(2, 0) * vBlockSize, vBlockSize); // Horizontal Block
+			DrawPartialSprite(vPos_Omni, gfxTiles.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize); // Omnidirectional Block
+			DrawPartialSprite(vPos_Countdown, gfxTiles.Sprite(), olc::vi2d(4, 0) * vBlockSize, vBlockSize); // countdown Block tile
+			DrawString(vPos_Countdown + olc::vi2d(4, 4), std::to_string(iCountdownNum), olc::BLACK); // countdown block integer
 		}
 	}
 
@@ -3038,6 +3426,7 @@ public:
 		gfxSplash.Load("Graphics//SplashScreen.png");
 		gfxWin.Load("Graphics//WinScreen.png"); 
 		gfxCursors.Load("Graphics//Cursors.png");
+		gfxMenuScene.Load("Graphics//MainMenuScene.png");
 
 		// Level Loading
 		LoadAllLevels();
