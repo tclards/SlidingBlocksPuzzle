@@ -6,12 +6,16 @@
 #include <cmath>
 
 // TODO_BUGS
-// Crash on closing program - seemingly related to audio engine wave deconstructor
+// Crash on closing program - seemingly related to audio engine wave deconstructor - low priority: does not matter in release mode7
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
 
 // TODO_A
 // Fill out Levels!
-// Add decal to main menu? or color coding for menu UI? Something to make it look nicer - ask the guys for advice
+// Overhaul Main Menu visuals - including adding color to sub menus
+// Change/Decide On game Name - then update main and readme, as well as exe output
+// Update portal graphics
+// create promotional materials
+// create itch.io page
 
 // Controls:
 // WASD or Arrow Keys to move Player Block
@@ -2546,13 +2550,31 @@ public:
 			DrawLevel(iLevelSet);
 
 			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 42, 24, "MAIN MENU", olc::WHITE);
-			DrawString(20, 148, "Press Enter to Start Game", olc::WHITE);
-			DrawString(20, 160, "Press L for Level Select", olc::WHITE);
-			DrawString(20, 172, "Press H to see High Scores", olc::WHITE);
-			DrawString(20, 185, "Press O for Options", olc::WHITE);
-			DrawString(20, 198, "Press C for Credits", olc::WHITE);
-			DrawString(20, 210, "Press ESC to Quit", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 77, 24, "I N C R E M E N T O", olc::WHITE);
+
+			DrawString((this->ScreenWidth() / 2) - 37, 38, "MAIN MENU", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 26, 60, "Press:", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 73, 72, "Enter to", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 2, 72, "Start Game", olc::CYAN);
+
+			DrawString((this->ScreenWidth() / 2) - 67, 84, "L for", olc::WHITE); // todo
+			DrawString((this->ScreenWidth() / 2) - 23, 84, "Level Select", olc::YELLOW);
+
+
+			DrawString((this->ScreenWidth() / 2) - 67, 96, "H for", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 23, 96, "High Scores", olc::MAGENTA);
+
+			DrawString((this->ScreenWidth() / 2) - 67, 108, "O for", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 23, 108, "Options", olc::BLUE);
+
+
+			DrawString((this->ScreenWidth() / 2) - 67, 120, "C for", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 23, 120, "Credits", olc::GREEN);
+
+
+			DrawString((this->ScreenWidth() / 2) - 67, 132, "ESC to", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 23, 132, "Quit", olc::RED);
+
 			break;
 		}
 	}
