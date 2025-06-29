@@ -12,6 +12,7 @@
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
 // startup SFX jingle not affected by fileio options
 // weirdness with cursor on main menu - caught on camera. repeatable?
+// portal locations not being cleared
 
 // TODO_A - Finish Game
 // Fill out Levels!
@@ -25,22 +26,27 @@
 //		- main 
 //		- readme
 //		- exe output
+// Update WinTile GFX
+// Update DoorSwitch GFX
 // Update portal
 //		- graphics
 //		- animation
 // Update Player Sprite
-// add SFX for cursor select 
-// add SFX for cursor enter
+// Rework sound design to create unified theme & replace placeholdersfx
+//		- add SFX for cursor select 
+//		- add SFX for cursor enter
+//		- Rework movement SFX to make unique SFX for each block type
+//		- Replace any SFX not matching theme
+//		- replace background music to match theme
+//		- audio balance
 
 // TODO_C - Feature Wishlist
-// add level selector properly? with level locking system
-// Rework sound design to create unified theme & replace placeholdersfx
-// Create special effect for loading into the first level of a level set
+// Add level selector properly? with level locking system
+// Create special effect/animation for loading into the first level of a level set
 //		- easy
 //		- medium
 //		- hard
-// Rework movement SFX to make unique SFX for each block type
-// Add background decals to clear screen to instead of black
+// Add background decal sprites to clear screen to instead of black
 
 // TODO_D - Prerelease Steps
 // create promotional materials
