@@ -18,6 +18,8 @@
 // Fill out Levels!
 
 // TODO_B - Rework & Polish
+// // Add background decal sprites to clear screen to instead of black
+// Update text color to black for UI
 // add color to main menu sub menus
 //		- High Scores
 //		- level select
@@ -46,7 +48,6 @@
 //		- easy
 //		- medium
 //		- hard
-// Add background decal sprites to clear screen to instead of black
 
 // TODO_D - Prerelease Steps
 // create promotional materials
