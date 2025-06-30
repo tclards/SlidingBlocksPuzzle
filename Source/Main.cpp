@@ -11,9 +11,7 @@
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor - low priority: does not matter in release mode
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
-// startup SFX jingle not affected by fileio options
 // weirdness with cursor on main menu - caught on camera. repeatable?
-// Entering 'p' during Level Select Input Code - exits to main menu
 
 // TODO_A - Finish Game
 // Fill out Levels!
@@ -31,9 +29,7 @@
 // Update Button GFX
 //		- WinTile GFX
 //      - DoorSwitch GFX
-// Update Portal
-//		- graphics
-//		- animation
+// Update Pause Menu
 // Rework sound design to create unified theme & replace placeholdersfx
 //		- add SFX for cursor select 
 //		- add SFX for cursor enter
@@ -41,8 +37,6 @@
 //		- Replace any SFX not matching theme
 //		- replace background music to match theme
 //		- audio balance
-// Unify UI Drawing under a single color variable for easy changing
-//		- Update text color to black for UI
 
 // TODO_C - Feature Wishlist
 // Add level selector properly? with level locking system
@@ -1264,6 +1258,13 @@ public:
 	// Vector containing door switches
 	std::vector<olc::vi2d> vSwitches;
 
+	// Variables for UI Draw Color
+	olc::Pixel pColor_GameUI = olc::WHITE;
+	olc::Pixel pColor_PauseUI = olc::WHITE;
+	olc::Pixel pColor_WinUI = olc::WHITE;
+	olc::Pixel pColor_RectUI_Fill = olc::BLACK;
+	olc::Pixel pColor_RectUI_Border = olc::WHITE;
+
 	// Vector of unique pointers to the blocks making up a level
 	std::vector<std::unique_ptr<block>> vLevel;
 
@@ -1280,6 +1281,9 @@ public:
 	// Timer for executing teleport rotate
 	float fTele_GFX_Flip = 0.0f;
 	float fTele_RotateSpeed = 0.2f;
+
+	// Flag for initial options loading during startup routine
+	bool bInitialLoad = false;
 
 	// Variables for Button Click SFX
 	bool bPlayButtonSFX_1 = false;
@@ -1925,6 +1929,22 @@ public:
 		// Do StartUp Routine at beginning of game
 		if (!bGameStarted)
 		{
+			// Load options into memory once on first frame of game - before startup
+			if (!bInitialLoad)
+			{
+				// Load Options
+				iOptionsLoad = LoadOptions();
+
+				// Check & Set Volume
+				audioEngine.SetOutputVolume(fSFXVolume);
+				audioEngine_Music.SetOutputVolume(fMusicVolume);
+
+				// Load High Scores
+				iHighScoreLoad = LoadHighScores();
+
+				bInitialLoad = true;
+			}
+
 			// Play the StartUP SFX one time
 			if (bDoStartUpJingle)
 			{
@@ -1949,12 +1969,6 @@ public:
 				bGameStarted = true;
 				bDoBackgroundMusic = true;
 			}
-
-			// Load Options
-			iOptionsLoad = LoadOptions();
-
-			// Load High Scores
-			iHighScoreLoad = LoadHighScores();
 
 			return true;
 		}
@@ -2011,6 +2025,746 @@ public:
 			return true;
 		}
 
+		// Draw Pause UI
+		DrawPauseMenu();
+
+		return true;
+	}
+
+	// Called per Frame while Main Menu flag is on
+	void MainMenu(float fElapsedTime)
+	{
+		iLevelSet = -1;
+
+		switch (iCurDisplay)
+		{
+		case 0: // High Score Screen
+			// User Input:
+			if (GetKey(olc::Key::ESCAPE).bPressed)										// Close Menu
+			{
+				iPageNum = 1;
+				iCurDisplay = -1;
+			}
+			if (GetKey(olc::Key::LEFT).bPressed || GetKey(olc::Key::A).bPressed)		// Move to next page
+			{
+				if (iPageNum > 1)
+				{
+					iPageNum--;
+				}
+			}
+			if (GetKey(olc::Key::RIGHT).bPressed || GetKey(olc::Key::D).bPressed)	    // Move to previous page
+			{
+				if (iPageNum < 8)
+				{
+					iPageNum++;
+				}
+			}
+			if (GetKey(olc::Key::H).bPressed)											// Reset Scores
+			{
+				for (int i = 0; i < vHighScore_Moves.size(); i++)
+				{
+					vHighScore_Moves[i] = 1000;
+				}
+				for (int i = 0; i < vHighScore_Time.size(); i++)
+				{
+					vHighScore_Time[i] = 10000;
+				}
+
+				fTotal_HS = 500000.0f;
+				iTotal_HS = 50000;
+
+				int iSave = SaveHighScores();
+				int iLoad = LoadHighScores();
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw High Score UI
+			DrawUI_HighScores();
+
+			break;
+		case 1: // Options Screen
+			// User Input:
+			if (GetKey(olc::Key::ESCAPE).bPressed)	// Close Menu
+			{
+				// Save Changes
+				iOptionsSave = SaveOptions();
+
+				iCurDisplay = -1;
+			}
+			if (GetKey(olc::Key::D).bPressed)		// Increase SFX Volume
+			{
+				fSFXVolume += 0.1f;
+				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+			}
+			if (GetKey(olc::Key::A).bPressed)		// Decrease SFX Volume
+			{
+				fSFXVolume -= 0.1f;
+				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+			}
+			if (GetKey(olc::Key::RIGHT).bPressed)	// Increase Music Volume
+			{
+				fMusicVolume += 0.1f;
+			}
+			if (GetKey(olc::Key::LEFT).bPressed)	// Decrease Music Volume
+			{
+				fMusicVolume -= 0.1f;
+			}
+
+			// Clamp Volume Values
+			if (fMusicVolume > 1.0f)
+			{
+				fMusicVolume = 1.0f;
+			}
+			if (fMusicVolume < 0.0f)
+			{
+				fMusicVolume = 0.0f;
+			}
+			if (fSFXVolume > 1.0f)
+			{
+				fSFXVolume = 1.0f;
+			}
+			if (fSFXVolume < 0.0f)
+			{
+				fSFXVolume = 0.0f;
+			}
+
+			// Apply Changes
+			audioEngine.SetOutputVolume(fSFXVolume);
+			audioEngine_Music.SetOutputVolume(fMusicVolume);
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw Options UI
+			DrawUI_Options();
+			
+			break;
+		case 2: // Level Select Code Screen
+			// User Input
+			if (GetKey(olc::Key::ESCAPE).bPressed)
+			{
+				if (IsTextEntryEnabled() == true) // Cancel Text Entry on ESC if Text Entry is Active
+				{
+					// Play Fail SFX
+					audioEngine.PlayWaveform(&audioSlot_LevelCode_Fail, false, fAudioSpeed);
+
+					// Disable Text Entry
+					TextEntryEnable(false);
+
+					// Reset sInput string
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+				}
+				else // Close Level Select Menu on ESC by default
+				{
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+					iCurDisplay = -1;
+				}
+			}
+
+			// Enable Text Entry on Enter
+			if (GetKey(olc::Key::ENTER).bPressed && IsTextEntryEnabled() == false)
+			{
+				TextEntryEnable(true);
+			}
+
+			// Use Checkpoint Code, if player has inputted one
+			if (sInputCode != "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd")		// Some kind of user input has been detected in the string
+			{
+				if (sInputCode == sMediumLevelCode)
+				{
+					// Play Success SFX
+					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
+
+					// Set Level
+					iCurLevel = 16;
+
+					// Disable Text Entry
+					TextEntryEnable(false);
+
+					// Exit Menus, reset sInput string, Load Level						
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+					iCurDisplay = -1;
+					bMainMenu = false;
+					LoadLevel(iCurLevel, false);
+
+				}
+				else if (sInputCode == sHardLevelCode)
+				{
+					// Play Success SFX
+					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
+
+					// Set Level
+					iCurLevel = 36;
+
+					// Disable Text Entry
+					TextEntryEnable(false);
+
+					// Exit Menus, reset sInput string, Load Level
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+					iCurDisplay = -1;
+					bMainMenu = false;
+					LoadLevel(iCurLevel, false);
+				}
+				else
+				{
+					// Play Fail SFX
+					audioEngine.PlayWaveform(&audioSlot_LevelCode_Fail, false, fAudioSpeed);
+
+					// Disable Text Entry
+					TextEntryEnable(false);
+
+					// Reset sInput string
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+				}
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw Level Select UI
+			DrawUI_LevelSelect();
+
+			break;
+		case 3: // Credits Screen
+			// User Input:
+			if (GetKey(olc::Key::ESCAPE).bPressed)	// Close Menu
+			{
+				// Save Changes
+				iOptionsSave = SaveOptions();
+
+				iCurDisplay = -1;
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw UI
+			DrawUI_Credits();
+
+			break;
+		default: // Main Menu
+			// User Input:
+			if (GetKey(olc::Key::UP).bPressed || GetKey(olc::Key::W).bPressed)
+			{
+				bCursorBlink = false;
+				fCursorBlinkTimer = 0.0f;
+
+				iMenuSelectCursor_main--;
+				if (iMenuSelectCursor_main < 0)
+				{
+					iMenuSelectCursor_main = 5;
+				}
+			}
+			if (GetKey(olc::Key::DOWN).bPressed || GetKey(olc::Key::S).bPressed)
+			{
+				bCursorBlink = false;
+				fCursorBlinkTimer = 0.0f;
+
+				iMenuSelectCursor_main++;
+				if (iMenuSelectCursor_main > 5)
+				{
+					iMenuSelectCursor_main = 0;
+				}
+			}
+			if (GetKey(olc::Key::ENTER).bPressed)
+			{
+				switch (iMenuSelectCursor_main)
+				{
+				case 0: // Start Game
+					ResetMainMenu();
+					bMainMenu = false;
+					iCurLevel = 1;
+					LoadLevel(iCurLevel, false);
+					break;
+				case 1: // Level Select
+					ResetMainMenu();
+					iMenuSelectCursor_main = 1;
+					iCurDisplay = 2;
+					break;
+				case 2: // High Scores
+					ResetMainMenu();
+					iMenuSelectCursor_main = 2;
+					iCurDisplay = 0;
+					break;
+				case 3: // Options
+					ResetMainMenu();
+					iMenuSelectCursor_main = 3;
+					iCurDisplay = 1;
+					break;
+				case 4: // Credits
+					ResetMainMenu();
+					iMenuSelectCursor_main = 4;
+					iCurDisplay = 3;
+					break;
+				case 5: // Quit Game
+					ResetMainMenu();
+					iMenuSelectCursor_main = 5;
+					internalHighScoreUtility_Time();
+					internalHighScoreUtility_Moves();
+					SaveHighScores();
+					this->~Game();
+					break;
+				default:
+					break;
+				}
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw UI
+			DoGameTitle(fElapsedTime);
+			DrawString((this->ScreenWidth() / 2) - 36, 51, "MAIN MENU", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 40, 68, "Start Game", olc::CYAN);
+			DrawString((this->ScreenWidth() / 2) - 48, 80, "Level Select", olc::YELLOW);
+			DrawString((this->ScreenWidth() / 2) - 44, 92, "High Scores", olc::MAGENTA);
+			DrawString((this->ScreenWidth() / 2) - 28, 104, "Options", olc::BLUE);
+			DrawString((this->ScreenWidth() / 2) - 28, 116, "Credits", olc::GREEN);
+			DrawString((this->ScreenWidth() / 2) - 15, 128, "Quit", olc::RED);
+
+			// Draw cursor 
+			DoCursorBlink(fElapsedTime); // update cursor blink variables
+
+			if (!bCursorBlink) // only draw cursor on frames where cursor blink is toggled false
+			{
+				olc::vi2d vCursorPos_R = { 0,0 };
+				olc::vi2d vCursorPos_L = { 0,0 };
+
+				switch (iMenuSelectCursor_main)
+				{
+				case 0: // Start Game
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 40, 63 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 57, 63 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 0) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize); // L
+					break;
+				case 1: // Level Select
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 48, 75 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 65, 75 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L
+					break;
+				case 2: // High Scores
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 45, 87 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 61, 87 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize); // L
+					break;
+				case 3: // Options
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 99 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 99 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize); // L
+					break;
+				case 4: // Credits
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 111 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 111 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L
+					break;
+				case 5: // Quit Game
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 18, 123 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 34, 123 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(2, 0) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(3, 0) * vBlockSize, vBlockSize); // L
+					break;
+				default:
+					break;
+				}
+			}
+
+			// Draw game scene loop
+			DoMainMenuGameScene(fElapsedTime);
+
+			break;
+		}
+	}
+#pragma endregion
+
+	// Draw Functions
+	#pragma region Draw Functions
+
+	// Draws Level
+	void DrawLevel(int iLevelSet)
+	{
+		// Clear screen to black before drawing each frame
+		Clear(olc::BLACK);
+
+		// Check & Set LevelSet Variable
+		SetLevelSet();
+
+		// door drawing
+		for (int i = 0; i < vDoors_pos.size(); i++)
+		{
+			switch (iLevelSet)
+			{
+			case 0:		// easy
+				if (bDoorsOpen)
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize);
+				}
+				else
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 1) * vBlockSize, vBlockSize);
+				}
+				break;
+			case 1:		// medium
+				if (bDoorsOpen)
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 2) * vBlockSize, vBlockSize);
+				}
+				else
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
+				}
+				break;
+			case 2:		// hard
+				if (bDoorsOpen)
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 2) * vBlockSize, vBlockSize);
+				}
+				else
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 2) * vBlockSize, vBlockSize);
+				}
+				break;
+			default:
+				break;
+			}
+		}
+
+		// win condition drawing
+		for (auto& g : vGoals)
+		{
+			FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+		}
+
+		// door switch drawing
+		for (auto& d : vSwitches)
+		{
+			FillCircle(d * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
+		}
+
+		// teleport drawing
+		if (bLevelHasTeleports)
+		{
+			switch (iTele_Facing)
+			{
+			case 0:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 4) * vBlockSize, vBlockSize);
+				break;
+			case 1:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 4) * vBlockSize, vBlockSize);
+				break;
+			case 2:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize);
+				break;
+			case 3:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize);
+				break;
+			}
+		}
+
+		// block drawing
+		olc::vi2d vBlockPos = { 0,0 };
+		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++)
+		{
+			for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
+			{
+				// get pointer to block at a particular position
+				auto& b = vLevel[id(vBlockPos)];
+
+				// check for nullptr, then draw
+				if (b)
+				{
+					b->DrawSelf(this, vBlockPos, vBlockSize, gfxTiles, iLevelSet);
+				}
+			}
+		}
+	}
+
+	// Draws UI
+	void DrawUI(float fElapsedTime)
+	{
+		if (iCurLevel != -1) // Active Gameplay
+		{
+			// Goal Tracking UI
+			FillRect(3, 2, 92, 10, pColor_RectUI_Fill);
+			DrawRect(3, 2, 92, 10, pColor_RectUI_Border);
+			DrawString(5, 4, "Goals: ", pColor_GameUI);
+			DrawString(55, 4, std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), pColor_GameUI);
+
+			// Level Tracking UI
+			FillRect(144, 2, 100, 10, pColor_RectUI_Fill);
+			DrawRect(144, 2, 100, 10, pColor_RectUI_Border);
+			DrawString(146, 4, "Level: ", pColor_GameUI);
+			DrawString(196, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), pColor_GameUI);
+
+			// Debug Mode Indicator
+			if (bDebugMode) 
+			{
+				DrawString(17, 17, "DEBUG", olc::YELLOW);
+			}
+
+			// Moves & Time Score UI
+			std::string sMoves = "";
+			std::string sTime = "";
+			CreateStrings_UI(sMoves, sTime);
+			FillRect(3, 226, 92, 10, pColor_RectUI_Fill); // Draw Moves
+			DrawRect(3, 226, 92, 10, pColor_RectUI_Border);
+			DrawString(5, 228, "Moves: " + sMoves, pColor_GameUI);
+			FillRect(144, 226, 100, 10, pColor_RectUI_Fill); // Draw Time
+			DrawRect(144, 226, 100, 10, pColor_RectUI_Border);
+			DrawString(146, 228, "Time: " + sTime, pColor_GameUI);
+
+
+			// Special UI for Displaying Checkpoint Codes that can be inputted on Main Menu Level Select screen
+			if (iCurLevel == 16)
+			{
+				FillRect(146, 17, 92, 10, pColor_RectUI_Fill); 
+				DrawRect(146, 17, 92, 10, pColor_RectUI_Border);
+				DrawString(148, 19, "Code: " + sMediumLevelCode, pColor_GameUI);
+			}
+			else if (iCurLevel == 36)
+			{
+				FillRect(146, 17, 92, 10, pColor_RectUI_Fill);
+				DrawRect(146, 17, 92, 10, pColor_RectUI_Border);
+				DrawString(148, 19, "Code: " + sHardLevelCode, pColor_GameUI);
+			}
+		}
+		else // Win Screen
+		{
+			// Win Screen Stuff
+			fTime_WinScreen += fElapsedTime;
+			bEnableInput = false;
+			if (fTime_WinScreen < 4.0f) // after 4 seconds remove splash, draw UI, and re-enable input
+			{
+				DrawSprite(olc::vi2d(0, 0), gfxWin.Sprite());
+			}
+			else
+			{
+				bEnableInput = true;
+				iLevelSet = -1;
+				audioEngine_Music.SetOutputVolume(0.0f);
+				DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", pColor_WinUI);
+				DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", pColor_WinUI);
+				DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC for Main Menu", pColor_WinUI);
+			}
+		}
+	}
+
+	// Draws High Score UI
+	void DrawUI_HighScores()
+	{
+		DrawString((this->ScreenWidth() / 2) - 42, 24, "HIGH SCORES", olc::WHITE);
+
+		DrawString(20, 180, "Press ESC to Close", olc::WHITE);
+		DrawString(20, 190, "Press H to Reset Scores", olc::WHITE);
+
+		DrawString(20, 202, "Press Left or Right to", olc::WHITE);
+		DrawString(20, 212, "Select Page", olc::WHITE);
+		DrawString(230, 215, std::to_string(iPageNum), olc::WHITE);
+
+		switch (iPageNum)
+		{
+		case 1:
+			DrawString(20, 33, "Level 1:", olc::WHITE);
+			DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[0]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[0])) + "s", olc::WHITE);
+			DrawString(20, 53, "Level 2:", olc::WHITE);
+			DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[1]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[1])) + "s", olc::WHITE);
+			DrawString(20, 73, "Level 3:", olc::WHITE);
+			DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[2]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[2])) + "s", olc::WHITE);
+			DrawString(20, 93, "Level 4:", olc::WHITE);
+			DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[3]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[3])) + "s", olc::WHITE);
+			DrawString(20, 113, "Level 5:", olc::WHITE);
+			DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[4]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[4])) + "s", olc::WHITE);
+			DrawString(20, 133, "Level 6:", olc::WHITE);
+			DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[5]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[5])) + "s", olc::WHITE);
+			DrawString(20, 153, "Level 7:", olc::WHITE);
+			DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[6]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[6])) + "s", olc::WHITE);
+			break;
+		case 2:
+			DrawString(20, 33, "Level 8:", olc::WHITE);
+			DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[7]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[7])) + "s", olc::WHITE);
+			DrawString(20, 53, "Level 9:", olc::WHITE);
+			DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[8]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[8])) + "s", olc::WHITE);
+			DrawString(20, 73, "Level 10:", olc::WHITE);
+			DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[9]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[9])) + "s", olc::WHITE);
+			DrawString(20, 93, "Level 11:", olc::WHITE);
+			DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[10]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[10])) + "s", olc::WHITE);
+			DrawString(20, 113, "Level 12:", olc::WHITE);
+			DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[11]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[11])) + "s", olc::WHITE);
+			DrawString(20, 133, "Level 13:", olc::WHITE);
+			DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[12]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[12])) + "s", olc::WHITE);
+			DrawString(20, 153, "Level 14:", olc::WHITE);
+			DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[13]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[13])) + "s", olc::WHITE);
+			break;
+		case 3:
+			DrawString(20, 33, "Level 15:", olc::WHITE);
+			DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[14]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[14])) + "s", olc::WHITE);
+			DrawString(20, 53, "Level 16:", olc::WHITE);
+			DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[15]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[15])) + "s", olc::WHITE);
+			DrawString(20, 73, "Level 17:", olc::WHITE);
+			DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[16]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[16])) + "s", olc::WHITE);
+			DrawString(20, 93, "Level 18:", olc::WHITE);
+			DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[17]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[17])) + "s", olc::WHITE);
+			DrawString(20, 113, "Level 19:", olc::WHITE);
+			DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[18]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[18])) + "s", olc::WHITE);
+			DrawString(20, 133, "Level 20:", olc::WHITE);
+			DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[19]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[19])) + "s", olc::WHITE);
+			DrawString(20, 153, "Level 21:", olc::WHITE);
+			DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[20]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[20])) + "s", olc::WHITE);
+			break;
+		case 4:
+			DrawString(20, 33, "Level 22:", olc::WHITE);
+			DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[21]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[21])) + "s", olc::WHITE);
+			DrawString(20, 53, "Level 23:", olc::WHITE);
+			DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[22]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[22])) + "s", olc::WHITE);
+			DrawString(20, 73, "Level 24:", olc::WHITE);
+			DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[23]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[23])) + "s", olc::WHITE);
+			DrawString(20, 93, "Level 25:", olc::WHITE);
+			DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[24]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[24])) + "s", olc::WHITE);
+			DrawString(20, 113, "Level 26:", olc::WHITE);
+			DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[25]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[25])) + "s", olc::WHITE);
+			DrawString(20, 133, "Level 27:", olc::WHITE);
+			DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[26]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[26])) + "s", olc::WHITE);
+			DrawString(20, 153, "Level 28:", olc::WHITE);
+			DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[27]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[27])) + "s", olc::WHITE);
+			break;
+		case 5:
+			DrawString(20, 33, "Level 29:", olc::WHITE);
+			DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[28]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[28])) + "s", olc::WHITE);
+			DrawString(20, 53, "Level 30:", olc::WHITE);
+			DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[29]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[29])) + "s", olc::WHITE);
+			DrawString(20, 73, "Level 31:", olc::WHITE);
+			DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[30]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[30])) + "s", olc::WHITE);
+			DrawString(20, 93, "Level 32:", olc::WHITE);
+			DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[31]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[31])) + "s", olc::WHITE);
+			DrawString(20, 113, "Level 33:", olc::WHITE);
+			DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[32]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[32])) + "s", olc::WHITE);
+			DrawString(20, 133, "Level 34:", olc::WHITE);
+			DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[33]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[33])) + "s", olc::WHITE);
+			DrawString(20, 153, "Level 35:", olc::WHITE);
+			DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[34]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[34])) + "s", olc::WHITE);
+			break;
+		case 6:
+			DrawString(20, 33, "Level 36:", olc::WHITE);
+			DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[35]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[35])) + "s", olc::WHITE);
+			DrawString(20, 53, "Level 37:", olc::WHITE);
+			DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[36]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[36])) + "s", olc::WHITE);
+			DrawString(20, 73, "Level 38:", olc::WHITE);
+			DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[37]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[37])) + "s", olc::WHITE);
+			DrawString(20, 93, "Level 39:", olc::WHITE);
+			DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[38]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[38])) + "s", olc::WHITE);
+			DrawString(20, 113, "Level 40:", olc::WHITE);
+			DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[39]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[39])) + "s", olc::WHITE);
+			DrawString(20, 133, "Level 41:", olc::WHITE);
+			DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[40]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[40])) + "s", olc::WHITE);
+			DrawString(20, 153, "Level 42:", olc::WHITE);
+			DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[41]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[41])) + "s", olc::WHITE);
+			break;
+		case 7:
+			DrawString(20, 33, "Level 43:", olc::WHITE);
+			DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[42]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[42])) + "s", olc::WHITE);
+			DrawString(20, 53, "Level 44:", olc::WHITE);
+			DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[43]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[43])) + "s", olc::WHITE);
+			DrawString(20, 73, "Level 45:", olc::WHITE);
+			DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[44]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[44])) + "s", olc::WHITE);
+			DrawString(20, 93, "Level 46:", olc::WHITE);
+			DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[45]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[45])) + "s", olc::WHITE);
+			DrawString(20, 113, "Level 47:", olc::WHITE);
+			DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[46]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[46])) + "s", olc::WHITE);
+			DrawString(20, 133, "Level 48:", olc::WHITE);
+			DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[47]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[47])) + "s", olc::WHITE);
+			DrawString(20, 153, "Level 49:", olc::WHITE);
+			DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[48]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[48])) + "s", olc::WHITE);
+			break;
+		case 8:
+			DrawString(20, 33, "Level 50:", olc::WHITE);
+			DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[49]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[49])) + "s", olc::WHITE);
+
+			iTotal_HS = 0;
+			fTotal_HS = 0.0f;
+			for (int i = 0; i < vHighScore_Moves.size(); i++)
+			{
+				iTotal_HS += vHighScore_Moves[i];
+			}
+			for (int i = 0; i < vHighScore_Time.size(); i++)
+			{
+				fTotal_HS += vHighScore_Time[i];
+			}
+
+			DrawString(20, 143, "Total:", olc::WHITE);
+			DrawString(20, 153, "Moves: " + std::to_string(iTotal_HS) + "\nTime: " + FloatToString(TruncateFloat(fTotal_HS)) + "s", olc::WHITE);
+			break;
+		default:
+			break;
+		}
+	}
+
+	// Draws Options UI
+	void DrawUI_Options()
+	{
+		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "OPTIONS", olc::WHITE);
+		DrawString((256 / 2) - 108, (240 / 2) - 85, "Press Arrow Keys to", olc::WHITE);
+		DrawString((256 / 2) - 108, (240 / 2) - 75, "Adjust Music Volume", olc::WHITE);
+		DrawString((256 / 2) - 108, (240 / 2) - 60, "Press A or D to", olc::WHITE);
+		DrawString((256 / 2) - 108, (240 / 2) - 50, "Adjust SFX Volume", olc::WHITE);
+
+		DrawString((256 / 2) - 108, (240 / 2) + 72, "Music: " + std::to_string(fMusicVolume), olc::WHITE);
+		DrawString((256 / 2) - 108, (240 / 2) + 82, "SFX: " + std::to_string(fSFXVolume), olc::WHITE);
+		DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
+	}
+
+	// Draws Level Select UI
+	void DrawUI_LevelSelect()
+	{
+		DrawString((this->ScreenWidth() / 2) - 50, (240 / 2) - 96, "LEVEL SELECT", olc::WHITE);
+		DrawString(20, 199, "Press Enter to Input Code", olc::WHITE);
+		DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
+
+		// Text Entry UI
+		if (IsTextEntryEnabled() == true)
+		{
+			DrawString(65, 35, "Text Entry Mode", olc::YELLOW);
+		}
+	}
+
+	// Draws Credits UI
+	void DrawUI_Credits()
+	{
+		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "CREDITS", olc::WHITE);
+
+			DrawString(20, 35, "Programming:", olc::YELLOW);
+			DrawString(20, 45, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 60, "Art Design:", olc::GREEN);
+			DrawString(20, 70, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 85, "Sound Design:", olc::RED);
+			DrawString(20, 95, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 110, "Level Design:", olc::MAGENTA);
+			DrawString(20, 120, "Tyler Clardy", olc::WHITE);
+			DrawString(20, 130, "James Norman", olc::WHITE);
+			DrawString(20, 140, "Aaron McBroom", olc::WHITE);
+
+			DrawString(20, 155, "Promotional Materials:", olc::BLUE);
+			DrawString(20, 165, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 200, "3bytes Studio 2025", olc::CYAN);
+			DrawString(20, 212, "Press ESC to Close", olc::WHITE);
+	}
+
+	// Draws Pause Menu
+	void DrawPauseMenu()
+	{
 		// Clear screen to black before drawing each frame
 		Clear(olc::BLACK);
 
@@ -2228,1011 +2982,12 @@ public:
 		}
 
 		// Draw UI Elements
-		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", olc::WHITE);
-		DrawString(20, 45, "Stats for Current Level", olc::WHITE);
-		DrawString(20, 70, sTimerUI, olc::WHITE);
-		DrawString(20, 57, sMovementUI, olc::WHITE);
-		DrawString(20, 212, "Press Enter to Resume", olc::WHITE);
-		DrawString(20, 198, "Press ESC for Main Menu", olc::WHITE);
-
-		return true;
-	}
-
-	// Called per Frame while Main Menu flag is on
-	void MainMenu(float fElapsedTime)
-	{
-		iLevelSet = -1;
-
-		switch (iCurDisplay)
-		{
-		case 0: // High Score Screen
-			// User Input:
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Close Menu
-			{
-				iPageNum = 1;
-				iCurDisplay = -1;
-			}
-			if (GetKey(olc::Key::LEFT).bPressed || GetKey(olc::Key::A).bPressed)		// Move to next page
-			{
-				if (iPageNum > 1)
-				{
-					iPageNum--;
-				}
-			}
-			if (GetKey(olc::Key::RIGHT).bPressed || GetKey(olc::Key::D).bPressed)	    // Move to previous page
-			{
-				if (iPageNum < 8)
-				{
-					iPageNum++;
-				}
-			}
-			if (GetKey(olc::Key::H).bPressed)											// Reset Scores
-			{
-				for (int i = 0; i < vHighScore_Moves.size(); i++)
-				{
-					vHighScore_Moves[i] = 1000;
-				}
-				for (int i = 0; i < vHighScore_Time.size(); i++)
-				{
-					vHighScore_Time[i] = 10000;
-				}
-
-				fTotal_HS = 500000.0f;
-				iTotal_HS = 50000;
-
-				int iSave = SaveHighScores();
-				int iLoad = LoadHighScores();
-			}
-
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
-
-			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 42, 24, "HIGH SCORES", olc::WHITE);
-
-			DrawString(20, 180, "Press ESC to Close", olc::WHITE);
-			DrawString(20, 190, "Press H to Reset Scores", olc::WHITE);
-
-			DrawString(20, 202, "Press Left or Right to", olc::WHITE);
-			DrawString(20, 212, "Select Page", olc::WHITE);
-			DrawString(230, 215, std::to_string(iPageNum), olc::WHITE);
-
-			// Display Scores 
-			switch (iPageNum)
-			{
-			case 1:
-				DrawString(20, 33, "Level 1:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[0]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[0])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 2:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[1]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[1])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 3:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[2]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[2])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 4:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[3]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[3])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 5:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[4]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[4])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 6:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[5]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[5])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 7:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[6]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[6])) + "s", olc::WHITE);
-				break;
-			case 2:
-				DrawString(20, 33, "Level 8:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[7]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[7])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 9:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[8]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[8])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 10:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[9]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[9])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 11:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[10]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[10])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 12:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[11]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[11])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 13:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[12]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[12])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 14:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[13]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[13])) + "s", olc::WHITE);
-				break;
-			case 3:
-				DrawString(20, 33, "Level 15:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[14]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[14])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 16:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[15]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[15])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 17:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[16]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[16])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 18:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[17]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[17])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 19:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[18]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[18])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 20:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[19]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[19])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 21:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[20]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[20])) + "s", olc::WHITE);
-				break;
-			case 4:
-				DrawString(20, 33, "Level 22:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[21]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[21])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 23:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[22]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[22])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 24:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[23]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[23])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 25:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[24]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[24])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 26:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[25]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[25])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 27:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[26]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[26])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 28:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[27]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[27])) + "s", olc::WHITE);
-				break;
-			case 5:
-				DrawString(20, 33, "Level 29:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[28]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[28])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 30:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[29]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[29])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 31:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[30]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[30])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 32:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[31]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[31])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 33:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[32]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[32])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 34:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[33]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[33])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 35:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[34]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[34])) + "s", olc::WHITE);
-				break;
-			case 6:
-				DrawString(20, 33, "Level 36:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[35]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[35])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 37:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[36]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[36])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 38:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[37]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[37])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 39:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[38]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[38])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 40:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[39]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[39])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 41:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[40]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[40])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 42:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[41]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[41])) + "s", olc::WHITE);
-				break;
-			case 7:
-				DrawString(20, 33, "Level 43:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[42]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[42])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 44:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[43]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[43])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 45:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[44]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[44])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 46:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[45]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[45])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 47:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[46]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[46])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 48:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[47]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[47])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 49:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[48]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[48])) + "s", olc::WHITE);
-				break;
-			case 8:
-				DrawString(20, 33, "Level 50:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[49]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[49])) + "s", olc::WHITE);
-
-				iTotal_HS = 0;
-				fTotal_HS = 0.0f;
-				for (int i = 0; i < vHighScore_Moves.size(); i++)
-				{
-					iTotal_HS += vHighScore_Moves[i];
-				}
-				for (int i = 0; i < vHighScore_Time.size(); i++)
-				{
-					fTotal_HS += vHighScore_Time[i];
-				}
-
-				DrawString(20, 143, "Total:", olc::WHITE);
-				DrawString(20, 153, "Moves: " + std::to_string(iTotal_HS) + "\nTime: " + FloatToString(TruncateFloat(fTotal_HS)) + "s", olc::WHITE);
-				break;
-			default:
-				break;
-			}
-			break;
-		case 1: // Options Screen
-			// User Input:
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
-			{
-				// Save Changes
-				iOptionsSave = SaveOptions();
-
-				iCurDisplay = -1;
-			}
-			if (GetKey(olc::Key::D).bPressed)		// Increase SFX Volume
-			{
-				fSFXVolume += 0.1f;
-				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
-			}
-			if (GetKey(olc::Key::A).bPressed)		// Decrease SFX Volume
-			{
-				fSFXVolume -= 0.1f;
-				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
-			}
-			if (GetKey(olc::Key::RIGHT).bPressed)	// Increase Music Volume
-			{
-				fMusicVolume += 0.1f;
-			}
-			if (GetKey(olc::Key::LEFT).bPressed)	// Decrease Music Volume
-			{
-				fMusicVolume -= 0.1f;
-			}
-
-			// Clamp Volume Values
-			if (fMusicVolume > 1.0f)
-			{
-				fMusicVolume = 1.0f;
-			}
-			if (fMusicVolume < 0.0f)
-			{
-				fMusicVolume = 0.0f;
-			}
-			if (fSFXVolume > 1.0f)
-			{
-				fSFXVolume = 1.0f;
-			}
-			if (fSFXVolume < 0.0f)
-			{
-				fSFXVolume = 0.0f;
-			}
-
-			// Apply Changes
-			audioEngine.SetOutputVolume(fSFXVolume);
-			audioEngine_Music.SetOutputVolume(fMusicVolume);
-
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
-
-			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "OPTIONS", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) - 85, "Press Arrow Keys to", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) - 75, "Adjust Music Volume", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) - 60, "Press A or D to", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) - 50, "Adjust SFX Volume", olc::WHITE);
-
-			DrawString((256 / 2) - 108, (240 / 2) + 72, "Music: " + std::to_string(fMusicVolume), olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 82, "SFX: " + std::to_string(fSFXVolume), olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
-			break;
-		case 2: // Level Select Code Screen
-			// User Input
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Close Menu
-			{
-				sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
-				iCurDisplay = -1;
-			}
-			if (GetKey(olc::Key::ENTER).bPressed && IsTextEntryEnabled() == false)		// Enable Text Entry
-			{
-				TextEntryEnable(true);
-			}
-
-			// Use Input Input, if player has inputted one
-			if (sInputCode != "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd")		// Some kind of user input has been detected in the string
-			{
-				if (sInputCode == sMediumLevelCode)
-				{
-					// Play Success SFX
-					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
-
-					// Set Level
-					iCurLevel = 16;
-
-					// Disable Text Entry
-					TextEntryEnable(false);
-
-					// Exit Menus, reset sInput string, Load Level						
-					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
-					iCurDisplay = -1;
-					bMainMenu = false;
-					LoadLevel(iCurLevel, false);
-
-				}
-				else if (sInputCode == sHardLevelCode)
-				{
-					// Play Success SFX
-					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
-
-					// Set Level
-					iCurLevel = 36;
-
-					// Disable Text Entry
-					TextEntryEnable(false);
-
-					// Exit Menus, reset sInput string, Load Level
-					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
-					iCurDisplay = -1;
-					bMainMenu = false;
-					LoadLevel(iCurLevel, false);
-				}
-				else
-				{
-					// Play Fail SFX
-					audioEngine.PlayWaveform(&audioSlot_LevelCode_Fail, false, fAudioSpeed);
-
-					// Disable Text Entry
-					TextEntryEnable(false);
-
-					// Reset sInput string
-					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
-				}
-			}
-
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
-
-			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 50, (240 / 2) - 96, "LEVEL SELECT", olc::WHITE);
-			DrawString(20, 199, "Press Enter to Input Code", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
-
-			// Text Entry UI
-			if (IsTextEntryEnabled() == true)
-			{
-				DrawString(65, 35, "Text Entry Mode", olc::YELLOW);
-			}
-			break;
-		case 3: // Credits Screen
-			// User Input:
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
-			{
-				// Save Changes
-				iOptionsSave = SaveOptions();
-
-				iCurDisplay = -1;
-			}
-
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
-
-			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "CREDITS", olc::WHITE);
-
-			DrawString(20, 35, "Programming:", olc::YELLOW);
-			DrawString(20, 45, "Tyler Clardy", olc::WHITE);
-
-			DrawString(20, 60, "Art Design:", olc::GREEN);
-			DrawString(20, 70, "Tyler Clardy", olc::WHITE);
-
-			DrawString(20, 85, "Sound Design:", olc::RED);
-			DrawString(20, 95, "Tyler Clardy", olc::WHITE);
-
-			DrawString(20, 110, "Level Design:", olc::MAGENTA);
-			DrawString(20, 120, "Tyler Clardy", olc::WHITE);
-			DrawString(20, 130, "James Norman", olc::WHITE);
-			DrawString(20, 140, "Aaron McBroom", olc::WHITE);
-
-			DrawString(20, 155, "Promotional Materials:", olc::BLUE);
-			DrawString(20, 165, "Tyler Clardy", olc::WHITE);
-
-			DrawString(20, 200, "3bytes Studio 2025", olc::CYAN);
-			DrawString(20, 212, "Press ESC to Close", olc::WHITE);
-			break;
-		default: // Main Menu
-			// User Input:
-			if (GetKey(olc::Key::UP).bPressed || GetKey(olc::Key::W).bPressed)
-			{
-				bCursorBlink = false;
-				fCursorBlinkTimer = 0.0f;
-
-				iMenuSelectCursor_main--;
-				if (iMenuSelectCursor_main < 0)
-				{
-					iMenuSelectCursor_main = 5;
-				}
-			}
-			if (GetKey(olc::Key::DOWN).bPressed || GetKey(olc::Key::S).bPressed)
-			{
-				bCursorBlink = false;
-				fCursorBlinkTimer = 0.0f;
-
-				iMenuSelectCursor_main++;
-				if (iMenuSelectCursor_main > 5)
-				{
-					iMenuSelectCursor_main = 0;
-				}
-			}
-			if (GetKey(olc::Key::ENTER).bPressed)
-			{
-				switch (iMenuSelectCursor_main)
-				{
-				case 0: // Start Game
-					ResetMainMenu();
-					bMainMenu = false;
-					iCurLevel = 1;
-					LoadLevel(iCurLevel, false);
-					break;
-				case 1: // Level Select
-					ResetMainMenu();
-					iMenuSelectCursor_main = 1;
-					iCurDisplay = 2;
-					break;
-				case 2: // High Scores
-					ResetMainMenu();
-					iMenuSelectCursor_main = 2;
-					iCurDisplay = 0;
-					break;
-				case 3: // Options
-					ResetMainMenu();
-					iMenuSelectCursor_main = 3;
-					iCurDisplay = 1;
-					break;
-				case 4: // Credits
-					ResetMainMenu();
-					iMenuSelectCursor_main = 4;
-					iCurDisplay = 3;
-					break;
-				case 5: // Quit Game
-					ResetMainMenu();
-					iMenuSelectCursor_main = 5;
-					internalHighScoreUtility_Time();
-					internalHighScoreUtility_Moves();
-					SaveHighScores();
-					this->~Game();
-					break;
-				default:
-					break;
-				}
-			}
-
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
-
-			// Draw UI
-			DoGameTitle(fElapsedTime);
-			DrawString((this->ScreenWidth() / 2) - 36, 51, "MAIN MENU", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 40, 68, "Start Game", olc::CYAN);
-			DrawString((this->ScreenWidth() / 2) - 48, 80, "Level Select", olc::YELLOW);
-			DrawString((this->ScreenWidth() / 2) - 44, 92, "High Scores", olc::MAGENTA);
-			DrawString((this->ScreenWidth() / 2) - 28, 104, "Options", olc::BLUE);
-			DrawString((this->ScreenWidth() / 2) - 28, 116, "Credits", olc::GREEN);
-			DrawString((this->ScreenWidth() / 2) - 15, 128, "Quit", olc::RED);
-
-			// Draw cursor 
-			DoCursorBlink(fElapsedTime); // update cursor blink variables
-
-			if (!bCursorBlink) // only draw cursor on frames where cursor blink is toggled false
-			{
-				olc::vi2d vCursorPos_R = { 0,0 };
-				olc::vi2d vCursorPos_L = { 0,0 };
-
-				switch (iMenuSelectCursor_main)
-				{
-				case 0: // Start Game
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 40, 63 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 57, 63 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 0) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize); // L
-					break;
-				case 1: // Level Select
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 48, 75 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 65, 75 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L
-					break;
-				case 2: // High Scores
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 45, 87 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 61, 87 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize); // L
-					break;
-				case 3: // Options
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 99 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 99 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize); // L
-					break;
-				case 4: // Credits
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 111 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 111 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L
-					break;
-				case 5: // Quit Game
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 18, 123 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 34, 123 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(2, 0) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(3, 0) * vBlockSize, vBlockSize); // L
-					break;
-				default:
-					break;
-				}
-			}
-
-			// Draw game scene loop
-			DoMainMenuGameScene(fElapsedTime);
-
-			break;
-		}
-	}
-#pragma endregion
-
-	// Draw Functions
-	#pragma region Draw Functions
-
-	// Draws Level
-	void DrawLevel(int iLevelSet)
-	{
-		// Clear screen to black before drawing each frame
-		Clear(olc::BLACK);
-
-		// door drawing
-		for (int i = 0; i < vDoors_pos.size(); i++)
-		{
-			switch (iLevelSet)
-			{
-			case 0:		// easy
-				if (bDoorsOpen)
-				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize);
-				}
-				else
-				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 1) * vBlockSize, vBlockSize);
-				}
-				break;
-			case 1:		// medium
-				if (bDoorsOpen)
-				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 2) * vBlockSize, vBlockSize);
-				}
-				else
-				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
-				}
-				break;
-			case 2:		// hard
-				if (bDoorsOpen)
-				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 2) * vBlockSize, vBlockSize);
-				}
-				else
-				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 2) * vBlockSize, vBlockSize);
-				}
-				break;
-			default:
-				break;
-			}
-		}
-
-		// win condition drawing
-		for (auto& g : vGoals)
-		{
-			FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
-		}
-
-		// door switch drawing
-		for (auto& d : vSwitches)
-		{
-			FillCircle(d * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
-		}
-
-		// teleport drawing
-		if (bLevelHasTeleports)
-		{
-			switch (iTele_Facing)
-			{
-			case 0:
-				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 4) * vBlockSize, vBlockSize);
-				break;
-			case 1:
-				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 4) * vBlockSize, vBlockSize);
-				break;
-			case 2:
-				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize);
-				break;
-			case 3:
-				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize);
-				break;
-			}
-		}
-
-		// block drawing
-		olc::vi2d vBlockPos = { 0,0 };
-		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++)
-		{
-			for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
-			{
-				// get pointer to block at a particular position
-				auto& b = vLevel[id(vBlockPos)];
-
-				// check for nullptr, then draw
-				if (b)
-				{
-					b->DrawSelf(this, vBlockPos, vBlockSize, gfxTiles, iLevelSet);
-				}
-			}
-		}
-	}
-
-	// Draws UI per Frame
-	void DrawUI(float fElapsedTime)
-	{
-		// UI for active gameplay
-		if (iCurLevel != -1)
-		{
-			// Goal Tracking UI
-			DrawString(4, 4, "Goals: " + std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), olc::WHITE);
-
-			// Level Tracking UI
-			if (iCurLevel < 16)
-			{
-				iLevelSet = 0;
-				DrawString(128 + 20, 4, "Level: ", olc::WHITE);
-				DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
-
-			}
-			else if (iCurLevel < 36)
-			{
-				iLevelSet = 1;
-				DrawString(128 + 20, 4, "Level: ", olc::WHITE);
-				DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
-			}
-			else
-			{
-				iLevelSet = 2;
-				DrawString(128 + 20, 4, "Level: ", olc::WHITE);
-				DrawString(128 + 70, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), olc::WHITE);
-			}
-
-			if (bDebugMode) // Debug Mode Indicator
-			{
-				DrawString(17, 17, "DEBUG", olc::DARK_GREY);
-			}
-
-			// Move Number UI
-			switch (iCurLevel)
-			{
-			case 1:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_1), olc::WHITE);
-				break;
-			case 2:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_2), olc::WHITE);
-				break;
-			case 3:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_3), olc::WHITE);
-				break;
-			case 4:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_4), olc::WHITE);
-				break;
-			case 5:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_5), olc::WHITE);
-				break;
-			case 6:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_6), olc::WHITE);
-				break;
-			case 7:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_7), olc::WHITE);
-				break;
-			case 8:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_8), olc::WHITE);
-				break;
-			case 9:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_9), olc::WHITE);
-				break;
-			case 10:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_10), olc::WHITE);
-				break;
-			case 11:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_11), olc::WHITE);
-				break;
-			case 12:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_12), olc::WHITE);
-				break;
-			case 13:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_13), olc::WHITE);
-				break;
-			case 14:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_14), olc::WHITE);
-				break;
-			case 15:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_15), olc::WHITE);
-				break;
-			case 16:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_16), olc::WHITE);
-				break;
-			case 17:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_17), olc::WHITE);
-				break;
-			case 18:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_18), olc::WHITE);
-				break;
-			case 19:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_19), olc::WHITE);
-				break;
-			case 20:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_20), olc::WHITE);
-				break;
-			case 21:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_21), olc::WHITE);
-				break;
-			case 22:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_22), olc::WHITE);
-				break;
-			case 23:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_23), olc::WHITE);
-				break;
-			case 24:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_24), olc::WHITE);
-				break;
-			case 25:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_25), olc::WHITE);
-				break;
-			case 26:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_26), olc::WHITE);
-				break;
-			case 27:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_27), olc::WHITE);
-				break;
-			case 28:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_28), olc::WHITE);
-				break;
-			case 29:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_29), olc::WHITE);
-				break;
-			case 30:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_30), olc::WHITE);
-				break;
-			case 31:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_31), olc::WHITE);
-				break;
-			case 32:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_32), olc::WHITE);
-				break;
-			case 33:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_33), olc::WHITE);
-				break;
-			case 34:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_34), olc::WHITE);
-				break;
-			case 35:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_35), olc::WHITE);
-				break;
-			case 36:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_36), olc::WHITE);
-				break;
-			case 37:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_37), olc::WHITE);
-				break;
-			case 38:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_38), olc::WHITE);
-				break;
-			case 39:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_39), olc::WHITE);
-				break;
-			case 40:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_40), olc::WHITE);
-				break;
-			case 41:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_41), olc::WHITE);
-				break;
-			case 42:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_42), olc::WHITE);
-				break;
-			case 43:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_43), olc::WHITE);
-				break;
-			case 44:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_44), olc::WHITE);
-				break;
-			case 45:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_45), olc::WHITE);
-				break;
-			case 46:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_46), olc::WHITE);
-				break;
-			case 47:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_47), olc::WHITE);
-				break;
-			case 48:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_48), olc::WHITE);
-				break;
-			case 49:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_49), olc::WHITE);
-				break;
-			case 50:
-				DrawString(4, (240 / 2) + 108, "Moves: " + std::to_string(iNumOfMoves_50), olc::WHITE);
-				break;
-			default:
-				break;
-			}
-
-			// Timer Number UI
-			switch (iCurLevel)
-			{
-			case 1:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_1)), olc::WHITE);
-				break;
-			case 2:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_2)), olc::WHITE);
-				break;
-			case 3:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_3)), olc::WHITE);
-				break;
-			case 4:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_4)), olc::WHITE);
-				break;
-			case 5:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_5)), olc::WHITE);
-				break;
-			case 6:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_6)), olc::WHITE);
-				break;
-			case 7:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_7)), olc::WHITE);
-				break;
-			case 8:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_8)), olc::WHITE);
-				break;
-			case 9:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_9)), olc::WHITE);
-				break;
-			case 10:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_10)), olc::WHITE);
-				break;
-			case 11:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_11)), olc::WHITE);
-				break;
-			case 12:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_12)), olc::WHITE);
-				break;
-			case 13:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_13)), olc::WHITE);
-				break;
-			case 14:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_14)), olc::WHITE);
-				break;
-			case 15:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_15)), olc::WHITE);
-				break;
-			case 16:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_16)), olc::WHITE);
-				break;
-			case 17:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_17)), olc::WHITE);
-				break;
-			case 18:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_18)), olc::WHITE);
-				break;
-			case 19:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_19)), olc::WHITE);
-				break;
-			case 20:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_20)), olc::WHITE);
-				break;
-			case 21:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_21)), olc::WHITE);
-				break;
-			case 22:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_22)), olc::WHITE);
-				break;
-			case 23:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_23)), olc::WHITE);
-				break;
-			case 24:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_24)), olc::WHITE);
-				break;
-			case 25:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_25)), olc::WHITE);
-				break;
-			case 26:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_26)), olc::WHITE);
-				break;
-			case 27:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_27)), olc::WHITE);
-				break;
-			case 28:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_28)), olc::WHITE);
-				break;
-			case 29:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_29)), olc::WHITE);
-				break;
-			case 30:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_30)), olc::WHITE);
-				break;
-			case 31:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_31)), olc::WHITE);
-				break;
-			case 32:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_32)), olc::WHITE);
-				break;
-			case 33:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_33)), olc::WHITE);
-				break;
-			case 34:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_34)), olc::WHITE);
-				break;
-			case 35:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_35)), olc::WHITE);
-				break;
-			case 36:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_36)), olc::WHITE);
-				break;
-			case 37:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_37)), olc::WHITE);
-				break;
-			case 38:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_38)), olc::WHITE);
-				break;
-			case 39:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_39)), olc::WHITE);
-				break;
-			case 40:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_40)), olc::WHITE);
-				break;
-			case 41:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_41)), olc::WHITE);
-				break;
-			case 42:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_42)), olc::WHITE);
-				break;
-			case 43:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_43)), olc::WHITE);
-				break;
-			case 44:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_44)), olc::WHITE);
-				break;
-			case 45:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_45)), olc::WHITE);
-				break;
-			case 46:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_46)), olc::WHITE);
-				break;
-			case 47:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_47)), olc::WHITE);
-				break;
-			case 48:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_48)), olc::WHITE);
-				break;
-			case 49:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_49)), olc::WHITE);
-				break;
-			case 50:
-				DrawString(148, (240 / 2) + 108, "Time: " + FloatToString(TruncateFloat(iTime_50)), olc::WHITE);
-				break;
-			default:
-				break;
-			}
-		}
-
-		// UI for win conditions
-		else
-		{
-			// Win Screen Stuff
-			fTime_WinScreen += fElapsedTime;
-			bEnableInput = false;
-			if (fTime_WinScreen < 4.0f) // after 4 seconds remove splash, draw UI, and re-enable input
-			{
-				DrawSprite(olc::vi2d(0, 0), gfxWin.Sprite());
-			}
-			else
-			{
-				bEnableInput = true;
-				iLevelSet = -1;
-				audioEngine_Music.SetOutputVolume(0.0f);
-				DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", olc::WHITE);
-				DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", olc::WHITE);
-				DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC for Main Menu", olc::WHITE);
-			}
-		}
-
-		// Special UI for Displaying Checkpoint Codes that can be inputted on Main Menu Level Select screen
-		if (iCurLevel == 16)
-		{
-			DrawString(148, 17, "Code: " + sMediumLevelCode, olc::WHITE);
-		}
-		else if (iCurLevel == 36)
-		{
-			DrawString(148, 17, "Code: " + sHardLevelCode, olc::WHITE);
-		}
+		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", pColor_PauseUI);
+		DrawString(20, 45, "Stats for Current Level", pColor_PauseUI);
+		DrawString(20, 70, sTimerUI, pColor_PauseUI);
+		DrawString(20, 57, sMovementUI, pColor_PauseUI);
+		DrawString(20, 212, "Press Enter to Resume", pColor_PauseUI);
+		DrawString(20, 198, "Press ESC for Main Menu", pColor_PauseUI);
 	}
 
 	// Draws the game scene loop in the main menu
@@ -4552,6 +4307,342 @@ public:
 
 	// Utility Functions
 	#pragma region Utility Functions
+
+	// Sets LevelSet variable based on current level
+	void SetLevelSet()
+	{
+		// Level Tracking UI
+		if (iCurLevel < 16)
+		{
+			iLevelSet = 0;
+		}
+		else if (iCurLevel < 36)
+		{
+			iLevelSet = 1;
+		}
+		else
+		{
+			iLevelSet = 2;
+		}
+	}
+
+	// Creates Strings used in UI Drawing
+	void CreateStrings_UI(std::string& sMoves, std::string& sTime)
+	{
+		// Moves
+		switch (iCurLevel)
+		{
+		case 1:
+			sMoves = std::to_string(iNumOfMoves_1);
+			break;
+		case 2:
+			sMoves = std::to_string(iNumOfMoves_2);
+			break;
+		case 3:
+			sMoves = std::to_string(iNumOfMoves_3);
+			break;
+		case 4:
+			sMoves = std::to_string(iNumOfMoves_4);
+			break;
+		case 5:
+			sMoves = std::to_string(iNumOfMoves_5);
+				break;
+		case 6:
+			sMoves = std::to_string(iNumOfMoves_6);
+				break;
+		case 7:
+			sMoves = std::to_string(iNumOfMoves_7);
+				break;
+		case 8:
+			sMoves = std::to_string(iNumOfMoves_8);
+				break;
+		case 9:
+			sMoves = std::to_string(iNumOfMoves_9);
+				break;
+		case 10:
+			sMoves = std::to_string(iNumOfMoves_10);
+				break;
+		case 11:
+			sMoves = std::to_string(iNumOfMoves_11);
+			break;
+		case 12:
+			sMoves = std::to_string(iNumOfMoves_12);
+				break;
+		case 13:
+			sMoves = std::to_string(iNumOfMoves_13);
+				break;
+		case 14:
+			sMoves = std::to_string(iNumOfMoves_14);
+				break;
+		case 15:
+			sMoves = std::to_string(iNumOfMoves_15);
+				break;
+		case 16:
+			sMoves = std::to_string(iNumOfMoves_16);
+				break;
+		case 17:
+			sMoves = std::to_string(iNumOfMoves_17);
+				break;
+		case 18:
+			sMoves = std::to_string(iNumOfMoves_18);
+				break;
+		case 19:
+			sMoves = std::to_string(iNumOfMoves_19);
+				break;
+		case 20:
+			sMoves = std::to_string(iNumOfMoves_20);
+				break;
+		case 21:
+			sMoves = std::to_string(iNumOfMoves_21);
+			break;
+		case 22:
+			sMoves = std::to_string(iNumOfMoves_22);
+				break;
+		case 23:
+			sMoves = std::to_string(iNumOfMoves_23);
+				break;
+		case 24:
+			sMoves = std::to_string(iNumOfMoves_24);
+				break;
+		case 25:
+			sMoves = std::to_string(iNumOfMoves_25);
+				break;
+		case 26:
+			sMoves = std::to_string(iNumOfMoves_26);
+				break;
+		case 27:
+			sMoves = std::to_string(iNumOfMoves_27);
+				break;
+		case 28:
+			sMoves = std::to_string(iNumOfMoves_28);
+				break;
+		case 29:
+			sMoves = std::to_string(iNumOfMoves_29);
+				break;
+		case 30:
+			sMoves = std::to_string(iNumOfMoves_30);
+				break;
+		case 31:
+			sMoves = std::to_string(iNumOfMoves_31);
+				break;
+		case 32:
+			sMoves = std::to_string(iNumOfMoves_32);
+			break;
+		case 33:
+			sMoves = std::to_string(iNumOfMoves_33);
+				break;
+		case 34:
+			sMoves = std::to_string(iNumOfMoves_34);
+				break;
+		case 35:
+			sMoves = std::to_string(iNumOfMoves_35);
+				break;
+		case 36:
+			sMoves = std::to_string(iNumOfMoves_36);
+				break;
+		case 37:
+			sMoves = std::to_string(iNumOfMoves_37);
+				break;
+		case 38:
+			sMoves = std::to_string(iNumOfMoves_38);
+				break;
+		case 39:
+			sMoves = std::to_string(iNumOfMoves_39);
+				break;
+		case 40:
+			sMoves = std::to_string(iNumOfMoves_40);
+				break;
+		case 41:
+			sMoves = std::to_string(iNumOfMoves_41);
+				break;
+		case 42:
+			sMoves = std::to_string(iNumOfMoves_42);
+				break;
+		case 43:
+			sMoves = std::to_string(iNumOfMoves_43);
+			break;
+		case 44:
+			sMoves = std::to_string(iNumOfMoves_44);
+				break;
+		case 45:
+			sMoves = std::to_string(iNumOfMoves_45);
+				break;
+		case 46:
+			sMoves = std::to_string(iNumOfMoves_46);
+				break;
+		case 47:
+			sMoves = std::to_string(iNumOfMoves_47);
+				break;
+		case 48:
+			sMoves = std::to_string(iNumOfMoves_48);
+				break;
+		case 49:
+			sMoves = std::to_string(iNumOfMoves_49);
+				break;
+		case 50:
+			sMoves = std::to_string(iNumOfMoves_50);
+			break;
+		default:
+			break;
+		}
+
+		// Time
+		switch (iCurLevel)
+		{
+		case 1:
+			sTime = FloatToString(TruncateFloat(iTime_1));
+			break;
+		case 2:
+			sTime = FloatToString(TruncateFloat(iTime_2));
+			break;
+		case 3:
+			sTime = FloatToString(TruncateFloat(iTime_3));
+			break;
+		case 4:
+			sTime = FloatToString(TruncateFloat(iTime_4));
+			break;
+		case 5:
+			sTime = FloatToString(TruncateFloat(iTime_5));
+			break;
+		case 6:
+			sTime = FloatToString(TruncateFloat(iTime_6));
+			break;
+		case 7:
+			sTime = FloatToString(TruncateFloat(iTime_7));
+			break;
+		case 8:
+			sTime = FloatToString(TruncateFloat(iTime_8));
+			break;
+		case 9:
+			sTime = FloatToString(TruncateFloat(iTime_9));
+			break;
+		case 10:
+			sTime = FloatToString(TruncateFloat(iTime_10));
+			break;
+		case 11:
+			sTime = FloatToString(TruncateFloat(iTime_11));
+			break;
+		case 12:
+			sTime = FloatToString(TruncateFloat(iTime_12));
+			break;
+		case 13:
+			sTime = FloatToString(TruncateFloat(iTime_13));
+			break;
+		case 14:
+			sTime = FloatToString(TruncateFloat(iTime_14));
+			break;
+		case 15:
+			sTime = FloatToString(TruncateFloat(iTime_15));
+			break;
+		case 16:
+			sTime = FloatToString(TruncateFloat(iTime_16));
+			break;
+		case 17:
+			sTime = FloatToString(TruncateFloat(iTime_17));
+			break;
+		case 18:
+			sTime = FloatToString(TruncateFloat(iTime_18));
+			break;
+		case 19:
+			sTime = FloatToString(TruncateFloat(iTime_19));
+			break;
+		case 20:
+			sTime = FloatToString(TruncateFloat(iTime_20));
+			break;
+		case 21:
+			sTime = FloatToString(TruncateFloat(iTime_21));
+			break;
+		case 22:
+			sTime = FloatToString(TruncateFloat(iTime_22));
+			break;
+		case 23:
+			sTime = FloatToString(TruncateFloat(iTime_23));
+			break;
+		case 24:
+			sTime = FloatToString(TruncateFloat(iTime_24));
+			break;
+		case 25:
+			sTime = FloatToString(TruncateFloat(iTime_25));
+			break;
+		case 26:
+			sTime = FloatToString(TruncateFloat(iTime_26));
+			break;
+		case 27:
+			sTime = FloatToString(TruncateFloat(iTime_27));
+			break;
+		case 28:
+			sTime = FloatToString(TruncateFloat(iTime_28));
+			break;
+		case 29:
+			sTime = FloatToString(TruncateFloat(iTime_29));
+			break;
+		case 30:
+			sTime = FloatToString(TruncateFloat(iTime_30));
+			break;
+		case 31:
+			sTime = FloatToString(TruncateFloat(iTime_31));
+			break;
+		case 32:
+			sTime = FloatToString(TruncateFloat(iTime_32));
+			break;
+		case 33:
+			sTime = FloatToString(TruncateFloat(iTime_33));
+			break;
+		case 34:
+			sTime = FloatToString(TruncateFloat(iTime_34));
+			break;
+		case 35:
+			sTime = FloatToString(TruncateFloat(iTime_35));
+			break;
+		case 36:
+			sTime = FloatToString(TruncateFloat(iTime_36));
+			break;
+		case 37:
+			sTime = FloatToString(TruncateFloat(iTime_37));
+			break;
+		case 38:
+			sTime = FloatToString(TruncateFloat(iTime_38));
+			break;
+		case 39:
+			sTime = FloatToString(TruncateFloat(iTime_39));
+			break;
+		case 40:
+			sTime = FloatToString(TruncateFloat(iTime_40));
+			break;
+		case 41:
+			sTime = FloatToString(TruncateFloat(iTime_41));
+			break;
+		case 42:
+			sTime = FloatToString(TruncateFloat(iTime_42));
+			break;
+		case 43:
+			sTime = FloatToString(TruncateFloat(iTime_43));
+			break;
+		case 44:
+			sTime = FloatToString(TruncateFloat(iTime_44));
+			break;
+		case 45:
+			sTime = FloatToString(TruncateFloat(iTime_45));
+			break;
+		case 46:
+			sTime = FloatToString(TruncateFloat(iTime_46));
+			break;
+		case 47:
+			sTime = FloatToString(TruncateFloat(iTime_47));
+			break;
+		case 48:
+			sTime = FloatToString(TruncateFloat(iTime_48));
+			break;
+		case 49:
+			sTime = FloatToString(TruncateFloat(iTime_49));
+			break;
+		case 50:
+			sTime = FloatToString(TruncateFloat(iTime_50));
+			break;
+		default:
+			break;
+		}
+	}
 
 	// Truncates float to 2 decimal places 
 	float TruncateFloat(float fIn)
