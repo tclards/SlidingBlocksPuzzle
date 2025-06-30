@@ -13,35 +13,24 @@
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
 // startup SFX jingle not affected by fileio options
 // weirdness with cursor on main menu - caught on camera. repeatable?
-// portal locations not being cleared
 
 // TODO_A - Finish Game
 // Fill out Levels!
 
 // TODO_B - Rework & Polish
-// 
 // Add background decal sprites to clear screen to instead of black
-// 
 // add color to main menu sub menus
 //		- High Scores
 //		- level select
 //		- options
-// 
 // Update Name
-//		- main 
-//		- readme
 //		- exe output
-// 
-// Update WinTile GFX
-// 
-// Update DoorSwitch GFX
-// 
-// Update portal
+// Update Button GFX
+//		- WinTile GFX
+//      - DoorSwitch GFX
+// Update Portal
 //		- graphics
 //		- animation
-// 
-// Update Player Sprite
-// 
 // Rework sound design to create unified theme & replace placeholdersfx
 //		- add SFX for cursor select 
 //		- add SFX for cursor enter
@@ -49,9 +38,8 @@
 //		- Replace any SFX not matching theme
 //		- replace background music to match theme
 //		- audio balance
-// 
 // Unify UI Drawing under a single color variable for easy changing
-// Update text color to black for UI
+//		- Update text color to black for UI
 
 // TODO_C - Feature Wishlist
 // Add level selector properly? with level locking system
@@ -98,7 +86,8 @@ auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; }; // Trans
 // Created by Tyler Clardy in June 2025
 // Thanks to oneLoneCoder for the PixelGameEngine and SoundWaveEngine, as well as the inspiration for the start of the project. You rock, Javid!
 
-class Puzzle : public olc::PixelGameEngine
+// Game Class
+class Game : public olc::PixelGameEngine
 {
 public:
 
@@ -1453,13 +1442,13 @@ public:
 #pragma endregion
 
 	// Constructor
-	Puzzle()
+	Game()
 	{
-		sAppName = "Sliding Blocks Puzzle Game";
+		sAppName = "INCREMENTO";
 	}
 
 	// Deconstructor
-	~Puzzle()
+	~Game()
 	{
 		audioEngine.StopAll();
 		audioEngine_Music.StopAll();
@@ -1467,2123 +1456,317 @@ public:
 		audioEngine_Music.~WaveEngine();
 	}
 
-	// utility function for exiting main menu - reset all variables
-	void ResetMainMenu()
+	// Core Functions
+	#pragma region Core Functions
+
+	// Runs once at start of game
+	bool OnUserCreate() override
 	{
-		iMenuSelectCursor_main = 0;
-		bCursorBlink = false;
-		iTitleSwitch = 0;
-		iMenuSceneState = -3;
-		fMenuSceneTimer = 0.0f;
-		fMenuSceneRestartEffectTimer = 0.0f;
-		fSceneEffectTimer = 0.0f;
-		fSceneFreezeTimer = 0.0f;
-		bRestartScene = false;
-		bSceneEffect = false;
+		// Audio Loading
+		LoadAllAudio();
+
+		// Graphics Loading
+		gfxTiles.Load("Graphics//TileSheet.png");
+		gfxSplash.Load("Graphics//SplashScreen.png");
+		gfxWin.Load("Graphics//WinScreen.png");
+		gfxCursors.Load("Graphics//Cursors.png");
+		gfxMenuScene.Load("Graphics//MainMenuScene.png");
+
+		// Level Loading
+		LoadAllLevels();
+
+		// Load Blank Menu Level
+		LoadLevel(iCurLevel, false);
+		bMainMenu = true;
+
+		return true;
 	}
 
-	// Utility function to truncate a float to 2 decimal places 
-	float TruncateFloat(float fIn)
+	// Gameplay per Frame
+	bool DoGameplayLogic(float fElapsedTime)
 	{
-		float fScaled = fIn * 100.0f;
+		// Teleport GFX Check
+		if (bLevelHasTeleports) { DoTeleportFlipCheck(fElapsedTime); }
 
-		float fTruncatedScaled = std::trunc(fScaled);
-
-		float fTruncated = fTruncatedScaled / 100.0f;
-
-		return fTruncated;
-	}
-
-	// Utility function to convert float to string with only 2 decimal places
-	std::string FloatToString(float fIn)
-	{
-		std::stringstream ss;
-
-		ss << std::fixed << std::setprecision(2) << fIn;
-
-		return ss.str();
-	}
-
-	// Utility function for rotating teleport tiles
-	void DoTeleportFlipCheck(float fElapsedTime)
-	{
-		fTele_GFX_Flip += fElapsedTime;
-
-		// if timing threshold has been reached, reset timer and execute rotate operation
-		if (fTele_GFX_Flip >= fTele_RotateSpeed)
+		// User Input
+		#pragma region User Input
+		bool bPushing = false;
+		int iDirPush = NORTH;
+		if (iCurLevel != -1) // disable most input on end screen
 		{
-			fTele_GFX_Flip = 0.0f;
-
-			iTele_Facing++;
-
-			if (iTele_Facing == 4) // clamp values to the range of 0 - 4
+			if (bEnableInput && GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
 			{
-				iTele_Facing = 0;
+				iDirPush = 0;
+				bPushing = true;
 			}
-		}
-	}
-
-	// Function for loading options settings
-	int LoadOptions() // returns -1 for failure, or 1 for success
-	{
-		std::ifstream inOptions("Options.txt");
-
-		if (inOptions.is_open())
-		{
-			std::string sCurLine;
-			bool bSFX = false;
-			bool bMusic = false;
-
-			while (std::getline(inOptions, sCurLine))
+			if (bEnableInput && GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
 			{
-				if (bSFX == true)
+				iDirPush = SOUTH;
+				bPushing = true;
+			}
+			if (bEnableInput && GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
+			{
+				iDirPush = WEST;
+				bPushing = true;
+			}
+			if (bEnableInput && GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
+			{
+				iDirPush = EAST;
+				bPushing = true;
+			}
+			if (bEnableInput && GetKey(olc::Key::R).bPressed)
+			{
+				ResetLevelScore();
+				LoadLevel(iCurLevel, true);
+			}
+			if (bEnableInput && GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
+			{
+				bPaused = true;	// Pause Game
+			}
+			if (bEnableInput && GetKey(olc::Key::CTRL).bHeld && GetKey(olc::Key::ENTER).bPressed && GetKey(olc::Key::MINUS).bPressed) // DebugMode
+			{
+				if (bDebugMode)
 				{
-					fSFXVolume = std::stof(sCurLine);
-					bSFX = false;
-				}
-				else if (bMusic == true)
-				{
-					fMusicVolume = std::stof(sCurLine);
-					bMusic = false;
-				}
-
-				if (sCurLine == "{Volume_SFX}=")
-				{
-					bSFX = true;
-				}
-				else if (sCurLine == "{Volume_Music}=")
-				{
-					bMusic = true;
-				}
-			}
-
-			inOptions.close();
-			return 1;
-		}
-		else
-		{
-			return -1;
-		}
-
-		return -1;
-	}
-
-	// Function for setting options settings
-	int SaveOptions() // returns -1 for failure, or 1 for success
-	{
-		std::ofstream outOptions("Options.txt");
-		outOptions.clear();
-
-		if (outOptions.is_open())
-		{
-			outOptions << "{Volume_SFX}=\n" << fSFXVolume << "\n";
-			outOptions << "{Volume_Music}=\n" << fMusicVolume;
-
-			outOptions.close();
-			return 1;
-		}
-		else
-		{
-			return -1;
-		}
-
-		return -1;
-	}
-
-	// Function for loading High Scores
-	// Populates the vHighScore_Moves and vHighScore_Time vectors with data
-	int LoadHighScores() // returns -1 for failure, or 1 for success
-	{
-		// Open Streams
-		std::ifstream inHighScores_Moves("HighScores_Moves.txt");
-		std::ifstream inHighScores_Time("HighScores_Time.txt");
-
-		// Check for streams opening correctly
-		if (inHighScores_Moves.is_open() && inHighScores_Time.is_open())
-		{
-			// Clear vectors
-			vHighScore_Moves.clear();
-			vHighScore_Time.clear();
-
-			std::string sCurLine;
-			int iLineCount = 0;
-
-			// read move data into vector
-			while (std::getline(inHighScores_Moves, sCurLine))
-			{
-				vHighScore_Moves.push_back(std::stoi(sCurLine));
-			}
-
-			iLineCount = 0;
-
-			// read time data into vector
-			while (std::getline(inHighScores_Time, sCurLine))
-			{
-				vHighScore_Time.push_back(std::stof(sCurLine));
-			}
-
-			// close streams
-			inHighScores_Moves.close();
-			inHighScores_Time.close();
-
-			return 1;
-		}
-		else
-		{
-			return -1;
-		}
-
-		return -1;
-	}
-
-	// Checks if new Time score is better or worse than saved one, then saves to vector if better
-	void internalHighScoreUtility_Moves()
-	{
-		if (vHighScore_Moves[0] > iNumOfMoves_1 && iNumOfMoves_1 != 0) vHighScore_Moves[0] = iNumOfMoves_1;
-		if (vHighScore_Moves[1] > iNumOfMoves_2 && iNumOfMoves_2 != 0) vHighScore_Moves[1] = iNumOfMoves_2;
-		if (vHighScore_Moves[2] > iNumOfMoves_3 && iNumOfMoves_3 != 0) vHighScore_Moves[2] = iNumOfMoves_3;
-		if (vHighScore_Moves[3] > iNumOfMoves_4 && iNumOfMoves_4 != 0) vHighScore_Moves[3] = iNumOfMoves_4;
-		if (vHighScore_Moves[4] > iNumOfMoves_5 && iNumOfMoves_5 != 0) vHighScore_Moves[4] = iNumOfMoves_5;
-		if (vHighScore_Moves[5] > iNumOfMoves_6 && iNumOfMoves_6 != 0) vHighScore_Moves[5] = iNumOfMoves_6;
-		if (vHighScore_Moves[6] > iNumOfMoves_7 && iNumOfMoves_7 != 0) vHighScore_Moves[6] = iNumOfMoves_7;
-		if (vHighScore_Moves[7] > iNumOfMoves_8 && iNumOfMoves_8 != 0) vHighScore_Moves[7] = iNumOfMoves_8;
-		if (vHighScore_Moves[8] > iNumOfMoves_9 && iNumOfMoves_9 != 0) vHighScore_Moves[8] = iNumOfMoves_9;
-		if (vHighScore_Moves[9] > iNumOfMoves_10 && iNumOfMoves_10 != 0) vHighScore_Moves[9] = iNumOfMoves_10;
-		if (vHighScore_Moves[10] > iNumOfMoves_11 && iNumOfMoves_11 != 0) vHighScore_Moves[10] = iNumOfMoves_11;
-		if (vHighScore_Moves[11] > iNumOfMoves_12 && iNumOfMoves_12 != 0) vHighScore_Moves[11] = iNumOfMoves_12;
-		if (vHighScore_Moves[12] > iNumOfMoves_13 && iNumOfMoves_13 != 0) vHighScore_Moves[12] = iNumOfMoves_13;
-		if (vHighScore_Moves[13] > iNumOfMoves_14 && iNumOfMoves_14 != 0) vHighScore_Moves[13] = iNumOfMoves_14;
-		if (vHighScore_Moves[14] > iNumOfMoves_15 && iNumOfMoves_15 != 0) vHighScore_Moves[14] = iNumOfMoves_15;
-		if (vHighScore_Moves[15] > iNumOfMoves_16 && iNumOfMoves_16 != 0) vHighScore_Moves[15] = iNumOfMoves_16;
-		if (vHighScore_Moves[16] > iNumOfMoves_17 && iNumOfMoves_17 != 0) vHighScore_Moves[16] = iNumOfMoves_17;
-		if (vHighScore_Moves[17] > iNumOfMoves_18 && iNumOfMoves_18 != 0) vHighScore_Moves[17] = iNumOfMoves_18;
-		if (vHighScore_Moves[18] > iNumOfMoves_19 && iNumOfMoves_19 != 0) vHighScore_Moves[18] = iNumOfMoves_19;
-		if (vHighScore_Moves[19] > iNumOfMoves_20 && iNumOfMoves_20 != 0) vHighScore_Moves[19] = iNumOfMoves_20;
-		if (vHighScore_Moves[20] > iNumOfMoves_21 && iNumOfMoves_21 != 0) vHighScore_Moves[20] = iNumOfMoves_21;
-		if (vHighScore_Moves[21] > iNumOfMoves_22 && iNumOfMoves_22 != 0) vHighScore_Moves[21] = iNumOfMoves_22;
-		if (vHighScore_Moves[22] > iNumOfMoves_23 && iNumOfMoves_23 != 0) vHighScore_Moves[22] = iNumOfMoves_23;
-		if (vHighScore_Moves[23] > iNumOfMoves_24 && iNumOfMoves_24 != 0) vHighScore_Moves[23] = iNumOfMoves_24;
-		if (vHighScore_Moves[24] > iNumOfMoves_25 && iNumOfMoves_25 != 0) vHighScore_Moves[24] = iNumOfMoves_25;
-		if (vHighScore_Moves[25] > iNumOfMoves_26 && iNumOfMoves_26 != 0) vHighScore_Moves[25] = iNumOfMoves_26;
-		if (vHighScore_Moves[26] > iNumOfMoves_27 && iNumOfMoves_27 != 0) vHighScore_Moves[26] = iNumOfMoves_27;
-		if (vHighScore_Moves[27] > iNumOfMoves_28 && iNumOfMoves_28 != 0) vHighScore_Moves[27] = iNumOfMoves_28;
-		if (vHighScore_Moves[28] > iNumOfMoves_29 && iNumOfMoves_29 != 0) vHighScore_Moves[28] = iNumOfMoves_29;
-		if (vHighScore_Moves[29] > iNumOfMoves_30 && iNumOfMoves_30 != 0) vHighScore_Moves[29] = iNumOfMoves_30;
-		if (vHighScore_Moves[30] > iNumOfMoves_31 && iNumOfMoves_31 != 0) vHighScore_Moves[30] = iNumOfMoves_31;
-		if (vHighScore_Moves[31] > iNumOfMoves_32 && iNumOfMoves_32 != 0) vHighScore_Moves[31] = iNumOfMoves_32;
-		if (vHighScore_Moves[32] > iNumOfMoves_33 && iNumOfMoves_33 != 0) vHighScore_Moves[32] = iNumOfMoves_33;
-		if (vHighScore_Moves[33] > iNumOfMoves_34 && iNumOfMoves_34 != 0) vHighScore_Moves[33] = iNumOfMoves_34;
-		if (vHighScore_Moves[34] > iNumOfMoves_35 && iNumOfMoves_35 != 0) vHighScore_Moves[34] = iNumOfMoves_35;
-		if (vHighScore_Moves[35] > iNumOfMoves_36 && iNumOfMoves_36 != 0) vHighScore_Moves[35] = iNumOfMoves_36;
-		if (vHighScore_Moves[36] > iNumOfMoves_37 && iNumOfMoves_37 != 0) vHighScore_Moves[36] = iNumOfMoves_37;
-		if (vHighScore_Moves[37] > iNumOfMoves_38 && iNumOfMoves_38 != 0) vHighScore_Moves[37] = iNumOfMoves_38;
-		if (vHighScore_Moves[38] > iNumOfMoves_39 && iNumOfMoves_39 != 0) vHighScore_Moves[38] = iNumOfMoves_39;
-		if (vHighScore_Moves[39] > iNumOfMoves_40 && iNumOfMoves_40 != 0) vHighScore_Moves[39] = iNumOfMoves_40;
-		if (vHighScore_Moves[40] > iNumOfMoves_41 && iNumOfMoves_41 != 0) vHighScore_Moves[40] = iNumOfMoves_41;
-		if (vHighScore_Moves[41] > iNumOfMoves_42 && iNumOfMoves_42 != 0) vHighScore_Moves[41] = iNumOfMoves_42;
-		if (vHighScore_Moves[42] > iNumOfMoves_43 && iNumOfMoves_43 != 0) vHighScore_Moves[42] = iNumOfMoves_43;
-		if (vHighScore_Moves[43] > iNumOfMoves_44 && iNumOfMoves_44 != 0) vHighScore_Moves[43] = iNumOfMoves_44;
-		if (vHighScore_Moves[44] > iNumOfMoves_45 && iNumOfMoves_45 != 0) vHighScore_Moves[44] = iNumOfMoves_45;
-		if (vHighScore_Moves[45] > iNumOfMoves_46 && iNumOfMoves_46 != 0) vHighScore_Moves[45] = iNumOfMoves_46;
-		if (vHighScore_Moves[46] > iNumOfMoves_47 && iNumOfMoves_47 != 0) vHighScore_Moves[46] = iNumOfMoves_47;
-		if (vHighScore_Moves[47] > iNumOfMoves_48 && iNumOfMoves_48 != 0) vHighScore_Moves[47] = iNumOfMoves_48;
-		if (vHighScore_Moves[48] > iNumOfMoves_49 && iNumOfMoves_49 != 0) vHighScore_Moves[48] = iNumOfMoves_49;
-		if (vHighScore_Moves[49] > iNumOfMoves_50 && iNumOfMoves_50 != 0) vHighScore_Moves[49] = iNumOfMoves_50;
-	}
-
-	// Checks if new Time score is better or worse than saved one, then saves to vector if better
-	void internalHighScoreUtility_Time()
-	{
-		if (vHighScore_Time[0] > iTime_1 && iTime_1 != 0) vHighScore_Time[0] = iTime_1;
-		if (vHighScore_Time[1] > iTime_2 && iTime_2 != 0) vHighScore_Time[1] = iTime_2;
-		if (vHighScore_Time[2] > iTime_3 && iTime_3 != 0) vHighScore_Time[2] = iTime_3;
-		if (vHighScore_Time[3] > iTime_4 && iTime_4 != 0) vHighScore_Time[3] = iTime_4;
-		if (vHighScore_Time[4] > iTime_5 && iTime_5 != 0) vHighScore_Time[4] = iTime_5;
-		if (vHighScore_Time[5] > iTime_6 && iTime_6 != 0) vHighScore_Time[5] = iTime_6;
-		if (vHighScore_Time[6] > iTime_7 && iTime_7 != 0) vHighScore_Time[6] = iTime_7;
-		if (vHighScore_Time[7] > iTime_8 && iTime_8 != 0) vHighScore_Time[7] = iTime_8;
-		if (vHighScore_Time[8] > iTime_9 && iTime_9 != 0) vHighScore_Time[8] = iTime_9;
-		if (vHighScore_Time[9] > iTime_10 && iTime_10 != 0) vHighScore_Time[9] = iTime_10;
-		if (vHighScore_Time[10] > iTime_11 && iTime_11 != 0) vHighScore_Time[10] = iTime_11;
-		if (vHighScore_Time[11] > iTime_12 && iTime_12 != 0) vHighScore_Time[11] = iTime_12;
-		if (vHighScore_Time[12] > iTime_13 && iTime_13 != 0) vHighScore_Time[12] = iTime_13;
-		if (vHighScore_Time[13] > iTime_14 && iTime_14 != 0) vHighScore_Time[13] = iTime_14;
-		if (vHighScore_Time[14] > iTime_15 && iTime_15 != 0) vHighScore_Time[14] = iTime_15;
-		if (vHighScore_Time[15] > iTime_16 && iTime_16 != 0) vHighScore_Time[15] = iTime_16;
-		if (vHighScore_Time[16] > iTime_17 && iTime_17 != 0) vHighScore_Time[16] = iTime_17;
-		if (vHighScore_Time[17] > iTime_18 && iTime_18 != 0) vHighScore_Time[17] = iTime_18;
-		if (vHighScore_Time[18] > iTime_19 && iTime_19 != 0) vHighScore_Time[18] = iTime_19;
-		if (vHighScore_Time[19] > iTime_20 && iTime_20 != 0) vHighScore_Time[19] = iTime_20;
-		if (vHighScore_Time[20] > iTime_21 && iTime_21 != 0) vHighScore_Time[20] = iTime_21;
-		if (vHighScore_Time[21] > iTime_22 && iTime_22 != 0) vHighScore_Time[21] = iTime_22;
-		if (vHighScore_Time[22] > iTime_23 && iTime_23 != 0) vHighScore_Time[22] = iTime_23;
-		if (vHighScore_Time[23] > iTime_24 && iTime_24 != 0) vHighScore_Time[23] = iTime_24;
-		if (vHighScore_Time[24] > iTime_25 && iTime_25 != 0) vHighScore_Time[24] = iTime_25;
-		if (vHighScore_Time[25] > iTime_26 && iTime_26 != 0) vHighScore_Time[25] = iTime_26;
-		if (vHighScore_Time[26] > iTime_27 && iTime_27 != 0) vHighScore_Time[26] = iTime_27;
-		if (vHighScore_Time[27] > iTime_28 && iTime_28 != 0) vHighScore_Time[27] = iTime_28;
-		if (vHighScore_Time[28] > iTime_29 && iTime_29 != 0) vHighScore_Time[28] = iTime_29;
-		if (vHighScore_Time[29] > iTime_30 && iTime_30 != 0) vHighScore_Time[29] = iTime_30;
-		if (vHighScore_Time[30] > iTime_31 && iTime_31 != 0) vHighScore_Time[30] = iTime_31;
-		if (vHighScore_Time[31] > iTime_32 && iTime_32 != 0) vHighScore_Time[31] = iTime_32;
-		if (vHighScore_Time[32] > iTime_33 && iTime_33 != 0) vHighScore_Time[32] = iTime_33;
-		if (vHighScore_Time[33] > iTime_34 && iTime_34 != 0) vHighScore_Time[33] = iTime_34;
-		if (vHighScore_Time[34] > iTime_35 && iTime_35 != 0) vHighScore_Time[34] = iTime_35;
-		if (vHighScore_Time[35] > iTime_36 && iTime_36 != 0) vHighScore_Time[35] = iTime_36;
-		if (vHighScore_Time[36] > iTime_37 && iTime_37 != 0) vHighScore_Time[36] = iTime_37;
-		if (vHighScore_Time[37] > iTime_38 && iTime_38 != 0) vHighScore_Time[37] = iTime_38;
-		if (vHighScore_Time[38] > iTime_39 && iTime_39 != 0) vHighScore_Time[38] = iTime_39;
-		if (vHighScore_Time[39] > iTime_40 && iTime_40 != 0) vHighScore_Time[39] = iTime_40;
-		if (vHighScore_Time[40] > iTime_41 && iTime_41 != 0) vHighScore_Time[40] = iTime_41;
-		if (vHighScore_Time[41] > iTime_42 && iTime_42 != 0) vHighScore_Time[41] = iTime_42;
-		if (vHighScore_Time[42] > iTime_43 && iTime_43 != 0) vHighScore_Time[42] = iTime_43;
-		if (vHighScore_Time[43] > iTime_44 && iTime_44 != 0) vHighScore_Time[43] = iTime_44;
-		if (vHighScore_Time[44] > iTime_45 && iTime_45 != 0) vHighScore_Time[44] = iTime_45;
-		if (vHighScore_Time[45] > iTime_46 && iTime_46 != 0) vHighScore_Time[45] = iTime_46;
-		if (vHighScore_Time[46] > iTime_47 && iTime_47 != 0) vHighScore_Time[46] = iTime_47;
-		if (vHighScore_Time[47] > iTime_48 && iTime_48 != 0) vHighScore_Time[47] = iTime_48;
-		if (vHighScore_Time[48] > iTime_49 && iTime_49 != 0) vHighScore_Time[48] = iTime_49;
-		if (vHighScore_Time[49] > iTime_50 && iTime_50 != 0) vHighScore_Time[49] = iTime_50;
-	}
-
-	// Function for saving High Scores
-	int SaveHighScores() // returns -1 for failure, or 1 for success
-	{
-		std::ofstream outHighScores_Moves("HighScores_Moves.txt");
-		std::ofstream outHighScores_Time("HighScores_Time.txt");
-		outHighScores_Moves.clear();
-		outHighScores_Time.clear();
-
-		if (outHighScores_Moves.is_open() && outHighScores_Time.is_open())
-		{
-			for (int i = 0; i < vHighScore_Moves.size(); i++)
-			{
-				outHighScores_Moves << vHighScore_Moves[i] << "\n";
-			}
-
-			for (int i = 0; i < vHighScore_Time.size(); i++)
-			{
-				outHighScores_Time << vHighScore_Time[i] << "\n";
-			}
-
-			outHighScores_Moves.close();
-			outHighScores_Time.close();
-
-			return 1;
-		}
-		else
-		{
-			return -1;
-		}
-
-		return -1;
-	}
-
-	// Function to load all audio into memory
-	void LoadAllAudio()
-	{
-		// Initialize Audio Engines
-		audioEngine_Music.InitialiseAudio();	
-		audioEngine.InitialiseAudio();
-
-		// Load Slots
-		audioSlot_Music_1.LoadAudioWaveform(sBackgroundMusic_1);
-		audioSlot_Music_2.LoadAudioWaveform(sBackgroundMusic_2);
-		audioSlot_Music_3.LoadAudioWaveform(sBackgroundMusic_3);
-		audioSlot_Music_Menu.LoadAudioWaveform(sBackgroundMusic_Menu);
-		audioSlot_Movement_Succeed.LoadAudioWaveform(sMovement_1);
-		audioSlot_Movement_Fail.LoadAudioWaveform(sMovementFailure_1);
-		audioSlot_RestartLevel.LoadAudioWaveform(sRestartLevel_1);
-		audioSlot_WinJingle.LoadAudioWaveform(sWinJingle_1);
-		audioSlot_LevelTransition.LoadAudioWaveform(sLevelTransition_1);
-		audioSlot_PauseJingle.LoadAudioWaveform(sPauseJingle_1);	
-		audioSlot_UnPauseJingle.LoadAudioWaveform(sUnPauseJingle_1);
-		audioSlot_LevelCode_Succeed.LoadAudioWaveform(sLevelCode_1);
-		audioSlot_LevelCode_Fail.LoadAudioWaveform(sLevelCodeFail_1);
-		audioSlot_GameStartUp.LoadAudioWaveform(sGameStartUp);
-		audioSlot_DoorOpen.LoadAudioWaveform(sDoorOpen_1);
-		audioSlot_DoorClose.LoadAudioWaveform(sDoorClose_1);
-		audioSlot_Teleport_Succeed.LoadAudioWaveform(sTeleport_1);
-		audioSlot_Teleport_Fail.LoadAudioWaveform(sTeleportFailure_1);
-		audioSlot_ButtonClick_1.LoadAudioWaveform(sButtonClick_1);
-		audioSlot_ButtonClick_2.LoadAudioWaveform(sButtonClick_2);
-
-		// Set Volume					
-		audioEngine_Music.SetOutputVolume(fMusicVolume);
-		audioEngine.SetOutputVolume(fSFXVolume);
-	}
-
-	// Function to load all levels into memory
-	void LoadAllLevels()
-	{
-		// Push back each game level
-		vAllLevels.push_back(sLevel_0);
-		vAllLevels.push_back(sLevel_1);
-		vAllLevels.push_back(sLevel_2);
-		vAllLevels.push_back(sLevel_3);
-		vAllLevels.push_back(sLevel_4);
-		vAllLevels.push_back(sLevel_5);
-		vAllLevels.push_back(sLevel_6);
-		vAllLevels.push_back(sLevel_7);
-		vAllLevels.push_back(sLevel_8);
-		vAllLevels.push_back(sLevel_9);
-		vAllLevels.push_back(sLevel_10);
-		vAllLevels.push_back(sLevel_11);
-		vAllLevels.push_back(sLevel_12);
-		vAllLevels.push_back(sLevel_13);
-		vAllLevels.push_back(sLevel_14);
-		vAllLevels.push_back(sLevel_15);
-		vAllLevels.push_back(sLevel_16);
-		vAllLevels.push_back(sLevel_17);
-		vAllLevels.push_back(sLevel_18);
-		vAllLevels.push_back(sLevel_19);
-		vAllLevels.push_back(sLevel_20);
-		vAllLevels.push_back(sLevel_21);
-		vAllLevels.push_back(sLevel_22);
-		vAllLevels.push_back(sLevel_23);
-		vAllLevels.push_back(sLevel_24);
-		vAllLevels.push_back(sLevel_25);
-		vAllLevels.push_back(sLevel_26);
-		vAllLevels.push_back(sLevel_27);
-		vAllLevels.push_back(sLevel_28);
-		vAllLevels.push_back(sLevel_29);
-		vAllLevels.push_back(sLevel_30);
-		vAllLevels.push_back(sLevel_31);
-		vAllLevels.push_back(sLevel_32);
-		vAllLevels.push_back(sLevel_33);
-		vAllLevels.push_back(sLevel_34);
-		vAllLevels.push_back(sLevel_35);
-		vAllLevels.push_back(sLevel_36);
-		vAllLevels.push_back(sLevel_37);
-		vAllLevels.push_back(sLevel_38);
-		vAllLevels.push_back(sLevel_39);
-		vAllLevels.push_back(sLevel_40);
-		vAllLevels.push_back(sLevel_41);
-		vAllLevels.push_back(sLevel_42);
-		vAllLevels.push_back(sLevel_43);
-		vAllLevels.push_back(sLevel_44);
-		vAllLevels.push_back(sLevel_45);
-		vAllLevels.push_back(sLevel_46);
-		vAllLevels.push_back(sLevel_47);
-		vAllLevels.push_back(sLevel_48);
-		vAllLevels.push_back(sLevel_49);
-		vAllLevels.push_back(sLevel_50);
-
-		// End cap for vector, used in End Of Game logic
-		vAllLevels.push_back("End");
-	}
-
-	// utility function to reset move and time tracking var for a single level
-	void ResetLevelScore()
-	{
-		switch (iCurLevel)
-		{
-		case 1:
-			iNumOfMoves_1 = 0;
-			iTime_1 = 0;
-			break;
-		case 2:
-			iNumOfMoves_2 = 0;
-			iTime_2 = 0;
-			break;
-		case 3:
-			iNumOfMoves_3 = 0;
-			iTime_3 = 0;
-			break;
-		case 4:
-			iNumOfMoves_4 = 0;
-			iTime_4 = 0;
-			break;
-		case 5:
-			iNumOfMoves_5 = 0;
-			iTime_5 = 0;
-			break;
-		case 6:
-			iNumOfMoves_6 = 0;
-			iTime_6 = 0;
-			break;
-		case 7:
-			iNumOfMoves_7 = 0;
-			iTime_7 = 0;
-			break;
-		case 8:
-			iNumOfMoves_8 = 0;
-			iTime_8 = 0;
-			break;
-		case 9:
-			iNumOfMoves_9 = 0;
-			iTime_9 = 0;
-			break;
-		case 10:
-			iNumOfMoves_10 = 0;
-			iTime_10 = 0;
-			break;
-		case 11:
-			iNumOfMoves_11 = 0;
-			iTime_11 = 0;
-			break;
-		case 12:
-			iNumOfMoves_12 = 0;
-			iTime_12 = 0;
-			break;
-		case 13:
-			iNumOfMoves_13 = 0;
-			iTime_13 = 0;
-			break;
-		case 14:
-			iNumOfMoves_14 = 0;
-			iTime_14 = 0;
-			break;
-		case 15:
-			iNumOfMoves_15 = 0;
-			iTime_15 = 0;
-			break;
-		case 16:
-			iNumOfMoves_16 = 0;
-			iTime_16 = 0;
-			break;
-		case 17:
-			iNumOfMoves_17 = 0;
-			iTime_17 = 0;
-			break;
-		case 18:
-			iNumOfMoves_18 = 0;
-			iTime_18 = 0;
-			break;
-		case 19:
-			iNumOfMoves_19 = 0;
-			iTime_19 = 0;
-			break;
-		case 20:
-			iNumOfMoves_20 = 0;
-			iTime_20 = 0;
-			break;
-		case 21:
-			iNumOfMoves_21 = 0;
-			iTime_21 = 0;
-			break;
-		case 22:
-			iNumOfMoves_22 = 0;
-			iTime_22 = 0;
-			break;
-		case 23:
-			iNumOfMoves_23 = 0;
-			iTime_23 = 0;
-			break;
-		case 24:
-			iNumOfMoves_24 = 0;
-			iTime_24 = 0;
-			break;
-		case 25:
-			iNumOfMoves_25 = 0;
-			iTime_25 = 0;
-			break;
-		case 26:
-			iNumOfMoves_26 = 0;
-			iTime_26 = 0;
-			break;
-		case 27:
-			iNumOfMoves_27 = 0;
-			iTime_27 = 0;
-			break;
-		case 28:
-			iNumOfMoves_28 = 0;
-			iTime_28 = 0;
-			break;
-		case 29:
-			iNumOfMoves_29 = 0;
-			iTime_29 = 0;
-			break;
-		case 30:
-			iNumOfMoves_30 = 0;
-			iTime_30 = 0;
-			break;
-		case 31:
-			iNumOfMoves_31 = 0;
-			iTime_31 = 0;
-			break;
-		case 32:
-			iNumOfMoves_32 = 0;
-			iTime_32 = 0;
-			break;
-		case 33:
-			iNumOfMoves_33 = 0;
-			iTime_33 = 0;
-			break;
-		case 34:
-			iNumOfMoves_34 = 0;
-			iTime_34 = 0;
-			break;
-		case 35:
-			iNumOfMoves_35 = 0;
-			iTime_35 = 0;
-			break;
-		case 36:
-			iNumOfMoves_36 = 0;
-			iTime_36 = 0;
-			break;
-		case 37:
-			iNumOfMoves_37 = 0;
-			iTime_37 = 0;
-			break;
-		case 38:
-			iNumOfMoves_38 = 0;
-			iTime_38 = 0;
-			break;
-		case 39:
-			iNumOfMoves_39 = 0;
-			iTime_39 = 0;
-			break;
-		case 40:
-			iNumOfMoves_40 = 0;
-			iTime_40 = 0;
-			break;
-		case 41:
-			iNumOfMoves_41 = 0;
-			iTime_41 = 0;
-			break;
-		case 42:
-			iNumOfMoves_42 = 0;
-			iTime_42 = 0;
-			break;
-		case 43:
-			iNumOfMoves_43 = 0;
-			iTime_43 = 0;
-			break;
-		case 44:
-			iNumOfMoves_44 = 0;
-			iTime_44 = 0;
-			break;
-		case 45:
-			iNumOfMoves_45 = 0;
-			iTime_45 = 0;
-			break;
-		case 46:
-			iNumOfMoves_46 = 0;
-			iTime_46 = 0;
-			break;
-		case 47:
-			iNumOfMoves_47 = 0;
-			iTime_47 = 0;
-			break;
-		case 48:
-			iNumOfMoves_48 = 0;
-			iTime_48 = 0;
-			break;
-		case 49:
-			iNumOfMoves_49 = 0;
-			iTime_49 = 0;
-			break;
-		case 50:
-			iNumOfMoves_50 = 0;
-			iTime_50 = 0;
-			break;
-		default:
-			break;
-		}
-
-		internalHighScoreUtility_Moves();
-		internalHighScoreUtility_Time();
-	}
-
-	// Function for loading a level from string template
-	void LoadLevel(int n, bool bWasRestart)
-	{
-		// Clear existing level data
-		vLevel.clear();
-		vGoals.clear();
-		vDoors_pos.clear();
-		vSwitches.clear();
-		bLevelHasTeleports = false;
-		bDoorsOpen = false;
-
-		// reset audio
-		audioEngine.StopAll();
-		audioEngine_Music.StopAll();
-
-		// check for no more levels in memory
-		if (vAllLevels[iCurLevel] == "End" || bMainMenu)
-		{
-			iCurLevel = -1;
-		}
-
-		// Begin load level
-		std::string sLevelToLoad;
-		if (iCurLevel == -1)
-		{
-			sLevelToLoad = sLevel_Error;
-		}
-		else
-		{
-			sLevelToLoad = vAllLevels[iCurLevel];
-		}
-
-		// SFX
-		if (!bMainMenu) // Dont Play Load SFX when loading Main Menu
-		{
-			if (iCurLevel == -1)
-			{
-				audioEngine.PlayWaveform(&audioSlot_WinJingle, false, fAudioSpeed);			// Play SFX
-			}
-			else if (bWasRestart == true)
-			{
-				audioEngine.PlayWaveform(&audioSlot_RestartLevel, false, fAudioSpeed);		// Play SFX
-			}
-			else
-			{
-				audioEngine.PlayWaveform(&audioSlot_LevelTransition, false, fAudioSpeed);	// Play SFX
-			}
-		}
-
-		// iterate over level
-		for (int y = 0; y < vLevelSize.y; y++)
-		{
-			for (int x = 0; x < vLevelSize.x; x++)
-			{
-				// index into 1D version of array coordinates
-				switch (sLevelToLoad[y * vLevelSize.x + x])
-				{
-				case '#':
-					vLevel.emplace_back(std::make_unique<block_solid>());
-					break;
-				case 'P':
-					vLevel.emplace_back(std::make_unique<block_player>());
-					vPlayerPos = { x,y };
-					break;
-				case '+':
-					vLevel.emplace_back(std::make_unique<block_simple>());
-					break;
-				case '-':
-					vLevel.emplace_back(std::make_unique<block_horizontal>());
-					break;
-				case '|':
-					vLevel.emplace_back(std::make_unique<block_vertical>());
-					break;
-				case '1':
-					vLevel.emplace_back(std::make_unique<block_countdown>(1));
-					break;
-				case '2':
-					vLevel.emplace_back(std::make_unique<block_countdown>(2));
-					break;
-				case '3':
-					vLevel.emplace_back(std::make_unique<block_countdown>(3));
-					break;
-				case '4':
-					vLevel.emplace_back(std::make_unique<block_countdown>(4));
-					break;
-				case '5':
-					vLevel.emplace_back(std::make_unique<block_countdown>(5));
-					break;
-				case '6':
-					vLevel.emplace_back(std::make_unique<block_countdown>(6));
-					break;
-				case '7':
-					vLevel.emplace_back(std::make_unique<block_countdown>(7));
-					break;
-				case '8':
-					vLevel.emplace_back(std::make_unique<block_countdown>(8));
-					break;
-				case '9':
-					vLevel.emplace_back(std::make_unique<block_countdown>(9));
-					break;
-				case '@':
-					vGoals.push_back({ x,y });
-					vLevel.emplace_back(nullptr);
-					break;
-				case 'D':
-					vDoors_pos.push_back({ x,y });
-					vLevel.emplace_back(nullptr);
-					break;
-				case 'S':
-					vSwitches.push_back({ x,y });
-					vLevel.emplace_back(nullptr);
-					break;
-				case 'B':
-					vTele_Blue = { x,y };
-					bLevelHasTeleports = true;
-					vLevel.emplace_back(nullptr);
-					break;
-				case 'O':
-					vTele_Orange = { x,y };
-					bLevelHasTeleports = true;
-					vLevel.emplace_back(nullptr);
-					break;
-				default:
-					vLevel.emplace_back(nullptr);
-				}
-			}
-		}
-
-		// restart music
-		if (iCurLevel >= 1 && iCurLevel <= 15 && !bMainMenu)
-		{
-			audioEngine_Music.PlayWaveform(&audioSlot_Music_1, true, fAudioSpeed * 0.75f);
-		}
-		else if (iCurLevel >= 16 && iCurLevel <= 35 && !bMainMenu)
-		{
-			audioEngine_Music.PlayWaveform(&audioSlot_Music_2, true, fAudioSpeed * 0.75f);
-		}
-		else if (iCurLevel >= 36 && iCurLevel <= 50 && !bMainMenu)
-		{
-			audioEngine_Music.PlayWaveform(&audioSlot_Music_3, true, fAudioSpeed * 0.75f);
-		}
-		else if (bMainMenu)
-		{
-			audioEngine_Music.PlayWaveform(&audioSlot_Music_Menu, true, fAudioSpeed * 0.75f);
-		}
-	}
-
-	// Overridden Text Entry function for use in Level Select Menu
-	void OnTextEntryComplete(const std::string& sText) override 
-	{ 
-		sInputCode = sText;
-	}
-
-	// Called Every Frame while the Main Menu system is open
-	void MainMenu(float fElapsedTime)
-	{
-		iLevelSet = -1;
-
-		switch (iCurDisplay)
-		{
-		case 0: // High Score Screen
-			// User Input:
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Close Menu
-			{
-				iPageNum = 1;
-				iCurDisplay = -1;
-			}
-			if (GetKey(olc::Key::LEFT).bPressed || GetKey(olc::Key::A).bPressed)		// Move to next page
-			{
-				if (iPageNum > 1)
-				{
-					iPageNum--;
-				}
-			}
-			if (GetKey(olc::Key::RIGHT).bPressed || GetKey(olc::Key::D).bPressed)	    // Move to previous page
-			{
-				if (iPageNum < 8)
-				{
-					iPageNum++;
-				}
-			}
-			if (GetKey(olc::Key::H).bPressed)											// Reset Scores
-			{
-				for (int i = 0; i < vHighScore_Moves.size(); i++)
-				{
-					vHighScore_Moves[i] = 1000;
-				}
-				for (int i = 0; i < vHighScore_Time.size(); i++)
-				{
-					vHighScore_Time[i] = 10000;
-				}
-
-				fTotal_HS = 500000.0f;
-				iTotal_HS = 50000;
-
-				int iSave = SaveHighScores();
-				int iLoad = LoadHighScores();
-			}
-
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
-
-			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 42, 24, "HIGH SCORES", olc::WHITE);
-			
-			DrawString(20, 180, "Press ESC to Close", olc::WHITE);
-			DrawString(20, 190, "Press H to Reset Scores", olc::WHITE);
-
-			DrawString(20, 202, "Press Left or Right to", olc::WHITE);
-			DrawString(20, 212, "Select Page", olc::WHITE);
-			DrawString(230, 215, std::to_string(iPageNum), olc::WHITE);
-
-			// Display Scores 
-			switch (iPageNum)
-			{
-			case 1:
-				DrawString(20, 33, "Level 1:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[0]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[0])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 2:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[1]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[1])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 3:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[2]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[2])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 4:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[3]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[3])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 5:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[4]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[4])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 6:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[5]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[5])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 7:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[6]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[6])) + "s", olc::WHITE);
-				break;
-			case 2:
-				DrawString(20, 33, "Level 8:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[7]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[7])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 9:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[8]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[8])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 10:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[9]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[9])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 11:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[10]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[10])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 12:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[11]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[11])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 13:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[12]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[12])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 14:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[13]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[13])) + "s", olc::WHITE);
-				break;
-			case 3:
-				DrawString(20, 33, "Level 15:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[14]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[14])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 16:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[15]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[15])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 17:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[16]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[16])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 18:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[17]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[17])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 19:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[18]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[18])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 20:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[19]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[19])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 21:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[20]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[20])) + "s", olc::WHITE);
-				break;
-			case 4:
-				DrawString(20, 33, "Level 22:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[21]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[21])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 23:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[22]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[22])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 24:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[23]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[23])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 25:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[24]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[24])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 26:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[25]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[25])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 27:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[26]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[26])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 28:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[27]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[27])) + "s", olc::WHITE);
-				break;
-			case 5:
-				DrawString(20, 33, "Level 29:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[28]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[28])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 30:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[29]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[29])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 31:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[30]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[30])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 32:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[31]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[31])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 33:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[32]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[32])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 34:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[33]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[33])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 35:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[34]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[34])) + "s", olc::WHITE);
-				break;
-			case 6:
-				DrawString(20, 33, "Level 36:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[35]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[35])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 37:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[36]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[36])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 38:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[37]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[37])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 39:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[38]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[38])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 40:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[39]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[39])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 41:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[40]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[40])) + "s", olc::WHITE);
-				DrawString(20, 153, "Level 42:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[41]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[41])) + "s", olc::WHITE);
-				break;
-			case 7:
-				DrawString(20, 33, "Level 43:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[42]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[42])) + "s", olc::WHITE);
-				DrawString(20, 53, "Level 44:", olc::WHITE);
-				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[43]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[43])) + "s", olc::WHITE);
-				DrawString(20, 73, "Level 45:", olc::WHITE);
-				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[44]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[44])) + "s", olc::WHITE);
-				DrawString(20, 93, "Level 46:", olc::WHITE);
-				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[45]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[45])) + "s", olc::WHITE);
-				DrawString(20, 113, "Level 47:", olc::WHITE);
-				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[46]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[46])) + "s", olc::WHITE);
-				DrawString(20, 133, "Level 48:", olc::WHITE);
-				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[47]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[47])) + "s",olc::WHITE);
-				DrawString(20, 153, "Level 49:", olc::WHITE);
-				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[48]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[48])) + "s", olc::WHITE);
-				break;
-			case 8:
-				DrawString(20, 33, "Level 50:", olc::WHITE);
-				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[49]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[49])) + "s", olc::WHITE);
-
-				iTotal_HS = 0;
-				fTotal_HS = 0.0f;
-				for (int i = 0; i < vHighScore_Moves.size(); i++)
-				{
-					iTotal_HS += vHighScore_Moves[i];
-				}
-				for (int i = 0; i < vHighScore_Time.size(); i++)
-				{
-					fTotal_HS += vHighScore_Time[i];
-				}
-
-				DrawString(20, 143, "Total:", olc::WHITE);
-				DrawString(20, 153, "Moves: " + std::to_string(iTotal_HS) + "\nTime: " + FloatToString(TruncateFloat(fTotal_HS)) + "s", olc::WHITE);
-				break;
-			default:
-				break;
-			}
-			break;
-		case 1: // Options Screen
-			// User Input:
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
-			{
-				// Save Changes
-				iOptionsSave = SaveOptions();
-
-				iCurDisplay = -1;
-			}
-			if (GetKey(olc::Key::D).bPressed)		// Increase SFX Volume
-			{
-				fSFXVolume += 0.1f;
-				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
-			}
-			if (GetKey(olc::Key::A).bPressed)		// Decrease SFX Volume
-			{
-				fSFXVolume -= 0.1f;
-				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
-			}
-			if (GetKey(olc::Key::RIGHT).bPressed)	// Increase Music Volume
-			{
-				fMusicVolume += 0.1f;
-			}
-			if (GetKey(olc::Key::LEFT).bPressed)	// Decrease Music Volume
-			{
-				fMusicVolume -= 0.1f;
-			}
-
-			// Clamp Volume Values
-			if (fMusicVolume > 1.0f)
-			{
-				fMusicVolume = 1.0f;
-			}
-			if (fMusicVolume < 0.0f)
-			{
-				fMusicVolume = 0.0f;
-			}
-			if (fSFXVolume > 1.0f)
-			{
-				fSFXVolume = 1.0f;
-			}
-			if (fSFXVolume < 0.0f)
-			{
-				fSFXVolume = 0.0f;
-			}
-
-			// Apply Changes
-			audioEngine.SetOutputVolume(fSFXVolume);
-			audioEngine_Music.SetOutputVolume(fMusicVolume);
-
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
-
-			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "OPTIONS", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) - 85, "Press Arrow Keys to", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) - 75, "Adjust Music Volume", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) - 60, "Press A or D to", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) - 50, "Adjust SFX Volume", olc::WHITE);
-
-			DrawString((256 / 2) - 108, (240 / 2) + 72, "Music: " + std::to_string(fMusicVolume), olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 82, "SFX: " +std::to_string(fSFXVolume), olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
-			break;
-		case 2: // Level Select Code Screen
-			// User Input
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Close Menu
-			{
-				sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
-				iCurDisplay = -1;
-			}
-			if (GetKey(olc::Key::ENTER).bPressed && IsTextEntryEnabled() == false)		// Enable Text Entry
-			{
-				TextEntryEnable(true);
-			}
-
-			// Use Input Input, if player has inputted one
-			if (sInputCode != "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd")		// Some kind of user input has been detected in the string
-			{
-				if (sInputCode == sMediumLevelCode)
-				{
-					// Play Success SFX
-					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
-
-					// Set Level
-					iCurLevel = 16;
-
-					// Disable Text Entry
-					TextEntryEnable(false);
-
-					// Exit Menus, reset sInput string, Load Level						
-					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
-					iCurDisplay = -1;
-					bMainMenu = false;
-					LoadLevel(iCurLevel, false);
-
-				}
-				else if (sInputCode == sHardLevelCode)
-				{
-					// Play Success SFX
-					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
-
-					// Set Level
-					iCurLevel = 36;
-
-					// Disable Text Entry
-					TextEntryEnable(false);
-
-					// Exit Menus, reset sInput string, Load Level
-					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
-					iCurDisplay = -1;
-					bMainMenu = false;
-					LoadLevel(iCurLevel, false);
+					bDebugMode = false;
 				}
 				else
 				{
-					// Play Fail SFX
-					audioEngine.PlayWaveform(&audioSlot_LevelCode_Fail, false, fAudioSpeed);
-
-					// Disable Text Entry
-					TextEntryEnable(false);
-
-					// Reset sInput string
-					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+					bDebugMode = true;
 				}
 			}
-
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
-
-			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 50, (240 / 2) - 96, "LEVEL SELECT", olc::WHITE);
-			DrawString(20, 199, "Press Enter to Input Code", olc::WHITE);
-			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
-			
-			// Text Entry UI
-			if (IsTextEntryEnabled() == true)
+			if (bEnableInput && bDebugMode && GetKey(olc::Key::V).bPressed) // Debug Mode Door Open/Close
 			{
-				DrawString(65, 35, "Text Entry Mode", olc::YELLOW);
-			}
-			break;
-		case 3: // Credits Screen
-			// User Input:
-			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
-			{
-				// Save Changes
-				iOptionsSave = SaveOptions();
-
-				iCurDisplay = -1;
-			}
-
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
-
-			// Draw UI
-			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "CREDITS", olc::WHITE);
-
-			DrawString(20, 35, "Programming:", olc::YELLOW);
-			DrawString(20, 45, "Tyler Clardy", olc::WHITE);
-
-			DrawString(20, 60, "Art Design:", olc::GREEN);
-			DrawString(20, 70, "Tyler Clardy", olc::WHITE);
-
-			DrawString(20, 85, "Sound Design:", olc::RED);
-			DrawString(20, 95, "Tyler Clardy", olc::WHITE);
-
-			DrawString(20, 110, "Level Design:", olc::MAGENTA);
-			DrawString(20, 120, "Tyler Clardy", olc::WHITE);
-			DrawString(20, 130, "James Norman", olc::WHITE);
-			DrawString(20, 140, "Aaron McBroom", olc::WHITE);
-
-			DrawString(20, 155, "Promotional Materials:", olc::BLUE);
-			DrawString(20, 165, "Tyler Clardy", olc::WHITE);
-
-			DrawString(20, 200, "3bytes Studio 2025", olc::CYAN);
-			DrawString(20, 212, "Press ESC to Close", olc::WHITE);
-			break;
-		default: // Main Menu
-			// User Input:
-			if (GetKey(olc::Key::UP).bPressed || GetKey(olc::Key::W).bPressed)
-			{
-				bCursorBlink = false;
-				fCursorBlinkTimer = 0.0f;
-
-				iMenuSelectCursor_main--;
-				if (iMenuSelectCursor_main < 0)
+				if (bDoors_DebugForceOpen)
 				{
-					iMenuSelectCursor_main = 5;
-				}
-			}
-			if (GetKey(olc::Key::DOWN).bPressed || GetKey(olc::Key::S).bPressed)
-			{
-				bCursorBlink = false;
-				fCursorBlinkTimer = 0.0f;
-
-				iMenuSelectCursor_main++;
-				if (iMenuSelectCursor_main > 5)
-				{
-					iMenuSelectCursor_main = 0;
-				}
-			}
-			if (GetKey(olc::Key::ENTER).bPressed)
-			{
-				switch (iMenuSelectCursor_main)
-				{
-				case 0: // Start Game
-					ResetMainMenu();
-					bMainMenu = false;			
-					iCurLevel = 1;
-					LoadLevel(iCurLevel, false);
-					break;
-				case 1: // Level Select
-					ResetMainMenu();
-					iMenuSelectCursor_main = 1;
-					iCurDisplay = 2;
-					break;
-				case 2: // High Scores
-					ResetMainMenu();
-					iMenuSelectCursor_main = 2;
-					iCurDisplay = 0;
-					break;
-				case 3: // Options
-					ResetMainMenu();
-					iMenuSelectCursor_main = 3;
-					iCurDisplay = 1;
-					break;
-				case 4: // Credits
-					ResetMainMenu();
-					iMenuSelectCursor_main = 4;
-					iCurDisplay = 3;
-					break;
-				case 5: // Quit Game
-					ResetMainMenu();
-					iMenuSelectCursor_main = 5;
-					internalHighScoreUtility_Time();
-					internalHighScoreUtility_Moves();
-					SaveHighScores();
-					this->~Puzzle();
-					break;
-				default:
-					break;
-				}
-			}
-
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
-
-			// Draw UI
-			DoGameTitle(fElapsedTime);
-			DrawString((this->ScreenWidth() / 2) - 36, 51, "MAIN MENU", olc::WHITE);
-			DrawString((this->ScreenWidth() / 2) - 40, 68, "Start Game", olc::CYAN); 
-			DrawString((this->ScreenWidth() / 2) - 48, 80, "Level Select", olc::YELLOW); 
-			DrawString((this->ScreenWidth() / 2) - 44, 92, "High Scores", olc::MAGENTA); 
-			DrawString((this->ScreenWidth() / 2) - 28, 104, "Options", olc::BLUE); 
-			DrawString((this->ScreenWidth() / 2) - 28, 116, "Credits", olc::GREEN); 
-			DrawString((this->ScreenWidth() / 2) - 15, 128, "Quit", olc::RED); 
-			
-			// Draw cursor 
-			DoCursorBlink(fElapsedTime); // update cursor blink variables
-
-			if (!bCursorBlink) // only draw cursor on frames where cursor blink is toggled false
-			{
-				olc::vi2d vCursorPos_R = { 0,0 };
-				olc::vi2d vCursorPos_L = { 0,0 };
-
-				switch (iMenuSelectCursor_main)
-				{
-				case 0: // Start Game
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 40, 63 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 57, 63 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 0) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize); // L
-					break;
-				case 1: // Level Select
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 48, 75 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 65, 75 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L
-					break;
-				case 2: // High Scores
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 45, 87 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 61, 87 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize); // L
-					break;
-				case 3: // Options
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 99 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 99 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize); // L
-					break;
-				case 4: // Credits
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 111 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 111 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L
-					break;
-				case 5: // Quit Game
-					vCursorPos_R = { (this->ScreenWidth() / 2) + 18, 123 };
-					vCursorPos_L = { (this->ScreenWidth() / 2) - 34, 123 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(2, 0) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(3, 0) * vBlockSize, vBlockSize); // L
-					break;
-				default:
-					break;
-				}
-			}
-
-			// Draw game scene loop
-			DoMainMenuGameScene(fElapsedTime);
-
-			break;
-		}
-	}
-
-	// Utility function controlling blink effect on menu selection cursor
-	void DoCursorBlink(float fElapsedTime)
-	{
-		// Check flag
-		if (bDoCursorBlink)
-		{
-			fCursorBlinkTimer += fElapsedTime;
-
-			if (fCursorBlinkTimer >= fCursorBlinkSpeed) // Enough time has passed - toggle flag for cursor blink
-			{
-				fCursorBlinkTimer = 0.0f; // reset timer
-
-				// toggle flag
-				if (bCursorBlink == true)
-				{
-					bCursorBlink = false;
+					bDoors_DebugForceOpen = false;
 				}
 				else
 				{
-					bCursorBlink = true;
+					bDoors_DebugForceOpen = true;
 				}
 			}
 		}
-	}
-
-	// Utility function for drawing the game scene loop in the main menu
-	void DoMainMenuGameScene(float fElapsedTime)
-	{
-		// Timer for scene game state
-		fMenuSceneTimer += fElapsedTime;
-		if (fMenuSceneTimer >= fMenuSceneSpeed && !bRestartScene)
+		else
 		{
-			fMenuSceneTimer = 0.0f;
-
-			iMenuSceneState++;
-			if (iMenuSceneState >= 32)
+			// Win Screen ESC
+			if (bEnableInput && GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)
 			{
-				bRestartScene = true;
+				fTime_WinScreen = 0.0f;
+				audioEngine_Music.SetOutputVolume(fMusicVolume);	// Unmute Background Music
+				bMainMenu = true;									// Set Flag
+
+				// Reset All Level Score Data
+				DoLevelScoreReset();
+
+				return true;
 			}
 		}
+#pragma endregion
 
-		// Do Restart Sequence
-		if (bRestartScene)
+		// Movement Logic
+		#pragma region Movement
+		bool bPlayerMoved = false;
+		bool bTeleported = false;
+		int iCursorTracker = 0;
+		int iTeleportSucceededOrFailed = -1; // -1, no tele attempt, 0 = tele failed, 1 = tele succeeded
+		int iMovementSuceededOrFailed = -1; // -1 = no move, 0 = move failed, 1 = move succeeded
+		if (bPushing) // check if a push attempt is happening this frame
 		{
-			// wait for timer to end, then 
-			fMenuSceneRestartEffectTimer += fElapsedTime;
-			if (fMenuSceneRestartEffectTimer >= fMenuSceneRestartEffectTimerSpeed)
+			olc::vi2d vBlockPos = vPlayerPos; // 'cursor' to track attempted movement
+
+			bool bAllowPush = false;
+			bool bTest = true;
+
+			// test for ability to move in a specific direction
+			while (bTest)
 			{
-				// do freeze effect
-				bSceneEffect = false;
-
-				// wait for freeze timer before doing reset
-				fSceneFreezeTimer += fElapsedTime;
-				if (fSceneFreezeTimer >= fSceneFreezeSpeed)
+				if (vLevel[id(vBlockPos)] != nullptr) // check target block space for nullptr
 				{
-					// reset restart flag
-					bRestartScene = false;
-
-					// reset scene effect flag
-					bSceneEffect = false;
-
-					// reset timers
-					fSceneFreezeTimer = 0.0f;
-					fMenuSceneRestartEffectTimer = 0.0f;
-					fSceneEffectTimer = 0.0f;
-
-					// do restart
-					iMenuSceneState = -3;
-				}
-			}
-			else
-			{
-				// do effect
-				fSceneEffectTimer += fElapsedTime;
-				if (fSceneEffectTimer >= fSceneEffectSpeed)
-				{
-					// reset timer
-					fSceneEffectTimer = 0.0f;
-
-					// toggle flag
-					if (bSceneEffect == false)
+					if (vLevel[id(vBlockPos)]->Push((iDirPush + 2) % 4)) // call blocks push function to determine if it can be pushed in the direction specified
 					{
-						bSceneEffect = true;
+						// if block is allowed to be pushed in that direction - move cursor that direction so we can check for collision in neighboring space
+						switch (iDirPush) // select neighbor
+						{
+						case NORTH: vBlockPos.y--; iCursorTracker++; break;
+						case SOUTH: vBlockPos.y++; iCursorTracker++; break;
+						case EAST: vBlockPos.x++; iCursorTracker++; break;
+						case WEST: vBlockPos.x--; iCursorTracker++; break;
+						}
 					}
-					else if (bSceneEffect == true)
+					else // block cant be pushed that way -- end testing
 					{
-						bSceneEffect = false;
+						bPlayerMoved = true;
+						iMovementSuceededOrFailed = 0;
+						bTest = false;
+					}
+				}
+				else // target space was nullptr
+				{
+					// check target space against all door locations
+					bool bTargetIsDoor = false;
+					for (auto& d : vDoors_pos)
+					{
+						if (vBlockPos == d)
+						{
+							bTargetIsDoor = true;
+						}
+					}
+
+					if (bTargetIsDoor)	// Target Space is door
+					{
+						if (!bDoorsOpen) // doors are closed - player cannot move there. End testing
+						{
+							bPlayerMoved = true;
+							iMovementSuceededOrFailed = 0;
+							bTest = false;
+						}
+						else			// doors are open - player can move there. End testing
+						{
+							bPlayerMoved = true;
+							iMovementSuceededOrFailed = 1;
+							bAllowPush = true;
+							bTest = false;
+						}
+					}
+					else				// Target space is not a door - check for teleport 
+					{
+						bool bTargetIsTeleporter = false;
+						if (bLevelHasTeleports)
+						{
+							if (vBlockPos == vTele_Blue || vBlockPos == vTele_Orange)
+							{
+								bTargetIsTeleporter = true;
+							}
+						}
+
+						if (bTargetIsTeleporter)
+						{
+							// check if player - blocks cannot teleport, but player can
+							bool bTeleAllowed = false;
+							if (iCursorTracker == 1)
+							{
+								bTeleAllowed = true;
+							}
+
+							if (!bTeleAllowed) // Teleport is not allowed - Player cannot move there. End testing
+							{
+								bPlayerMoved = true;
+								iTeleportSucceededOrFailed = 0;
+								iMovementSuceededOrFailed = 0;
+								bTest = false;
+							}
+							else // teleport is allowed - player can move there. End testing
+							{
+								bTeleported = true;
+								bPlayerMoved = true;
+								iTeleportSucceededOrFailed = 1;
+								iMovementSuceededOrFailed = 1;
+								bAllowPush = true;
+								bTest = false;
+							}
+						}
+						else // target space was nullptr and did not contain a door or teleporter - player can move there. End testing
+						{
+							bPlayerMoved = true;
+							iMovementSuceededOrFailed = 1;
+							bAllowPush = true;
+							bTest = false;
+						}
+					}
+				}
+			}
+
+			if (bAllowPush) // if push is allowed - execute push logic
+			{
+				if (bTeleported) // teleport movement
+				{
+					if (vBlockPos == vTele_Blue)
+					{
+						std::swap(vLevel[id(vTele_Orange)], vLevel[id(vPlayerPos)]);
+						vPlayerPos = vTele_Orange;
+					}
+					else if (vBlockPos == vTele_Orange)
+					{
+						std::swap(vLevel[id(vTele_Blue)], vLevel[id(vPlayerPos)]);
+						vPlayerPos = vTele_Blue;
+					}
+				}
+				else // normal movement
+				{
+					while (vBlockPos != vPlayerPos) // walk backwards until reaching player position from valid move location that cursor found, swapping block positions as needed
+					{
+						olc::vi2d vSourcePos = vBlockPos;
+						switch (iDirPush)
+						{
+						case NORTH: vSourcePos.y++; break;
+						case SOUTH: vSourcePos.y--; break;
+						case EAST: vSourcePos.x--; break;
+						case WEST: vSourcePos.x++; break;
+						}
+
+						if (vLevel[id(vSourcePos)] != nullptr) // check for nullptr
+						{
+							vLevel[id(vSourcePos)]->Move(); // call any custom move logic before actually excecuting move
+						}
+
+						std::swap(vLevel[id(vSourcePos)], vLevel[id(vBlockPos)]); // swap blocks
+						vBlockPos = vSourcePos; // increment 'cursor' backwards
+					}
+
+					// update player location after movement logic loop completes
+					switch (iDirPush)
+					{
+					case NORTH: vPlayerPos.y--; break;
+					case SOUTH: vPlayerPos.y++; break;
+					case EAST: vPlayerPos.x++; break;
+					case WEST: vPlayerPos.x--; break;
 					}
 				}
 			}
 		}
+#pragma endregion
 
-		// debug
-		/*DrawString(17, 17, std::to_string(iMenuSceneState), olc::DARK_GREY);
-		if (GetKey(olc::Key::RIGHT).bPressed)
+		// Movement & Teleport SFX
+		if (bPlayerMoved == true)
 		{
-			iMenuSceneState++;
-			if (iMenuSceneState > 32)
+			if (iTeleportSucceededOrFailed == -1) // no teleport, just regular movement
 			{
-				iMenuSceneState = 32;
-			}
-		}
-		if (GetKey(olc::Key::LEFT).bPressed)
-		{
-			iMenuSceneState--;
-			if (iMenuSceneState < -1)
-			{
-				iMenuSceneState = -1;
-			}
-		}*/
-
-		olc::vi2d vPos_Vertical = { 176, 176 }; 
-		olc::vi2d vPos_Player = { 48, 160 }; 
-		olc::vi2d vPos_Horizontal = { 112, 192 }; 
-		olc::vi2d vPos_Omni = { 208, 176 }; 
-		olc::vi2d vPos_Countdown = { 80, 160 }; 
-		int iCountdownNum = 2;
-
-		// update positions
-		if (iMenuSceneState != -1)
-		{
-			if (iMenuSceneState >= 20) // vertical block 
-			{
-				vPos_Vertical.y = 160;
-			}
-			if (iMenuSceneState == 25) // horizontal block
-			{
-				vPos_Horizontal.x = 96;
-			}
-			else if (iMenuSceneState == 26)
-			{
-				vPos_Horizontal.x = 80;
-			}
-			else if (iMenuSceneState > 26)
-			{
-				vPos_Horizontal.x = 64;
-			}
-			if (iMenuSceneState >= 4) // omni block
-			{
-				vPos_Omni.y = 160;
-			}
-			if (iMenuSceneState >= 11) // Countdown block
-			{
-				vPos_Countdown.x = 96;
-				iCountdownNum = 1;
-			}
-			switch (iMenuSceneState) // Player
-			{
-			case 0:
-				vPos_Player = { 32, 160 };
-				break;
-			case 1:
-				vPos_Player = { 32, 176 };
-				break;
-			case 2:
-				vPos_Player = { 32, 192 }; // on top of blue portal
-				break;
-			case 3:
-				vPos_Player = { 208, 192 }; // on top of orange portal
-				break;
-			case 4:
-				vPos_Player = { 208, 176 };
-				break;
-			case 5:
-				vPos_Player = { 208, 192 }; // on top of orange portal
-				break;
-			case 6:
-				vPos_Player = { 32, 192 }; // on top of blue portal
-				break;
-			case 7:
-				vPos_Player = { 32, 176 };
-				break;
-			case 8:
-				vPos_Player = { 32, 160 };
-				break;
-			case 9:
-				vPos_Player = { 48, 160 };
-				break;
-			case 10:
-				vPos_Player = { 64, 160 }; // on top of door
-				break;
-			case 11:
-				vPos_Player = { 80, 160 }; // pushing countdown
-				break;
-			case 12:
-				vPos_Player = { 80, 176 };
-				break;
-			case 13:
-				vPos_Player = { 96, 176 };
-				break;
-			case 14:
-				vPos_Player = { 112, 176 };
-				break;
-			case 15:
-				vPos_Player = { 128, 176 };
-				break;
-			case 16:
-				vPos_Player = { 144, 176 };
-				break;
-			case 17:
-				vPos_Player = { 144, 192 };
-				break;
-			case 18:
-				vPos_Player = { 160, 192 };
-				break;
-			case 19:
-				vPos_Player = { 176, 192 };
-				break;
-			case 20:
-				vPos_Player = { 176, 176 }; // pushing vertical block
-				break;
-			case 21:
-				vPos_Player = { 176, 192 }; //
-				break;
-			case 22:
-				vPos_Player = { 160, 192 };
-				break;
-			case 23:
-				vPos_Player = { 144, 192 }; 
-				break;
-			case 24:
-				vPos_Player = { 128, 192 };
-				break;
-			case 25:
-				vPos_Player = { 112, 192 };
-				break;
-			case 26:
-				vPos_Player = { 96, 192 };
-				break;
-			case 27:
-				vPos_Player = { 80, 192 };
-				break;
-			case 28:
-				vPos_Player = { 80, 176 };
-				break;
-			case 29:
-				vPos_Player = { 80, 160 };
-				break;
-			case 30:
-				vPos_Player = { 64, 160 };
-				break;
-			case 31:
-				vPos_Player = { 48, 160 };
-				break;
-			case 32:
-				vPos_Player = { 32, 160 };
-				break;
-			default:
-				break;
-			}
-		}
-
-		// DRAW SCENE:
-		if (!bSceneEffect)
-		{
-			// WALLS:
-		// Left Wall
-			DrawPartialSprite({ 16, 192 }, gfxMenuScene.Sprite(), olc::vi2d(1, 2)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 16, 176 }, gfxMenuScene.Sprite(), olc::vi2d(1, 2)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 16, 160 }, gfxMenuScene.Sprite(), olc::vi2d(1, 2)* vBlockSize, vBlockSize);
-
-			// Right Wall
-			DrawPartialSprite({ 224, 192 }, gfxMenuScene.Sprite(), olc::vi2d(1, 1)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 224, 176 }, gfxMenuScene.Sprite(), olc::vi2d(1, 1)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 224, 160 }, gfxMenuScene.Sprite(), olc::vi2d(1, 1)* vBlockSize, vBlockSize);
-
-			// Top
-			DrawPartialSprite({ 32, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 48, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 64, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 80, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 96, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 112, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 128, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 144, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 160, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 176, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 192, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 208, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0)* vBlockSize, vBlockSize);
-
-			// Bottom
-			DrawPartialSprite({ 32, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 48, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 64, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 80, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 96, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 112, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 128, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 144, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 160, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 176, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 192, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 208, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3)* vBlockSize, vBlockSize);
-
-			// Corners
-			DrawPartialSprite({ 224, 208 }, gfxMenuScene.Sprite(), olc::vi2d(3, 1)* vBlockSize, vBlockSize); // bottom right
-			DrawPartialSprite({ 16, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 4)* vBlockSize, vBlockSize); // top left
-			DrawPartialSprite({ 16, 208 }, gfxMenuScene.Sprite(), olc::vi2d(4, 1)* vBlockSize, vBlockSize); // bottom left
-			DrawPartialSprite({ 224, 144 }, gfxMenuScene.Sprite(), olc::vi2d(3, 3)* vBlockSize, vBlockSize); // top right
-
-			// Interior
-			DrawPartialSprite({ 192, 160 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize); // interior wall 1 (next to orange portal)
-			DrawPartialSprite({ 192, 176 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 192, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize);
-
-			DrawPartialSprite({ 48, 176 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize); // Interior wall 2 (next to blue portal)
-			DrawPartialSprite({ 48, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize);
-			DrawPartialSprite({ 64, 176 }, gfxTiles.Sprite(), olc::vi2d(2, 1)* vBlockSize, vBlockSize);
-
-			// SCENE Static:
-			// Portals
-			DoTeleportFlipCheck(fElapsedTime);
-			switch (iTele_Facing)
-			{
-			case 0:
-				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(3, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(3, 4) * vBlockSize, vBlockSize);
-				break;
-			case 1:
-				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 4) * vBlockSize, vBlockSize);
-				break;
-			case 2:
-				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize);
-				break;
-			case 3:
-				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize);
-				break;
-			}
-			// Door Switch
-			olc::vi2d vDoorSwitch_MenuScene = { 208, 160 };
-			FillCircle(vDoorSwitch_MenuScene + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
-			// Win Tiles
-			olc::vi2d vWinTile_MenuScene_1 = { 64, 192 };
-			olc::vi2d vWinTile_MenuScene_2 = { 176, 160 };
-			olc::vi2d vWinTile_MenuScene_3 = { 32, 160 };
-			FillCircle(vWinTile_MenuScene_1 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
-			FillCircle(vWinTile_MenuScene_2 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
-			FillCircle(vWinTile_MenuScene_3 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
-
-			// SCENE NonStatic
-			// Door
-			if (iMenuSceneState >= 4) // open
-			{
-				DrawPartialSprite({ 64, 160 }, gfxTiles.Sprite(), olc::vi2d(2, 2) * vBlockSize, vBlockSize);
-			}
-			else // closed
-			{
-				DrawPartialSprite({ 64, 160 }, gfxTiles.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
-			}
-			// "PLAYER"
-			DrawPartialSprite(vPos_Player, gfxTiles.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize);
-			// Blocks
-			DrawPartialSprite(vPos_Vertical, gfxTiles.Sprite(), olc::vi2d(3, 0) * vBlockSize, vBlockSize); // vertical block
-			DrawPartialSprite(vPos_Horizontal, gfxTiles.Sprite(), olc::vi2d(2, 0) * vBlockSize, vBlockSize); // Horizontal Block
-			DrawPartialSprite(vPos_Omni, gfxTiles.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize); // Omnidirectional Block
-			DrawPartialSprite(vPos_Countdown, gfxTiles.Sprite(), olc::vi2d(4, 0) * vBlockSize, vBlockSize); // countdown Block tile
-			DrawString(vPos_Countdown + olc::vi2d(4, 4), std::to_string(iCountdownNum), olc::BLACK); // countdown block integer
-		}
-	}
-
-	// Utility function for Main Menu - Game Title Visual Effect
-	void DoGameTitle(float fElapsedTime)
-	{
-		olc::Pixel p_0;
-		olc::Pixel p_1;
-		olc::Pixel p_2;
-		olc::Pixel p_3;
-		olc::Pixel p_4;
-		olc::Pixel p_5;
-
-		// Check timer
-		fTitleSwitchTimer += fElapsedTime;
-		if (fTitleSwitchTimer >= fTitleSwitchSpeed)
-		{
-			fTitleSwitchTimer = 0.0f;
-
-			iTitleSwitch++;
-
-			if (iTitleSwitch > 5)
-			{
-				iTitleSwitch = 0;
-			}
-		}
-
-		// Color Picking
-		switch (iTitleSwitch)
-		{
-		case 0:
-			p_0 = olc::CYAN;
-			p_1 = olc::YELLOW;
-			p_2 = olc::MAGENTA;
-			p_3 = olc::BLUE;
-			p_4 = olc::GREEN;
-			p_5 = olc::RED;
-			break;
-		case 1:
-			p_0 = olc::RED;
-			p_1 = olc::CYAN;
-			p_2 = olc::YELLOW;
-			p_3 = olc::MAGENTA;
-			p_4 = olc::BLUE;
-			p_5 = olc::GREEN;
-			break;
-		case 2:
-			p_0 = olc::GREEN;
-			p_1 = olc::RED;
-			p_2 = olc::CYAN;
-			p_3 = olc::YELLOW;
-			p_4 = olc::MAGENTA;
-			p_5 = olc::BLUE;
-			break;
-		case 3:
-			p_0 = olc::BLUE;
-			p_1 = olc::GREEN;
-			p_2 = olc::RED;
-			p_3 = olc::CYAN;
-			p_4 = olc::YELLOW;
-			p_5 = olc::MAGENTA;
-			break;
-		case 4:
-			p_0 = olc::MAGENTA;
-			p_1 = olc::BLUE;
-			p_2 = olc::GREEN;
-			p_3 = olc::RED;
-			p_4 = olc::CYAN;
-			p_5 = olc::YELLOW;
-			break;
-		case 5:
-			p_0 = olc::YELLOW;
-			p_1 = olc::MAGENTA;
-			p_2 = olc::BLUE;
-			p_3 = olc::GREEN;
-			p_4 = olc::RED;
-			p_5 = olc::CYAN;
-			break;
-		default:
-			break;
-		}
-
-		// Draw Title
-		DrawString(((this->ScreenWidth() / 2) - 77) + 5, 34, "I", p_0);
-		DrawString(((this->ScreenWidth() / 2) - 63) + 5, 34, "N", p_1);
-		DrawString(((this->ScreenWidth() / 2) - 48) + 5, 34, "C", p_2);
-		DrawString(((this->ScreenWidth() / 2) - 33) + 5, 34, "R", p_3);
-		DrawString(((this->ScreenWidth() / 2) - 18) + 5, 34, "E", p_4);
-		DrawString(((this->ScreenWidth() / 2) - 3) + 5, 34, "M", p_5);
-		DrawString(((this->ScreenWidth() / 2) + 12) + 5, 34, "E", p_0);
-		DrawString(((this->ScreenWidth() / 2) + 27) + 5, 34, "N", p_1);
-		DrawString(((this->ScreenWidth() / 2) + 42) + 5, 34, "T", p_2);
-		DrawString(((this->ScreenWidth() / 2) + 57) + 5, 34, "0", p_3);
-	}
-
-	// Utility function for checking background music flag
-	void BackgroundMusicToggle()
-	{
-		if (!bDoBackgroundMusic)
-		{
-			audioEngine_Music.SetOutputVolume(0.0f);
-		}
-		else
-		{
-			audioEngine_Music.SetOutputVolume(fMusicVolume);
-		}
-	}
-
-	// Draws the current level to the screen
-	void DrawLevel(int iLevelSet)
-	{
-		// Clear screen to black before drawing each frame
-		Clear(olc::BLACK);
-		
-		// door drawing
-		for (int i = 0; i < vDoors_pos.size(); i++)
-		{
-			switch (iLevelSet)
-			{
-			case 0:		// easy
-				if (bDoorsOpen)
+				// normal move SFX
+				if (iMovementSuceededOrFailed == 0) // Movement Failed
 				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize);
+					audioEngine.PlayWaveform(&audioSlot_Movement_Fail, false, fAudioSpeed * 2.0f);
 				}
-				else
+				else if (iMovementSuceededOrFailed == 1) // Movement Succeeded
 				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 1) * vBlockSize, vBlockSize);
-				}
-				break;
-			case 1:		// medium
-				if (bDoorsOpen)
-				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 2) * vBlockSize, vBlockSize);
-				}
-				else
-				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
-				}
-				break;
-			case 2:		// hard
-				if (bDoorsOpen)
-				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 2) * vBlockSize, vBlockSize);
-				}
-				else
-				{
-					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 2) * vBlockSize, vBlockSize);
-				}
-				break;
-			default:
-				break;
-			}
-		}
-
-		// win condition drawing
-		for (auto& g : vGoals)
-		{
-			FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
-		}
-
-		// door switch drawing
-		for (auto& d : vSwitches)
-		{
-			FillCircle(d * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
-		}
-
-		// teleport drawing
-		if (bLevelHasTeleports)
-		{
-			switch (iTele_Facing)
-			{
-			case 0:
-				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 4) * vBlockSize, vBlockSize);
-				break;
-			case 1:
-				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 4) * vBlockSize, vBlockSize);
-				break;
-			case 2:
-				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize);
-				break;
-			case 3:
-				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize);
-				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize);
-				break;
-			}
-		}
-
-		// block drawing
-		olc::vi2d vBlockPos = { 0,0 };
-		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++) 
-		{
-			for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
-			{
-				// get pointer to block at a particular position
-				auto& b = vLevel[id(vBlockPos)];
-
-				// check for nullptr, then draw
-				if (b)
-				{
-					b->DrawSelf(this, vBlockPos, vBlockSize, gfxTiles, iLevelSet);
+					audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed * 2.0f);
 				}
 			}
+			else if (iTeleportSucceededOrFailed == 0) // teleport failed
+			{
+				audioEngine.PlayWaveform(&audioSlot_Teleport_Fail, false, fAudioSpeed);
+			}
+			else if (iTeleportSucceededOrFailed == 1) // teleport succeeded
+			{
+				audioEngine.PlayWaveform(&audioSlot_Teleport_Succeed, false, fAudioSpeed);
+			}
 		}
-	}
 
-	// Utility function for tracking time per frame within each level
-	void RecordLevelTimePerFrame(float fElapsedTime)
-	{
-		switch (iCurLevel)
-		{
-		case 1:
-			iTime_1 += fElapsedTime;
-			break;
-		case 2:
-			iTime_2 += fElapsedTime;
-			break;
-		case 3:
-			iTime_3 += fElapsedTime;
-			break;
-		case 4:
-			iTime_4 += fElapsedTime;
-			break;
-		case 5:
-			iTime_5 += fElapsedTime;
-			break;
-		case 6:
-			iTime_6 += fElapsedTime;
-			break;
-		case 7:
-			iTime_7 += fElapsedTime;
-			break;
-		case 8:
-			iTime_8 += fElapsedTime;
-			break;
-		case 9:
-			iTime_9 += fElapsedTime;
-			break;
-		case 10:
-			iTime_10 += fElapsedTime;
-			break;
-		case 11:
-			iTime_11 += fElapsedTime;
-			break;
-		case 12:
-			iTime_12 += fElapsedTime;
-			break;
-		case 13:
-			iTime_13 += fElapsedTime;
-			break;
-		case 14:
-			iTime_14 += fElapsedTime;
-			break;
-		case 15:
-			iTime_15 += fElapsedTime;
-			break;
-		case 16:
-			iTime_16 += fElapsedTime;
-			break;
-		case 17:
-			iTime_17 += fElapsedTime;
-			break;
-		case 18:
-			iTime_18 += fElapsedTime;
-			break;
-		case 19:
-			iTime_19 += fElapsedTime;
-			break;
-		case 20:
-			iTime_20 += fElapsedTime;
-			break;
-		case 21:
-			iTime_21 += fElapsedTime;
-			break;
-		case 22:
-			iTime_22 += fElapsedTime;
-			break;
-		case 23:
-			iTime_23 += fElapsedTime;
-			break;
-		case 24:
-			iTime_24 += fElapsedTime;
-			break;
-		case 25:
-			iTime_25 += fElapsedTime;
-			break;
-		case 26:
-			iTime_26 += fElapsedTime;
-			break;
-		case 27:
-			iTime_27 += fElapsedTime;
-			break;
-		case 28:
-			iTime_28 += fElapsedTime;
-			break;
-		case 29:
-			iTime_29 += fElapsedTime;
-			break;
-		case 30:
-			iTime_30 += fElapsedTime;
-			break;
-		case 31:
-			iTime_31 += fElapsedTime;
-			break;
-		case 32:
-			iTime_32 += fElapsedTime;
-			break;
-		case 33:
-			iTime_33 += fElapsedTime;
-			break;
-		case 34:
-			iTime_34 += fElapsedTime;
-			break;
-		case 35:
-			iTime_35 += fElapsedTime;
-			break;
-		case 36:
-			iTime_36 += fElapsedTime;
-			break;
-		case 37:
-			iTime_37 += fElapsedTime;
-			break;
-		case 38:
-			iTime_38 += fElapsedTime;
-			break;
-		case 39:
-			iTime_39 += fElapsedTime;
-			break;
-		case 40:
-			iTime_40 += fElapsedTime;
-			break;
-		case 41:
-			iTime_41 += fElapsedTime;
-			break;
-		case 42:
-			iTime_42 += fElapsedTime;
-			break;
-		case 43:
-			iTime_43 += fElapsedTime;
-			break;
-		case 44:
-			iTime_44 += fElapsedTime;
-			break;
-		case 45:
-			iTime_45 += fElapsedTime;
-			break;
-		case 46:
-			iTime_46 += fElapsedTime;
-			break;
-		case 47:
-			iTime_47 += fElapsedTime;
-			break;
-		case 48:
-			iTime_48 += fElapsedTime;
-			break;
-		case 49:
-			iTime_49 += fElapsedTime;
-			break;
-		case 50:
-			iTime_50 += fElapsedTime;
-			break;
-		default:
-			break;
-		}
-	}
+		// Move Counting
+		DoLevelMoveCounting(bPlayerMoved, iMovementSuceededOrFailed);
 
-	// Reset Level Scores
-	void DoLevelScoreReset()
-	{
-		// Reset Move Counters
-		iNumOfMoves_1 = 0;
-		iNumOfMoves_2 = 0;
-		iNumOfMoves_3 = 0;
-		iNumOfMoves_4 = 0;
-		iNumOfMoves_5 = 0;
-		iNumOfMoves_6 = 0;
-		iNumOfMoves_7 = 0;
-		iNumOfMoves_8 = 0;
-		iNumOfMoves_9 = 0;
-		iNumOfMoves_10 = 0;
-		iNumOfMoves_11 = 0;
-		iNumOfMoves_12 = 0;
-		iNumOfMoves_13 = 0;
-		iNumOfMoves_14 = 0;
-		iNumOfMoves_15 = 0;
-		iNumOfMoves_16 = 0;
-		iNumOfMoves_17 = 0;
-		iNumOfMoves_18 = 0;
-		iNumOfMoves_19 = 0;
-		iNumOfMoves_20 = 0;
-		iNumOfMoves_21 = 0;
-		iNumOfMoves_22 = 0;
-		iNumOfMoves_23 = 0;
-		iNumOfMoves_24 = 0;
-		iNumOfMoves_25 = 0;
-		iNumOfMoves_26 = 0;
-		iNumOfMoves_27 = 0;
-		iNumOfMoves_28 = 0;
-		iNumOfMoves_29 = 0;
-		iNumOfMoves_30 = 0;
-		iNumOfMoves_31 = 0;
-		iNumOfMoves_32 = 0;
-		iNumOfMoves_33 = 0;
-		iNumOfMoves_34 = 0;
-		iNumOfMoves_35 = 0;
-		iNumOfMoves_36 = 0;
-		iNumOfMoves_37 = 0;
-		iNumOfMoves_38 = 0;
-		iNumOfMoves_39 = 0;
-		iNumOfMoves_40 = 0;
-		iNumOfMoves_41 = 0;
-		iNumOfMoves_42 = 0;
-		iNumOfMoves_43 = 0;
-		iNumOfMoves_44 = 0;
-		iNumOfMoves_45 = 0;
-		iNumOfMoves_46 = 0;
-		iNumOfMoves_47 = 0;
-		iNumOfMoves_48 = 0;
-		iNumOfMoves_49 = 0;
-		iNumOfMoves_50 = 0;
+		// Draw Function
+		DrawLevel(iLevelSet);
 
-		// Reset Timers
-		iTime_1 = 0.0f;
-		iTime_2 = 0.0f;
-		iTime_3 = 0.0f;
-		iTime_4 = 0.0f;
-		iTime_5 = 0.0f;
-		iTime_6 = 0.0f;
-		iTime_7 = 0.0f;
-		iTime_8 = 0.0f;
-		iTime_9 = 0.0f;
-		iTime_10 = 0.0f;
-		iTime_11 = 0.0f;
-		iTime_12 = 0.0f;
-		iTime_13 = 0.0f;
-		iTime_14 = 0.0f;
-		iTime_15 = 0.0f;
-		iTime_16 = 0.0f;
-		iTime_17 = 0.0f;
-		iTime_18 = 0.0f;
-		iTime_19 = 0.0f;
-		iTime_20 = 0.0f;
-		iTime_21 = 0.0f;
-		iTime_22 = 0.0f;
-		iTime_23 = 0.0f;
-		iTime_24 = 0.0f;
-		iTime_25 = 0.0f;
-		iTime_26 = 0.0f;
-		iTime_27 = 0.0f;
-		iTime_28 = 0.0f;
-		iTime_29 = 0.0f;
-		iTime_30 = 0.0f;
-		iTime_31 = 0.0f;
-		iTime_32 = 0.0f;
-		iTime_33 = 0.0f;
-		iTime_34 = 0.0f;
-		iTime_35 = 0.0f;
-		iTime_36 = 0.0f;
-		iTime_37 = 0.0f;
-		iTime_38 = 0.0f;
-		iTime_39 = 0.0f;
-		iTime_40 = 0.0f;
-		iTime_41 = 0.0f;
-		iTime_42 = 0.0f;
-		iTime_43 = 0.0f;
-		iTime_44 = 0.0f;
-		iTime_45 = 0.0f;
-		iTime_46 = 0.0f;
-		iTime_47 = 0.0f;
-		iTime_48 = 0.0f;
-		iTime_49 = 0.0f;
-		iTime_50 = 0.0f;
+		// UI and Level Set Tracking
+		DrawUI(fElapsedTime);
+
+		// Per Frame Button Checking - Win Tiles & Door Switches
+		DoButtonCheck(bPlayerMoved, fElapsedTime);
+
+		// Add to Level Timer per frame
+		RecordLevelTimePerFrame(fElapsedTime);
+
+		return true;
 	}
 
 	// Check Win Conditions per Frame
@@ -3726,174 +1909,951 @@ public:
 		DoWinLogic(fElapsedTime);
 	}
 
-	// Utility Function called per frame for recording player moves
-	void DoLevelMoveCounting(bool bPlayerMoved, int iMovementSuceededOrFailed)
+	// Runs every frame
+	bool OnUserUpdate(float fElapsedTime) override
 	{
-		if (bPlayerMoved == true && iMovementSuceededOrFailed == 1)
+		// Check Background Music Flag
+		BackgroundMusicToggle();
+
+		// Startup Routine
+		#pragma region StartUp Routine
+
+		// Do StartUp Routine at beginning of game
+		if (!bGameStarted)
 		{
-			switch (iCurLevel)
+			// Play the StartUP SFX one time
+			if (bDoStartUpJingle)
+			{
+				// Play Game Start Up SFX
+				pwStart = audioEngine.PlayWaveform(&audioSlot_GameStartUp, false, fSplashScreenSpeed);
+				fStartTime = fElapsedTime;
+				dDuration = pwStart->dDuration;
+				fTarget = fElapsedTime + dDuration;
+
+				// Set Flag
+				bDoStartUpJingle = false;
+			}
+
+			// Draw Splash Screen
+			DrawSprite(olc::vi2d(0, 0), gfxSplash.Sprite());
+
+			// Wait for StartUp SFX to finish, then set flags to stop Start Up Routine
+			fTimer += fElapsedTime;
+			if (fTimer >= fTarget)
+			{
+				// Set Flags
+				bGameStarted = true;
+				bDoBackgroundMusic = true;
+			}
+
+			// Load Options
+			iOptionsLoad = LoadOptions();
+
+			// Load High Scores
+			iHighScoreLoad = LoadHighScores();
+
+			return true;
+		}
+#pragma endregion
+
+		// Game Logic Per Frame
+		if (bGameStarted)
+		{
+			// Main Menu Logic
+			if (bMainMenu) { MainMenu(fElapsedTime); return true; }
+
+			// Gameplay Logic
+			if (!bPaused) { return DoGameplayLogic(fElapsedTime); }
+
+			// Pause Logic
+			if (bPaused) { return DoPauseLogic(fElapsedTime); }
+
+		}
+	}
+
+	// Pause Function
+	bool DoPauseLogic(float fElapsedTime)
+	{
+		// Play SFX
+		if (bPauseJinglePlayed == false)
+		{
+			audioEngine.PlayWaveform(&audioSlot_PauseJingle, false, fAudioSpeed);
+			bPauseJinglePlayed = true;
+		}
+
+		// Pause Background Music
+		audioEngine_Music.SetOutputVolume(0.0f);
+
+		// Check for user input to unpause or Quit
+		if (GetKey(olc::Key::ENTER).bPressed)										// Unpause
+		{
+			audioEngine.PlayWaveform(&audioSlot_UnPauseJingle, false, fAudioSpeed);	// Play UnPause Jingle SFX
+			audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
+			bPaused = false;														// Reset Flags
+			bPauseJinglePlayed = false;
+		}
+		if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Quit to Main Menu
+		{
+			audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
+			bPaused = false;														// Reset Pause Flags
+			bPauseJinglePlayed = false;
+
+			ResetLevelScore();														// Reset Score for current level
+			SaveHighScores();														// Save HighScores
+
+			bMainMenu = true;														// Set Main Menu Flag
+			LoadLevel(52, false);
+
+			return true;
+		}
+
+		// Clear screen to black before drawing each frame
+		Clear(olc::BLACK);
+
+		// Draw Pause Window
+		FillRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::DARK_BLUE);
+		DrawRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::WHITE);
+
+		// Get Timer and Movement Data
+		std::string sMovementUI;
+		std::string sTimerUI;
+		switch (iCurLevel)
+		{
+		case 1:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_1);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_1);
+			break;
+		case 2:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_2);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_2);
+			break;
+		case 3:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_3);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_3);
+			break;
+		case 4:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_4);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_4);
+			break;
+		case 5:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_5);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_5);
+			break;
+		case 6:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_6);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_6);
+			break;
+		case 7:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_7);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_7);
+			break;
+		case 8:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_8);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_8);
+			break;
+		case 9:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_9);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_9);
+			break;
+		case 10:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_10);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_10);
+			break;
+		case 11:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_11);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_11);
+			break;
+		case 12:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_12);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_12);
+			break;
+		case 13:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_13);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_13);
+			break;
+		case 14:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_14);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_14);
+			break;
+		case 15:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_15);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_15);
+			break;
+		case 16:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_16);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_16);
+			break;
+		case 17:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_17);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_17);
+			break;
+		case 18:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_18);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_18);
+			break;
+		case 19:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_19);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_19);
+			break;
+		case 20:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_20);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_20);
+			break;
+		case 21:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_21);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_21);
+			break;
+		case 22:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_22);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_22);
+			break;
+		case 23:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_23);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_23);
+			break;
+		case 24:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_24);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_24);
+			break;
+		case 25:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_25);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_25);
+			break;
+		case 26:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_26);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_26);
+			break;
+		case 27:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_27);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_27);
+			break;
+		case 28:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_28);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_28);
+			break;
+		case 29:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_29);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_29);
+			break;
+		case 30:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_30);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_30);
+			break;
+		case 31:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_31);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_31);
+			break;
+		case 32:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_32);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_32);
+			break;
+		case 33:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_33);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_33);
+			break;
+		case 34:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_34);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_34);
+			break;
+		case 35:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_35);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_35);
+			break;
+		case 36:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_36);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_36);
+			break;
+		case 37:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_37);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_37);
+			break;
+		case 38:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_38);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_38);
+			break;
+		case 39:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_39);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_39);
+			break;
+		case 40:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_40);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_40);
+			break;
+		case 41:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_41);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_41);
+			break;
+		case 42:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_42);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_42);
+			break;
+		case 43:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_43);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_43);
+			break;
+		case 44:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_44);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_44);
+			break;
+		case 45:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_45);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_45);
+			break;
+		case 46:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_46);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_46);
+			break;
+		case 47:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_47);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_47);
+			break;
+		case 48:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_48);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_48);
+			break;
+		case 49:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_49);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_49);
+			break;
+		case 50:
+			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_50);
+			sTimerUI = "Level Timer: " + std::to_string(iTime_50);
+			break;
+		default:
+			break;
+		}
+
+		// Draw UI Elements
+		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", olc::WHITE);
+		DrawString(20, 45, "Stats for Current Level", olc::WHITE);
+		DrawString(20, 70, sTimerUI, olc::WHITE);
+		DrawString(20, 57, sMovementUI, olc::WHITE);
+		DrawString(20, 212, "Press Enter to Resume", olc::WHITE);
+		DrawString(20, 198, "Press ESC for Main Menu", olc::WHITE);
+
+		return true;
+	}
+
+	// Called per Frame while Main Menu flag is on
+	void MainMenu(float fElapsedTime)
+	{
+		iLevelSet = -1;
+
+		switch (iCurDisplay)
+		{
+		case 0: // High Score Screen
+			// User Input:
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Close Menu
+			{
+				iPageNum = 1;
+				iCurDisplay = -1;
+			}
+			if (GetKey(olc::Key::LEFT).bPressed || GetKey(olc::Key::A).bPressed)		// Move to next page
+			{
+				if (iPageNum > 1)
+				{
+					iPageNum--;
+				}
+			}
+			if (GetKey(olc::Key::RIGHT).bPressed || GetKey(olc::Key::D).bPressed)	    // Move to previous page
+			{
+				if (iPageNum < 8)
+				{
+					iPageNum++;
+				}
+			}
+			if (GetKey(olc::Key::H).bPressed)											// Reset Scores
+			{
+				for (int i = 0; i < vHighScore_Moves.size(); i++)
+				{
+					vHighScore_Moves[i] = 1000;
+				}
+				for (int i = 0; i < vHighScore_Time.size(); i++)
+				{
+					vHighScore_Time[i] = 10000;
+				}
+
+				fTotal_HS = 500000.0f;
+				iTotal_HS = 50000;
+
+				int iSave = SaveHighScores();
+				int iLoad = LoadHighScores();
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw UI
+			DrawString((this->ScreenWidth() / 2) - 42, 24, "HIGH SCORES", olc::WHITE);
+
+			DrawString(20, 180, "Press ESC to Close", olc::WHITE);
+			DrawString(20, 190, "Press H to Reset Scores", olc::WHITE);
+
+			DrawString(20, 202, "Press Left or Right to", olc::WHITE);
+			DrawString(20, 212, "Select Page", olc::WHITE);
+			DrawString(230, 215, std::to_string(iPageNum), olc::WHITE);
+
+			// Display Scores 
+			switch (iPageNum)
 			{
 			case 1:
-				iNumOfMoves_1++;
+				DrawString(20, 33, "Level 1:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[0]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[0])) + "s", olc::WHITE);
+				DrawString(20, 53, "Level 2:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[1]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[1])) + "s", olc::WHITE);
+				DrawString(20, 73, "Level 3:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[2]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[2])) + "s", olc::WHITE);
+				DrawString(20, 93, "Level 4:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[3]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[3])) + "s", olc::WHITE);
+				DrawString(20, 113, "Level 5:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[4]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[4])) + "s", olc::WHITE);
+				DrawString(20, 133, "Level 6:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[5]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[5])) + "s", olc::WHITE);
+				DrawString(20, 153, "Level 7:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[6]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[6])) + "s", olc::WHITE);
 				break;
 			case 2:
-				iNumOfMoves_2++;
+				DrawString(20, 33, "Level 8:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[7]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[7])) + "s", olc::WHITE);
+				DrawString(20, 53, "Level 9:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[8]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[8])) + "s", olc::WHITE);
+				DrawString(20, 73, "Level 10:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[9]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[9])) + "s", olc::WHITE);
+				DrawString(20, 93, "Level 11:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[10]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[10])) + "s", olc::WHITE);
+				DrawString(20, 113, "Level 12:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[11]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[11])) + "s", olc::WHITE);
+				DrawString(20, 133, "Level 13:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[12]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[12])) + "s", olc::WHITE);
+				DrawString(20, 153, "Level 14:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[13]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[13])) + "s", olc::WHITE);
 				break;
 			case 3:
-				iNumOfMoves_3++;
+				DrawString(20, 33, "Level 15:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[14]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[14])) + "s", olc::WHITE);
+				DrawString(20, 53, "Level 16:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[15]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[15])) + "s", olc::WHITE);
+				DrawString(20, 73, "Level 17:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[16]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[16])) + "s", olc::WHITE);
+				DrawString(20, 93, "Level 18:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[17]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[17])) + "s", olc::WHITE);
+				DrawString(20, 113, "Level 19:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[18]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[18])) + "s", olc::WHITE);
+				DrawString(20, 133, "Level 20:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[19]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[19])) + "s", olc::WHITE);
+				DrawString(20, 153, "Level 21:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[20]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[20])) + "s", olc::WHITE);
 				break;
 			case 4:
-				iNumOfMoves_4++;
+				DrawString(20, 33, "Level 22:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[21]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[21])) + "s", olc::WHITE);
+				DrawString(20, 53, "Level 23:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[22]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[22])) + "s", olc::WHITE);
+				DrawString(20, 73, "Level 24:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[23]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[23])) + "s", olc::WHITE);
+				DrawString(20, 93, "Level 25:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[24]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[24])) + "s", olc::WHITE);
+				DrawString(20, 113, "Level 26:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[25]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[25])) + "s", olc::WHITE);
+				DrawString(20, 133, "Level 27:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[26]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[26])) + "s", olc::WHITE);
+				DrawString(20, 153, "Level 28:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[27]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[27])) + "s", olc::WHITE);
 				break;
 			case 5:
-				iNumOfMoves_5++;
+				DrawString(20, 33, "Level 29:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[28]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[28])) + "s", olc::WHITE);
+				DrawString(20, 53, "Level 30:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[29]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[29])) + "s", olc::WHITE);
+				DrawString(20, 73, "Level 31:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[30]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[30])) + "s", olc::WHITE);
+				DrawString(20, 93, "Level 32:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[31]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[31])) + "s", olc::WHITE);
+				DrawString(20, 113, "Level 33:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[32]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[32])) + "s", olc::WHITE);
+				DrawString(20, 133, "Level 34:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[33]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[33])) + "s", olc::WHITE);
+				DrawString(20, 153, "Level 35:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[34]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[34])) + "s", olc::WHITE);
 				break;
 			case 6:
-				iNumOfMoves_6++;
+				DrawString(20, 33, "Level 36:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[35]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[35])) + "s", olc::WHITE);
+				DrawString(20, 53, "Level 37:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[36]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[36])) + "s", olc::WHITE);
+				DrawString(20, 73, "Level 38:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[37]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[37])) + "s", olc::WHITE);
+				DrawString(20, 93, "Level 39:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[38]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[38])) + "s", olc::WHITE);
+				DrawString(20, 113, "Level 40:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[39]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[39])) + "s", olc::WHITE);
+				DrawString(20, 133, "Level 41:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[40]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[40])) + "s", olc::WHITE);
+				DrawString(20, 153, "Level 42:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[41]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[41])) + "s", olc::WHITE);
 				break;
 			case 7:
-				iNumOfMoves_7++;
+				DrawString(20, 33, "Level 43:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[42]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[42])) + "s", olc::WHITE);
+				DrawString(20, 53, "Level 44:", olc::WHITE);
+				DrawString(20, 63, "Moves: " + std::to_string(vHighScore_Moves[43]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[43])) + "s", olc::WHITE);
+				DrawString(20, 73, "Level 45:", olc::WHITE);
+				DrawString(20, 83, "Moves: " + std::to_string(vHighScore_Moves[44]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[44])) + "s", olc::WHITE);
+				DrawString(20, 93, "Level 46:", olc::WHITE);
+				DrawString(20, 103, "Moves: " + std::to_string(vHighScore_Moves[45]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[45])) + "s", olc::WHITE);
+				DrawString(20, 113, "Level 47:", olc::WHITE);
+				DrawString(20, 123, "Moves: " + std::to_string(vHighScore_Moves[46]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[46])) + "s", olc::WHITE);
+				DrawString(20, 133, "Level 48:", olc::WHITE);
+				DrawString(20, 143, "Moves: " + std::to_string(vHighScore_Moves[47]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[47])) + "s", olc::WHITE);
+				DrawString(20, 153, "Level 49:", olc::WHITE);
+				DrawString(20, 163, "Moves: " + std::to_string(vHighScore_Moves[48]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[48])) + "s", olc::WHITE);
 				break;
 			case 8:
-				iNumOfMoves_8++;
+				DrawString(20, 33, "Level 50:", olc::WHITE);
+				DrawString(20, 43, "Moves: " + std::to_string(vHighScore_Moves[49]) + " Time: " + FloatToString(TruncateFloat(vHighScore_Time[49])) + "s", olc::WHITE);
+
+				iTotal_HS = 0;
+				fTotal_HS = 0.0f;
+				for (int i = 0; i < vHighScore_Moves.size(); i++)
+				{
+					iTotal_HS += vHighScore_Moves[i];
+				}
+				for (int i = 0; i < vHighScore_Time.size(); i++)
+				{
+					fTotal_HS += vHighScore_Time[i];
+				}
+
+				DrawString(20, 143, "Total:", olc::WHITE);
+				DrawString(20, 153, "Moves: " + std::to_string(iTotal_HS) + "\nTime: " + FloatToString(TruncateFloat(fTotal_HS)) + "s", olc::WHITE);
 				break;
-			case 9:
-				iNumOfMoves_8++;
+			default:
 				break;
-			case 10:
-				iNumOfMoves_10++;
+			}
+			break;
+		case 1: // Options Screen
+			// User Input:
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
+			{
+				// Save Changes
+				iOptionsSave = SaveOptions();
+
+				iCurDisplay = -1;
+			}
+			if (GetKey(olc::Key::D).bPressed)		// Increase SFX Volume
+			{
+				fSFXVolume += 0.1f;
+				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+			}
+			if (GetKey(olc::Key::A).bPressed)		// Decrease SFX Volume
+			{
+				fSFXVolume -= 0.1f;
+				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+			}
+			if (GetKey(olc::Key::RIGHT).bPressed)	// Increase Music Volume
+			{
+				fMusicVolume += 0.1f;
+			}
+			if (GetKey(olc::Key::LEFT).bPressed)	// Decrease Music Volume
+			{
+				fMusicVolume -= 0.1f;
+			}
+
+			// Clamp Volume Values
+			if (fMusicVolume > 1.0f)
+			{
+				fMusicVolume = 1.0f;
+			}
+			if (fMusicVolume < 0.0f)
+			{
+				fMusicVolume = 0.0f;
+			}
+			if (fSFXVolume > 1.0f)
+			{
+				fSFXVolume = 1.0f;
+			}
+			if (fSFXVolume < 0.0f)
+			{
+				fSFXVolume = 0.0f;
+			}
+
+			// Apply Changes
+			audioEngine.SetOutputVolume(fSFXVolume);
+			audioEngine_Music.SetOutputVolume(fMusicVolume);
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw UI
+			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "OPTIONS", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) - 85, "Press Arrow Keys to", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) - 75, "Adjust Music Volume", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) - 60, "Press A or D to", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) - 50, "Adjust SFX Volume", olc::WHITE);
+
+			DrawString((256 / 2) - 108, (240 / 2) + 72, "Music: " + std::to_string(fMusicVolume), olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 82, "SFX: " + std::to_string(fSFXVolume), olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
+			break;
+		case 2: // Level Select Code Screen
+			// User Input
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Close Menu
+			{
+				sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+				iCurDisplay = -1;
+			}
+			if (GetKey(olc::Key::ENTER).bPressed && IsTextEntryEnabled() == false)		// Enable Text Entry
+			{
+				TextEntryEnable(true);
+			}
+
+			// Use Input Input, if player has inputted one
+			if (sInputCode != "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd")		// Some kind of user input has been detected in the string
+			{
+				if (sInputCode == sMediumLevelCode)
+				{
+					// Play Success SFX
+					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
+
+					// Set Level
+					iCurLevel = 16;
+
+					// Disable Text Entry
+					TextEntryEnable(false);
+
+					// Exit Menus, reset sInput string, Load Level						
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+					iCurDisplay = -1;
+					bMainMenu = false;
+					LoadLevel(iCurLevel, false);
+
+				}
+				else if (sInputCode == sHardLevelCode)
+				{
+					// Play Success SFX
+					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
+
+					// Set Level
+					iCurLevel = 36;
+
+					// Disable Text Entry
+					TextEntryEnable(false);
+
+					// Exit Menus, reset sInput string, Load Level
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+					iCurDisplay = -1;
+					bMainMenu = false;
+					LoadLevel(iCurLevel, false);
+				}
+				else
+				{
+					// Play Fail SFX
+					audioEngine.PlayWaveform(&audioSlot_LevelCode_Fail, false, fAudioSpeed);
+
+					// Disable Text Entry
+					TextEntryEnable(false);
+
+					// Reset sInput string
+					sInputCode = "1jhksvdfjhkghkdjsgfakjhs2376834876387236hsvbfdhjd";
+				}
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw UI
+			DrawString((this->ScreenWidth() / 2) - 50, (240 / 2) - 96, "LEVEL SELECT", olc::WHITE);
+			DrawString(20, 199, "Press Enter to Input Code", olc::WHITE);
+			DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
+
+			// Text Entry UI
+			if (IsTextEntryEnabled() == true)
+			{
+				DrawString(65, 35, "Text Entry Mode", olc::YELLOW);
+			}
+			break;
+		case 3: // Credits Screen
+			// User Input:
+			if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)	// Close Menu
+			{
+				// Save Changes
+				iOptionsSave = SaveOptions();
+
+				iCurDisplay = -1;
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw UI
+			DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "CREDITS", olc::WHITE);
+
+			DrawString(20, 35, "Programming:", olc::YELLOW);
+			DrawString(20, 45, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 60, "Art Design:", olc::GREEN);
+			DrawString(20, 70, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 85, "Sound Design:", olc::RED);
+			DrawString(20, 95, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 110, "Level Design:", olc::MAGENTA);
+			DrawString(20, 120, "Tyler Clardy", olc::WHITE);
+			DrawString(20, 130, "James Norman", olc::WHITE);
+			DrawString(20, 140, "Aaron McBroom", olc::WHITE);
+
+			DrawString(20, 155, "Promotional Materials:", olc::BLUE);
+			DrawString(20, 165, "Tyler Clardy", olc::WHITE);
+
+			DrawString(20, 200, "3bytes Studio 2025", olc::CYAN);
+			DrawString(20, 212, "Press ESC to Close", olc::WHITE);
+			break;
+		default: // Main Menu
+			// User Input:
+			if (GetKey(olc::Key::UP).bPressed || GetKey(olc::Key::W).bPressed)
+			{
+				bCursorBlink = false;
+				fCursorBlinkTimer = 0.0f;
+
+				iMenuSelectCursor_main--;
+				if (iMenuSelectCursor_main < 0)
+				{
+					iMenuSelectCursor_main = 5;
+				}
+			}
+			if (GetKey(olc::Key::DOWN).bPressed || GetKey(olc::Key::S).bPressed)
+			{
+				bCursorBlink = false;
+				fCursorBlinkTimer = 0.0f;
+
+				iMenuSelectCursor_main++;
+				if (iMenuSelectCursor_main > 5)
+				{
+					iMenuSelectCursor_main = 0;
+				}
+			}
+			if (GetKey(olc::Key::ENTER).bPressed)
+			{
+				switch (iMenuSelectCursor_main)
+				{
+				case 0: // Start Game
+					ResetMainMenu();
+					bMainMenu = false;
+					iCurLevel = 1;
+					LoadLevel(iCurLevel, false);
+					break;
+				case 1: // Level Select
+					ResetMainMenu();
+					iMenuSelectCursor_main = 1;
+					iCurDisplay = 2;
+					break;
+				case 2: // High Scores
+					ResetMainMenu();
+					iMenuSelectCursor_main = 2;
+					iCurDisplay = 0;
+					break;
+				case 3: // Options
+					ResetMainMenu();
+					iMenuSelectCursor_main = 3;
+					iCurDisplay = 1;
+					break;
+				case 4: // Credits
+					ResetMainMenu();
+					iMenuSelectCursor_main = 4;
+					iCurDisplay = 3;
+					break;
+				case 5: // Quit Game
+					ResetMainMenu();
+					iMenuSelectCursor_main = 5;
+					internalHighScoreUtility_Time();
+					internalHighScoreUtility_Moves();
+					SaveHighScores();
+					this->~Game();
+					break;
+				default:
+					break;
+				}
+			}
+
+			// Draw Blank Menu Level
+			DrawLevel(iLevelSet);
+
+			// Draw UI
+			DoGameTitle(fElapsedTime);
+			DrawString((this->ScreenWidth() / 2) - 36, 51, "MAIN MENU", olc::WHITE);
+			DrawString((this->ScreenWidth() / 2) - 40, 68, "Start Game", olc::CYAN);
+			DrawString((this->ScreenWidth() / 2) - 48, 80, "Level Select", olc::YELLOW);
+			DrawString((this->ScreenWidth() / 2) - 44, 92, "High Scores", olc::MAGENTA);
+			DrawString((this->ScreenWidth() / 2) - 28, 104, "Options", olc::BLUE);
+			DrawString((this->ScreenWidth() / 2) - 28, 116, "Credits", olc::GREEN);
+			DrawString((this->ScreenWidth() / 2) - 15, 128, "Quit", olc::RED);
+
+			// Draw cursor 
+			DoCursorBlink(fElapsedTime); // update cursor blink variables
+
+			if (!bCursorBlink) // only draw cursor on frames where cursor blink is toggled false
+			{
+				olc::vi2d vCursorPos_R = { 0,0 };
+				olc::vi2d vCursorPos_L = { 0,0 };
+
+				switch (iMenuSelectCursor_main)
+				{
+				case 0: // Start Game
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 40, 63 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 57, 63 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 0) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize); // L
+					break;
+				case 1: // Level Select
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 48, 75 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 65, 75 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L
+					break;
+				case 2: // High Scores
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 45, 87 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 61, 87 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize); // L
+					break;
+				case 3: // Options
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 99 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 99 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize); // L
+					break;
+				case 4: // Credits
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 111 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 111 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L
+					break;
+				case 5: // Quit Game
+					vCursorPos_R = { (this->ScreenWidth() / 2) + 18, 123 };
+					vCursorPos_L = { (this->ScreenWidth() / 2) - 34, 123 };
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(2, 0) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(3, 0) * vBlockSize, vBlockSize); // L
+					break;
+				default:
+					break;
+				}
+			}
+
+			// Draw game scene loop
+			DoMainMenuGameScene(fElapsedTime);
+
+			break;
+		}
+	}
+#pragma endregion
+
+	// Draw Functions
+	#pragma region Draw Functions
+
+	// Draws Level
+	void DrawLevel(int iLevelSet)
+	{
+		// Clear screen to black before drawing each frame
+		Clear(olc::BLACK);
+
+		// door drawing
+		for (int i = 0; i < vDoors_pos.size(); i++)
+		{
+			switch (iLevelSet)
+			{
+			case 0:		// easy
+				if (bDoorsOpen)
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize);
+				}
+				else
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 1) * vBlockSize, vBlockSize);
+				}
 				break;
-			case 11:
-				iNumOfMoves_11++;
+			case 1:		// medium
+				if (bDoorsOpen)
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 2) * vBlockSize, vBlockSize);
+				}
+				else
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
+				}
 				break;
-			case 12:
-				iNumOfMoves_12++;
-				break;
-			case 13:
-				iNumOfMoves_13++;
-				break;
-			case 14:
-				iNumOfMoves_14++;
-				break;
-			case 15:
-				iNumOfMoves_15++;
-				break;
-			case 16:
-				iNumOfMoves_16++;
-				break;
-			case 17:
-				iNumOfMoves_17++;
-				break;
-			case 18:
-				iNumOfMoves_18++;
-				break;
-			case 19:
-				iNumOfMoves_19++;
-				break;
-			case 20:
-				iNumOfMoves_20++;
-				break;
-			case 21:
-				iNumOfMoves_21++;
-				break;
-			case 22:
-				iNumOfMoves_22++;
-				break;
-			case 23:
-				iNumOfMoves_23++;
-				break;
-			case 24:
-				iNumOfMoves_24++;
-				break;
-			case 25:
-				iNumOfMoves_25++;
-				break;
-			case 26:
-				iNumOfMoves_26++;
-				break;
-			case 27:
-				iNumOfMoves_27++;
-				break;
-			case 28:
-				iNumOfMoves_28++;
-				break;
-			case 29:
-				iNumOfMoves_29++;
-				break;
-			case 30:
-				iNumOfMoves_30++;
-				break;
-			case 31:
-				iNumOfMoves_31++;
-				break;
-			case 32:
-				iNumOfMoves_32++;
-				break;
-			case 33:
-				iNumOfMoves_33++;
-				break;
-			case 34:
-				iNumOfMoves_34++;
-				break;
-			case 35:
-				iNumOfMoves_35++;
-				break;
-			case 36:
-				iNumOfMoves_36++;
-				break;
-			case 37:
-				iNumOfMoves_37++;
-				break;
-			case 38:
-				iNumOfMoves_38++;
-				break;
-			case 39:
-				iNumOfMoves_39++;
-				break;
-			case 40:
-				iNumOfMoves_40++;
-				break;
-			case 41:
-				iNumOfMoves_41++;
-				break;
-			case 42:
-				iNumOfMoves_42++;
-				break;
-			case 43:
-				iNumOfMoves_43++;
-				break;
-			case 44:
-				iNumOfMoves_44++;
-				break;
-			case 45:
-				iNumOfMoves_45++;
-				break;
-			case 46:
-				iNumOfMoves_46++;
-				break;
-			case 47:
-				iNumOfMoves_47++;
-				break;
-			case 48:
-				iNumOfMoves_48++;
-				break;
-			case 49:
-				iNumOfMoves_49++;
-				break;
-			case 50:
-				iNumOfMoves_50++;
+			case 2:		// hard
+				if (bDoorsOpen)
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 2) * vBlockSize, vBlockSize);
+				}
+				else
+				{
+					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 2) * vBlockSize, vBlockSize);
+				}
 				break;
 			default:
 				break;
 			}
 		}
+
+		// win condition drawing
+		for (auto& g : vGoals)
+		{
+			FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+		}
+
+		// door switch drawing
+		for (auto& d : vSwitches)
+		{
+			FillCircle(d * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
+		}
+
+		// teleport drawing
+		if (bLevelHasTeleports)
+		{
+			switch (iTele_Facing)
+			{
+			case 0:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 4) * vBlockSize, vBlockSize);
+				break;
+			case 1:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 4) * vBlockSize, vBlockSize);
+				break;
+			case 2:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize);
+				break;
+			case 3:
+				DrawPartialSprite(vTele_Blue * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize);
+				break;
+			}
+		}
+
+		// block drawing
+		olc::vi2d vBlockPos = { 0,0 };
+		for (vBlockPos.y = 0; vBlockPos.y < vLevelSize.y; vBlockPos.y++)
+		{
+			for (vBlockPos.x = 0; vBlockPos.x < vLevelSize.x; vBlockPos.x++)
+			{
+				// get pointer to block at a particular position
+				auto& b = vLevel[id(vBlockPos)];
+
+				// check for nullptr, then draw
+				if (b)
+				{
+					b->DrawSelf(this, vBlockPos, vBlockSize, gfxTiles, iLevelSet);
+				}
+			}
+		}
 	}
 
-	// Handles UI Draw Operations per Frame
+	// Draws UI per Frame
 	void DrawUI(float fElapsedTime)
 	{
 		// UI for active gameplay
-		if (iCurLevel != -1) 
+		if (iCurLevel != -1)
 		{
 			// Goal Tracking UI
 			DrawString(4, 4, "Goals: " + std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), olc::WHITE);
@@ -4271,645 +3231,1695 @@ public:
 		}
 	}
 
-	// Runs once at start of game
-	bool OnUserCreate() override
+	// Draws the game scene loop in the main menu
+	void DoMainMenuGameScene(float fElapsedTime)
 	{
-		// Audio Loading
-		LoadAllAudio();
+		// Timer for scene game state
+		fMenuSceneTimer += fElapsedTime;
+		if (fMenuSceneTimer >= fMenuSceneSpeed && !bRestartScene)
+		{
+			fMenuSceneTimer = 0.0f;
 
-		// Graphics Loading
-		gfxTiles.Load("Graphics//TileSheet.png");
-		gfxSplash.Load("Graphics//SplashScreen.png");
-		gfxWin.Load("Graphics//WinScreen.png"); 
-		gfxCursors.Load("Graphics//Cursors.png");
-		gfxMenuScene.Load("Graphics//MainMenuScene.png");
+			iMenuSceneState++;
+			if (iMenuSceneState >= 32)
+			{
+				bRestartScene = true;
+			}
+		}
 
-		// Level Loading
-		LoadAllLevels();
+		// Do Restart Sequence
+		if (bRestartScene)
+		{
+			// wait for timer to end, then 
+			fMenuSceneRestartEffectTimer += fElapsedTime;
+			if (fMenuSceneRestartEffectTimer >= fMenuSceneRestartEffectTimerSpeed)
+			{
+				// do freeze effect
+				bSceneEffect = false;
 
-		// Load Blank Menu Level
-		LoadLevel(iCurLevel, false);
-		bMainMenu = true;
-			
-		return true;
+				// wait for freeze timer before doing reset
+				fSceneFreezeTimer += fElapsedTime;
+				if (fSceneFreezeTimer >= fSceneFreezeSpeed)
+				{
+					// reset restart flag
+					bRestartScene = false;
+
+					// reset scene effect flag
+					bSceneEffect = false;
+
+					// reset timers
+					fSceneFreezeTimer = 0.0f;
+					fMenuSceneRestartEffectTimer = 0.0f;
+					fSceneEffectTimer = 0.0f;
+
+					// do restart
+					iMenuSceneState = -3;
+				}
+			}
+			else
+			{
+				// do effect
+				fSceneEffectTimer += fElapsedTime;
+				if (fSceneEffectTimer >= fSceneEffectSpeed)
+				{
+					// reset timer
+					fSceneEffectTimer = 0.0f;
+
+					// toggle flag
+					if (bSceneEffect == false)
+					{
+						bSceneEffect = true;
+					}
+					else if (bSceneEffect == true)
+					{
+						bSceneEffect = false;
+					}
+				}
+			}
+		}
+
+		// debug
+		/*DrawString(17, 17, std::to_string(iMenuSceneState), olc::DARK_GREY);
+		if (GetKey(olc::Key::RIGHT).bPressed)
+		{
+			iMenuSceneState++;
+			if (iMenuSceneState > 32)
+			{
+				iMenuSceneState = 32;
+			}
+		}
+		if (GetKey(olc::Key::LEFT).bPressed)
+		{
+			iMenuSceneState--;
+			if (iMenuSceneState < -1)
+			{
+				iMenuSceneState = -1;
+			}
+		}*/
+
+		olc::vi2d vPos_Vertical = { 176, 176 };
+		olc::vi2d vPos_Player = { 48, 160 };
+		olc::vi2d vPos_Horizontal = { 112, 192 };
+		olc::vi2d vPos_Omni = { 208, 176 };
+		olc::vi2d vPos_Countdown = { 80, 160 };
+		int iCountdownNum = 2;
+
+		// update positions
+		if (iMenuSceneState != -1)
+		{
+			if (iMenuSceneState >= 20) // vertical block 
+			{
+				vPos_Vertical.y = 160;
+			}
+			if (iMenuSceneState == 25) // horizontal block
+			{
+				vPos_Horizontal.x = 96;
+			}
+			else if (iMenuSceneState == 26)
+			{
+				vPos_Horizontal.x = 80;
+			}
+			else if (iMenuSceneState > 26)
+			{
+				vPos_Horizontal.x = 64;
+			}
+			if (iMenuSceneState >= 4) // omni block
+			{
+				vPos_Omni.y = 160;
+			}
+			if (iMenuSceneState >= 11) // Countdown block
+			{
+				vPos_Countdown.x = 96;
+				iCountdownNum = 1;
+			}
+			switch (iMenuSceneState) // Player
+			{
+			case 0:
+				vPos_Player = { 32, 160 };
+				break;
+			case 1:
+				vPos_Player = { 32, 176 };
+				break;
+			case 2:
+				vPos_Player = { 32, 192 }; // on top of blue portal
+				break;
+			case 3:
+				vPos_Player = { 208, 192 }; // on top of orange portal
+				break;
+			case 4:
+				vPos_Player = { 208, 176 };
+				break;
+			case 5:
+				vPos_Player = { 208, 192 }; // on top of orange portal
+				break;
+			case 6:
+				vPos_Player = { 32, 192 }; // on top of blue portal
+				break;
+			case 7:
+				vPos_Player = { 32, 176 };
+				break;
+			case 8:
+				vPos_Player = { 32, 160 };
+				break;
+			case 9:
+				vPos_Player = { 48, 160 };
+				break;
+			case 10:
+				vPos_Player = { 64, 160 }; // on top of door
+				break;
+			case 11:
+				vPos_Player = { 80, 160 }; // pushing countdown
+				break;
+			case 12:
+				vPos_Player = { 80, 176 };
+				break;
+			case 13:
+				vPos_Player = { 96, 176 };
+				break;
+			case 14:
+				vPos_Player = { 112, 176 };
+				break;
+			case 15:
+				vPos_Player = { 128, 176 };
+				break;
+			case 16:
+				vPos_Player = { 144, 176 };
+				break;
+			case 17:
+				vPos_Player = { 144, 192 };
+				break;
+			case 18:
+				vPos_Player = { 160, 192 };
+				break;
+			case 19:
+				vPos_Player = { 176, 192 };
+				break;
+			case 20:
+				vPos_Player = { 176, 176 }; // pushing vertical block
+				break;
+			case 21:
+				vPos_Player = { 176, 192 }; //
+				break;
+			case 22:
+				vPos_Player = { 160, 192 };
+				break;
+			case 23:
+				vPos_Player = { 144, 192 };
+				break;
+			case 24:
+				vPos_Player = { 128, 192 };
+				break;
+			case 25:
+				vPos_Player = { 112, 192 };
+				break;
+			case 26:
+				vPos_Player = { 96, 192 };
+				break;
+			case 27:
+				vPos_Player = { 80, 192 };
+				break;
+			case 28:
+				vPos_Player = { 80, 176 };
+				break;
+			case 29:
+				vPos_Player = { 80, 160 };
+				break;
+			case 30:
+				vPos_Player = { 64, 160 };
+				break;
+			case 31:
+				vPos_Player = { 48, 160 };
+				break;
+			case 32:
+				vPos_Player = { 32, 160 };
+				break;
+			default:
+				break;
+			}
+		}
+
+		// DRAW SCENE:
+		if (!bSceneEffect)
+		{
+			// WALLS:
+		// Left Wall
+			DrawPartialSprite({ 16, 192 }, gfxMenuScene.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 16, 176 }, gfxMenuScene.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 16, 160 }, gfxMenuScene.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
+
+			// Right Wall
+			DrawPartialSprite({ 224, 192 }, gfxMenuScene.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 224, 176 }, gfxMenuScene.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 224, 160 }, gfxMenuScene.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize);
+
+			// Top
+			DrawPartialSprite({ 32, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 48, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 64, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 80, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 96, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 112, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 128, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 144, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 160, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 176, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 192, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 208, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize);
+
+			// Bottom
+			DrawPartialSprite({ 32, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 48, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 64, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 80, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 96, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 112, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 128, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 144, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 160, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 176, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 192, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 208, 208 }, gfxMenuScene.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+
+			// Corners
+			DrawPartialSprite({ 224, 208 }, gfxMenuScene.Sprite(), olc::vi2d(3, 1) * vBlockSize, vBlockSize); // bottom right
+			DrawPartialSprite({ 16, 144 }, gfxMenuScene.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // top left
+			DrawPartialSprite({ 16, 208 }, gfxMenuScene.Sprite(), olc::vi2d(4, 1) * vBlockSize, vBlockSize); // bottom left
+			DrawPartialSprite({ 224, 144 }, gfxMenuScene.Sprite(), olc::vi2d(3, 3) * vBlockSize, vBlockSize); // top right
+
+			// Interior
+			DrawPartialSprite({ 192, 160 }, gfxTiles.Sprite(), olc::vi2d(2, 1) * vBlockSize, vBlockSize); // interior wall 1 (next to orange portal)
+			DrawPartialSprite({ 192, 176 }, gfxTiles.Sprite(), olc::vi2d(2, 1) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 192, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 1) * vBlockSize, vBlockSize);
+
+			DrawPartialSprite({ 48, 176 }, gfxTiles.Sprite(), olc::vi2d(2, 1) * vBlockSize, vBlockSize); // Interior wall 2 (next to blue portal)
+			DrawPartialSprite({ 48, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 1) * vBlockSize, vBlockSize);
+			DrawPartialSprite({ 64, 176 }, gfxTiles.Sprite(), olc::vi2d(2, 1) * vBlockSize, vBlockSize);
+
+			// SCENE Static:
+			// Portals
+			DoTeleportFlipCheck(fElapsedTime);
+			switch (iTele_Facing)
+			{
+			case 0:
+				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(3, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(3, 4) * vBlockSize, vBlockSize);
+				break;
+			case 1:
+				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(2, 4) * vBlockSize, vBlockSize);
+				break;
+			case 2:
+				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize);
+				break;
+			case 3:
+				DrawPartialSprite({ 32, 192 }, gfxTiles.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize);
+				DrawPartialSprite({ 208, 192 }, gfxTiles.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize);
+				break;
+			}
+			// Door Switch
+			olc::vi2d vDoorSwitch_MenuScene = { 208, 160 };
+			FillCircle(vDoorSwitch_MenuScene + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
+			// Win Tiles
+			olc::vi2d vWinTile_MenuScene_1 = { 64, 192 };
+			olc::vi2d vWinTile_MenuScene_2 = { 176, 160 };
+			olc::vi2d vWinTile_MenuScene_3 = { 32, 160 };
+			FillCircle(vWinTile_MenuScene_1 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+			FillCircle(vWinTile_MenuScene_2 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+			FillCircle(vWinTile_MenuScene_3 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+
+			// SCENE NonStatic
+			// Door
+			if (iMenuSceneState >= 4) // open
+			{
+				DrawPartialSprite({ 64, 160 }, gfxTiles.Sprite(), olc::vi2d(2, 2) * vBlockSize, vBlockSize);
+			}
+			else // closed
+			{
+				DrawPartialSprite({ 64, 160 }, gfxTiles.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize);
+			}
+			// "PLAYER"
+			DrawPartialSprite(vPos_Player, gfxTiles.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize);
+			// Blocks
+			DrawPartialSprite(vPos_Vertical, gfxTiles.Sprite(), olc::vi2d(3, 0) * vBlockSize, vBlockSize); // vertical block
+			DrawPartialSprite(vPos_Horizontal, gfxTiles.Sprite(), olc::vi2d(2, 0) * vBlockSize, vBlockSize); // Horizontal Block
+			DrawPartialSprite(vPos_Omni, gfxTiles.Sprite(), olc::vi2d(1, 0) * vBlockSize, vBlockSize); // Omnidirectional Block
+			DrawPartialSprite(vPos_Countdown, gfxTiles.Sprite(), olc::vi2d(4, 0) * vBlockSize, vBlockSize); // countdown Block tile
+			DrawString(vPos_Countdown + olc::vi2d(4, 4), std::to_string(iCountdownNum), olc::BLACK); // countdown block integer
+		}
 	}
 
-	// Gameplay per Frame
-	bool DoGameplayLogic(float fElapsedTime)
+	// Draws Game Title during Main Menu - includes visual effect logic
+	void DoGameTitle(float fElapsedTime)
 	{
-		// Teleport GFX Check
-		if (bLevelHasTeleports) { DoTeleportFlipCheck(fElapsedTime); }
+		olc::Pixel p_0;
+		olc::Pixel p_1;
+		olc::Pixel p_2;
+		olc::Pixel p_3;
+		olc::Pixel p_4;
+		olc::Pixel p_5;
 
-		// User Input
-		#pragma region User Input
-		bool bPushing = false;
-		int iDirPush = NORTH;
-		if (iCurLevel != -1) // disable most input on end screen
+		// Check timer
+		fTitleSwitchTimer += fElapsedTime;
+		if (fTitleSwitchTimer >= fTitleSwitchSpeed)
 		{
-			if (bEnableInput && GetKey(olc::Key::W).bPressed || GetKey(olc::Key::UP).bPressed)
-			{
-				iDirPush = 0;
-				bPushing = true;
-			}
-			if (bEnableInput && GetKey(olc::Key::S).bPressed || GetKey(olc::Key::DOWN).bPressed)
-			{
-				iDirPush = SOUTH;
-				bPushing = true;
-			}
-			if (bEnableInput && GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
-			{
-				iDirPush = WEST;
-				bPushing = true;
-			}
-			if (bEnableInput && GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
-			{
-				iDirPush = EAST;
-				bPushing = true;
-			}
-			if (bEnableInput && GetKey(olc::Key::R).bPressed)
-			{
-				ResetLevelScore();
-				LoadLevel(iCurLevel, true);
-			}
-			if (bEnableInput && GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
-			{
-				bPaused = true;	// Pause Game
-			}
-			if (bEnableInput && GetKey(olc::Key::CTRL).bHeld && GetKey(olc::Key::ENTER).bPressed && GetKey(olc::Key::MINUS).bPressed) // DebugMode
-			{
-				if (bDebugMode)
-				{
-					bDebugMode = false;
-				}
-				else
-				{
-					bDebugMode = true;
-				}
-			}
-			if (bEnableInput && bDebugMode && GetKey(olc::Key::V).bPressed) // Debug Mode Door Open/Close
-			{
-				if (bDoors_DebugForceOpen)
-				{
-					bDoors_DebugForceOpen = false;
-				}
-				else
-				{
-					bDoors_DebugForceOpen = true;
-				}
-			}
-		}
-		else
-		{
-			// Win Screen ESC
-			if (bEnableInput && GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)
-			{
-				fTime_WinScreen = 0.0f;
-				audioEngine_Music.SetOutputVolume(fMusicVolume);	// Unmute Background Music
-				bMainMenu = true;									// Set Flag
+			fTitleSwitchTimer = 0.0f;
 
-				// Reset All Level Score Data
-				DoLevelScoreReset();
+			iTitleSwitch++;
 
-				return true;
-			}
-		}
-#pragma endregion
-
-		// Movement Logic
-		#pragma region Movement
-		bool bPlayerMoved = false;
-		bool bTeleported = false;
-		int iCursorTracker = 0;
-		int iTeleportSucceededOrFailed = -1; // -1, no tele attempt, 0 = tele failed, 1 = tele succeeded
-		int iMovementSuceededOrFailed = -1; // -1 = no move, 0 = move failed, 1 = move succeeded
-		if (bPushing) // check if a push attempt is happening this frame
-		{
-			olc::vi2d vBlockPos = vPlayerPos; // 'cursor' to track attempted movement
-
-			bool bAllowPush = false;
-			bool bTest = true;
-
-			// test for ability to move in a specific direction
-			while (bTest)
+			if (iTitleSwitch > 5)
 			{
-				if (vLevel[id(vBlockPos)] != nullptr) // check target block space for nullptr
-				{
-					if (vLevel[id(vBlockPos)]->Push((iDirPush + 2) % 4)) // call blocks push function to determine if it can be pushed in the direction specified
-					{
-						// if block is allowed to be pushed in that direction - move cursor that direction so we can check for collision in neighboring space
-						switch (iDirPush) // select neighbor
-						{
-						case NORTH: vBlockPos.y--; iCursorTracker++; break;
-						case SOUTH: vBlockPos.y++; iCursorTracker++; break;
-						case EAST: vBlockPos.x++; iCursorTracker++; break;
-						case WEST: vBlockPos.x--; iCursorTracker++; break;
-						}
-					}
-					else // block cant be pushed that way -- end testing
-					{
-						bPlayerMoved = true;
-						iMovementSuceededOrFailed = 0;
-						bTest = false;
-					}
-				}
-				else // target space was nullptr
-				{
-					// check target space against all door locations
-					bool bTargetIsDoor = false;
-					for (auto& d : vDoors_pos)
-					{
-						if (vBlockPos == d)
-						{
-							bTargetIsDoor = true;
-						}
-					}
-
-					if (bTargetIsDoor)	// Target Space is door
-					{
-						if (!bDoorsOpen) // doors are closed - player cannot move there. End testing
-						{
-							bPlayerMoved = true;
-							iMovementSuceededOrFailed = 0;
-							bTest = false;
-						}
-						else			// doors are open - player can move there. End testing
-						{
-							bPlayerMoved = true;
-							iMovementSuceededOrFailed = 1;
-							bAllowPush = true;
-							bTest = false;
-						}
-					}
-					else				// Target space is not a door - check for teleport 
-					{
-						bool bTargetIsTeleporter = false;
-						if (bLevelHasTeleports)
-						{
-							if (vBlockPos == vTele_Blue || vBlockPos == vTele_Orange)
-							{
-								bTargetIsTeleporter = true;
-							}
-						}
-
-						if (bTargetIsTeleporter)
-						{
-							// check if player - blocks cannot teleport, but player can
-							bool bTeleAllowed = false;
-							if (iCursorTracker == 1)
-							{
-								bTeleAllowed = true;
-							}
-
-							if (!bTeleAllowed) // Teleport is not allowed - Player cannot move there. End testing
-							{
-								bPlayerMoved = true;
-								iTeleportSucceededOrFailed = 0;
-								iMovementSuceededOrFailed = 0;
-								bTest = false;
-							}
-							else // teleport is allowed - player can move there. End testing
-							{
-								bTeleported = true;
-								bPlayerMoved = true;
-								iTeleportSucceededOrFailed = 1;
-								iMovementSuceededOrFailed = 1;
-								bAllowPush = true;
-								bTest = false;
-							}
-						}
-						else // target space was nullptr and did not contain a door or teleporter - player can move there. End testing
-						{
-							bPlayerMoved = true;
-							iMovementSuceededOrFailed = 1;
-							bAllowPush = true;
-							bTest = false;
-						}
-					}
-				}
-			}
-
-			if (bAllowPush) // if push is allowed - execute push logic
-			{
-				if (bTeleported) // teleport movement
-				{
-					if (vBlockPos == vTele_Blue)
-					{
-						std::swap(vLevel[id(vTele_Orange)], vLevel[id(vPlayerPos)]);
-						vPlayerPos = vTele_Orange;
-					}
-					else if (vBlockPos == vTele_Orange)
-					{
-						std::swap(vLevel[id(vTele_Blue)], vLevel[id(vPlayerPos)]);
-						vPlayerPos = vTele_Blue;
-					}
-				}
-				else // normal movement
-				{
-					while (vBlockPos != vPlayerPos) // walk backwards until reaching player position from valid move location that cursor found, swapping block positions as needed
-					{
-						olc::vi2d vSourcePos = vBlockPos;
-						switch (iDirPush)
-						{
-						case NORTH: vSourcePos.y++; break;
-						case SOUTH: vSourcePos.y--; break;
-						case EAST: vSourcePos.x--; break;
-						case WEST: vSourcePos.x++; break;
-						}
-
-						if (vLevel[id(vSourcePos)] != nullptr) // check for nullptr
-						{
-							vLevel[id(vSourcePos)]->Move(); // call any custom move logic before actually excecuting move
-						}
-
-						std::swap(vLevel[id(vSourcePos)], vLevel[id(vBlockPos)]); // swap blocks
-						vBlockPos = vSourcePos; // increment 'cursor' backwards
-					}
-
-					// update player location after movement logic loop completes
-					switch (iDirPush)
-					{
-					case NORTH: vPlayerPos.y--; break;
-					case SOUTH: vPlayerPos.y++; break;
-					case EAST: vPlayerPos.x++; break;
-					case WEST: vPlayerPos.x--; break;
-					}
-				}
-			}
-		}
-#pragma endregion
-
-		// Movement & Teleport SFX
-		if (bPlayerMoved == true)
-		{
-			if (iTeleportSucceededOrFailed == -1) // no teleport, just regular movement
-			{
-				// normal move SFX
-				if (iMovementSuceededOrFailed == 0) // Movement Failed
-				{
-					audioEngine.PlayWaveform(&audioSlot_Movement_Fail, false, fAudioSpeed * 2.0f);
-				}
-				else if (iMovementSuceededOrFailed == 1) // Movement Succeeded
-				{
-					audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed * 2.0f);
-				}
-			}
-			else if (iTeleportSucceededOrFailed == 0) // teleport failed
-			{
-				audioEngine.PlayWaveform(&audioSlot_Teleport_Fail, false, fAudioSpeed);
-			}
-			else if (iTeleportSucceededOrFailed == 1) // teleport succeeded
-			{
-				audioEngine.PlayWaveform(&audioSlot_Teleport_Succeed, false, fAudioSpeed);
+				iTitleSwitch = 0;
 			}
 		}
 
-		// Move Counting
-		DoLevelMoveCounting(bPlayerMoved, iMovementSuceededOrFailed);
-
-		// Draw Function
-		DrawLevel(iLevelSet);
-
-		// UI and Level Set Tracking
-		DrawUI(fElapsedTime);
-
-		// Per Frame Button Checking - Win Tiles & Door Switches
-		DoButtonCheck(bPlayerMoved, fElapsedTime);
-
-		// Add to Level Timer per frame
-		RecordLevelTimePerFrame(fElapsedTime);
-
-		return true;
-	}
-
-	// Pause Function
-	bool DoPauseLogic(float fElapsedTime)
-	{
-		// Play SFX
-		if (bPauseJinglePlayed == false)
+		// Color Picking
+		switch (iTitleSwitch)
 		{
-			audioEngine.PlayWaveform(&audioSlot_PauseJingle, false, fAudioSpeed);
-			bPauseJinglePlayed = true;
-		}
-
-		// Pause Background Music
-		audioEngine_Music.SetOutputVolume(0.0f);
-
-		// Check for user input to unpause or Quit
-		if (GetKey(olc::Key::ENTER).bPressed)										// Unpause
-		{
-			audioEngine.PlayWaveform(&audioSlot_UnPauseJingle, false, fAudioSpeed);	// Play UnPause Jingle SFX
-			audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
-			bPaused = false;														// Reset Flags
-			bPauseJinglePlayed = false;
-		}
-		if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Quit to Main Menu
-		{
-			audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
-			bPaused = false;														// Reset Pause Flags
-			bPauseJinglePlayed = false;
-
-			ResetLevelScore();														// Reset Score for current level
-			SaveHighScores();														// Save HighScores
-
-			bMainMenu = true;														// Set Main Menu Flag
-			LoadLevel(52, false);
-
-			return true;
-		}
-
-		// Clear screen to black before drawing each frame
-		Clear(olc::BLACK);
-
-		// Draw Pause Window
-		FillRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::DARK_BLUE);
-		DrawRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::WHITE);
-
-		// Get Timer and Movement Data
-		std::string sMovementUI;
-		std::string sTimerUI;
-		switch (iCurLevel)
-		{
+		case 0:
+			p_0 = olc::CYAN;
+			p_1 = olc::YELLOW;
+			p_2 = olc::MAGENTA;
+			p_3 = olc::BLUE;
+			p_4 = olc::GREEN;
+			p_5 = olc::RED;
+			break;
 		case 1:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_1);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_1);
+			p_0 = olc::RED;
+			p_1 = olc::CYAN;
+			p_2 = olc::YELLOW;
+			p_3 = olc::MAGENTA;
+			p_4 = olc::BLUE;
+			p_5 = olc::GREEN;
 			break;
 		case 2:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_2);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_2);
+			p_0 = olc::GREEN;
+			p_1 = olc::RED;
+			p_2 = olc::CYAN;
+			p_3 = olc::YELLOW;
+			p_4 = olc::MAGENTA;
+			p_5 = olc::BLUE;
 			break;
 		case 3:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_3);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_3);
+			p_0 = olc::BLUE;
+			p_1 = olc::GREEN;
+			p_2 = olc::RED;
+			p_3 = olc::CYAN;
+			p_4 = olc::YELLOW;
+			p_5 = olc::MAGENTA;
 			break;
 		case 4:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_4);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_4);
+			p_0 = olc::MAGENTA;
+			p_1 = olc::BLUE;
+			p_2 = olc::GREEN;
+			p_3 = olc::RED;
+			p_4 = olc::CYAN;
+			p_5 = olc::YELLOW;
 			break;
 		case 5:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_5);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_5);
-			break;
-		case 6:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_6);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_6);
-			break;
-		case 7:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_7);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_7);
-			break;
-		case 8:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_8);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_8);
-			break;
-		case 9:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_9);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_9);
-			break;
-		case 10:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_10);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_10);
-			break;
-		case 11:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_11);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_11);
-			break;
-		case 12:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_12);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_12);
-			break;
-		case 13:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_13);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_13);
-			break;
-		case 14:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_14);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_14);
-			break;
-		case 15:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_15);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_15);
-			break;
-		case 16:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_16);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_16);
-			break;
-		case 17:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_17);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_17);
-			break;
-		case 18:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_18);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_18);
-			break;
-		case 19:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_19);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_19);
-			break;
-		case 20:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_20);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_20);
-			break;
-		case 21:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_21);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_21);
-			break;
-		case 22:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_22);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_22);
-			break;
-		case 23:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_23);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_23);
-			break;
-		case 24:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_24);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_24);
-			break;
-		case 25:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_25);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_25);
-			break;
-		case 26:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_26);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_26);
-			break;
-		case 27:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_27);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_27);
-			break;
-		case 28:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_28);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_28);
-			break;
-		case 29:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_29);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_29);
-			break;
-		case 30:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_30);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_30);
-			break;
-		case 31:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_31);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_31);
-			break;
-		case 32:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_32);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_32);
-			break;
-		case 33:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_33);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_33);
-			break;
-		case 34:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_34);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_34);
-			break;
-		case 35:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_35);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_35);
-			break;
-		case 36:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_36);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_36);
-			break;
-		case 37:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_37);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_37);
-			break;
-		case 38:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_38);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_38);
-			break;
-		case 39:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_39);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_39);
-			break;
-		case 40:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_40);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_40);
-			break;
-		case 41:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_41);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_41);
-			break;
-		case 42:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_42);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_42);
-			break;
-		case 43:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_43);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_43);
-			break;
-		case 44:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_44);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_44);
-			break;
-		case 45:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_45);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_45);
-			break;
-		case 46:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_46);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_46);
-			break;
-		case 47:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_47);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_47);
-			break;
-		case 48:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_48);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_48);
-			break;
-		case 49:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_49);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_49);
-			break;
-		case 50:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_50);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_50);
+			p_0 = olc::YELLOW;
+			p_1 = olc::MAGENTA;
+			p_2 = olc::BLUE;
+			p_3 = olc::GREEN;
+			p_4 = olc::RED;
+			p_5 = olc::CYAN;
 			break;
 		default:
 			break;
 		}
 
-		// Draw UI Elements
-		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", olc::WHITE);
-		DrawString(20, 45, "Stats for Current Level", olc::WHITE);
-		DrawString(20, 70, sTimerUI, olc::WHITE);
-		DrawString(20, 57, sMovementUI, olc::WHITE);
-		DrawString(20, 212, "Press Enter to Resume", olc::WHITE);
-		DrawString(20, 198, "Press ESC for Main Menu", olc::WHITE);
-
-		return true;
+		// Draw Title
+		DrawString(((this->ScreenWidth() / 2) - 77) + 5, 34, "I", p_0);
+		DrawString(((this->ScreenWidth() / 2) - 63) + 5, 34, "N", p_1);
+		DrawString(((this->ScreenWidth() / 2) - 48) + 5, 34, "C", p_2);
+		DrawString(((this->ScreenWidth() / 2) - 33) + 5, 34, "R", p_3);
+		DrawString(((this->ScreenWidth() / 2) - 18) + 5, 34, "E", p_4);
+		DrawString(((this->ScreenWidth() / 2) - 3) + 5, 34, "M", p_5);
+		DrawString(((this->ScreenWidth() / 2) + 12) + 5, 34, "E", p_0);
+		DrawString(((this->ScreenWidth() / 2) + 27) + 5, 34, "N", p_1);
+		DrawString(((this->ScreenWidth() / 2) + 42) + 5, 34, "T", p_2);
+		DrawString(((this->ScreenWidth() / 2) + 57) + 5, 34, "0", p_3);
 	}
 
-	// Runs every frame
-	bool OnUserUpdate(float fElapsedTime) override
+	// Rotates Teleport Tile GFX
+	void DoTeleportFlipCheck(float fElapsedTime)
 	{
-		// Check Background Music Flag
-		BackgroundMusicToggle();
+		fTele_GFX_Flip += fElapsedTime;
 
-		// Startup Routine
-		#pragma region StartUp Routine
-
-		// Do StartUp Routine at beginning of game
-		if (!bGameStarted)
+		// if timing threshold has been reached, reset timer and execute rotate operation
+		if (fTele_GFX_Flip >= fTele_RotateSpeed)
 		{
-			// Play the StartUP SFX one time
-			if (bDoStartUpJingle)
+			fTele_GFX_Flip = 0.0f;
+
+			iTele_Facing++;
+
+			if (iTele_Facing == 4) // clamp values to the range of 0 - 4
 			{
-				// Play Game Start Up SFX
-				pwStart = audioEngine.PlayWaveform(&audioSlot_GameStartUp, false, fSplashScreenSpeed);
-				fStartTime = fElapsedTime;
-				dDuration = pwStart->dDuration;
-				fTarget = fElapsedTime + dDuration;
-
-				// Set Flag
-				bDoStartUpJingle = false;
+				iTele_Facing = 0;
 			}
-
-			// Draw Splash Screen
-			DrawSprite(olc::vi2d(0, 0), gfxSplash.Sprite());
-
-			// Wait for StartUp SFX to finish, then set flags to stop Start Up Routine
-			fTimer += fElapsedTime;
-			if (fTimer >= fTarget)
-			{
-				// Set Flags
-				bGameStarted = true;
-				bDoBackgroundMusic = true;
-			}
-
-			// Load Options
-			iOptionsLoad = LoadOptions();
-
-			// Load High Scores
-			iHighScoreLoad = LoadHighScores();
-
-			return true;
 		}
+	}
+
+	// Blink Effect for Menu Cursor
+	void DoCursorBlink(float fElapsedTime)
+	{
+		// Check flag
+		if (bDoCursorBlink)
+		{
+			fCursorBlinkTimer += fElapsedTime;
+
+			if (fCursorBlinkTimer >= fCursorBlinkSpeed) // Enough time has passed - toggle flag for cursor blink
+			{
+				fCursorBlinkTimer = 0.0f; // reset timer
+
+				// toggle flag
+				if (bCursorBlink == true)
+				{
+					bCursorBlink = false;
+				}
+				else
+				{
+					bCursorBlink = true;
+				}
+			}
+		}
+	}
+
 #pragma endregion
 
-		// Game Logic Per Frame
-		if (bGameStarted)
+	// Saving, Loading, and FileIO Functions
+	#pragma region Saving, Loading, and FileIO Functions
+
+	// FileIO - Load Saved Options
+	int LoadOptions() // returns -1 for failure, or 1 for success
+	{
+		std::ifstream inOptions("Options.txt");
+
+		if (inOptions.is_open())
 		{
-			// Main Menu Logic
-			if (bMainMenu) { MainMenu(fElapsedTime); return true; }
+			std::string sCurLine;
+			bool bSFX = false;
+			bool bMusic = false;
 
-			// Gameplay Logic
-			if (!bPaused) { return DoGameplayLogic(fElapsedTime); }
-			
-			// Pause Logic
-			if (bPaused) { return DoPauseLogic(fElapsedTime); }
+			while (std::getline(inOptions, sCurLine))
+			{
+				if (bSFX == true)
+				{
+					fSFXVolume = std::stof(sCurLine);
+					bSFX = false;
+				}
+				else if (bMusic == true)
+				{
+					fMusicVolume = std::stof(sCurLine);
+					bMusic = false;
+				}
 
+				if (sCurLine == "{Volume_SFX}=")
+				{
+					bSFX = true;
+				}
+				else if (sCurLine == "{Volume_Music}=")
+				{
+					bMusic = true;
+				}
+			}
+
+			inOptions.close();
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+
+		return -1;
+	}
+
+	// FileIO - Save Options Menu
+	int SaveOptions() // returns -1 for failure, or 1 for success
+	{
+		std::ofstream outOptions("Options.txt");
+		outOptions.clear();
+
+		if (outOptions.is_open())
+		{
+			outOptions << "{Volume_SFX}=\n" << fSFXVolume << "\n";
+			outOptions << "{Volume_Music}=\n" << fMusicVolume;
+
+			outOptions.close();
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+
+		return -1;
+	}
+
+	// FileIO - Load High Scores
+	int LoadHighScores() // returns -1 for failure, or 1 for success
+	{
+		// Open Streams
+		std::ifstream inHighScores_Moves("HighScores_Moves.txt");
+		std::ifstream inHighScores_Time("HighScores_Time.txt");
+
+		// Check for streams opening correctly
+		if (inHighScores_Moves.is_open() && inHighScores_Time.is_open())
+		{
+			// Clear vectors
+			vHighScore_Moves.clear();
+			vHighScore_Time.clear();
+
+			std::string sCurLine;
+			int iLineCount = 0;
+
+			// read move data into vector
+			while (std::getline(inHighScores_Moves, sCurLine))
+			{
+				vHighScore_Moves.push_back(std::stoi(sCurLine));
+			}
+
+			iLineCount = 0;
+
+			// read time data into vector
+			while (std::getline(inHighScores_Time, sCurLine))
+			{
+				vHighScore_Time.push_back(std::stof(sCurLine));
+			}
+
+			// close streams
+			inHighScores_Moves.close();
+			inHighScores_Time.close();
+
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+
+		return -1;
+	}
+
+	// FileIO - Save High Scores
+	int SaveHighScores() // returns -1 for failure, or 1 for success
+	{
+		std::ofstream outHighScores_Moves("HighScores_Moves.txt");
+		std::ofstream outHighScores_Time("HighScores_Time.txt");
+		outHighScores_Moves.clear();
+		outHighScores_Time.clear();
+
+		if (outHighScores_Moves.is_open() && outHighScores_Time.is_open())
+		{
+			for (int i = 0; i < vHighScore_Moves.size(); i++)
+			{
+				outHighScores_Moves << vHighScore_Moves[i] << "\n";
+			}
+
+			for (int i = 0; i < vHighScore_Time.size(); i++)
+			{
+				outHighScores_Time << vHighScore_Time[i] << "\n";
+			}
+
+			outHighScores_Moves.close();
+			outHighScores_Time.close();
+
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+
+		return -1;
+	}
+
+	// Load All Audio into Memory
+	void LoadAllAudio()
+	{
+		// Initialize Audio Engines
+		audioEngine_Music.InitialiseAudio();
+		audioEngine.InitialiseAudio();
+
+		// Load Slots
+		audioSlot_Music_1.LoadAudioWaveform(sBackgroundMusic_1);
+		audioSlot_Music_2.LoadAudioWaveform(sBackgroundMusic_2);
+		audioSlot_Music_3.LoadAudioWaveform(sBackgroundMusic_3);
+		audioSlot_Music_Menu.LoadAudioWaveform(sBackgroundMusic_Menu);
+		audioSlot_Movement_Succeed.LoadAudioWaveform(sMovement_1);
+		audioSlot_Movement_Fail.LoadAudioWaveform(sMovementFailure_1);
+		audioSlot_RestartLevel.LoadAudioWaveform(sRestartLevel_1);
+		audioSlot_WinJingle.LoadAudioWaveform(sWinJingle_1);
+		audioSlot_LevelTransition.LoadAudioWaveform(sLevelTransition_1);
+		audioSlot_PauseJingle.LoadAudioWaveform(sPauseJingle_1);
+		audioSlot_UnPauseJingle.LoadAudioWaveform(sUnPauseJingle_1);
+		audioSlot_LevelCode_Succeed.LoadAudioWaveform(sLevelCode_1);
+		audioSlot_LevelCode_Fail.LoadAudioWaveform(sLevelCodeFail_1);
+		audioSlot_GameStartUp.LoadAudioWaveform(sGameStartUp);
+		audioSlot_DoorOpen.LoadAudioWaveform(sDoorOpen_1);
+		audioSlot_DoorClose.LoadAudioWaveform(sDoorClose_1);
+		audioSlot_Teleport_Succeed.LoadAudioWaveform(sTeleport_1);
+		audioSlot_Teleport_Fail.LoadAudioWaveform(sTeleportFailure_1);
+		audioSlot_ButtonClick_1.LoadAudioWaveform(sButtonClick_1);
+		audioSlot_ButtonClick_2.LoadAudioWaveform(sButtonClick_2);
+
+		// Set Volume					
+		audioEngine_Music.SetOutputVolume(fMusicVolume);
+		audioEngine.SetOutputVolume(fSFXVolume);
+	}
+
+	// Load All Levels into Memory
+	void LoadAllLevels()
+	{
+		// Push back each game level
+		vAllLevels.push_back(sLevel_0);
+		vAllLevels.push_back(sLevel_1);
+		vAllLevels.push_back(sLevel_2);
+		vAllLevels.push_back(sLevel_3);
+		vAllLevels.push_back(sLevel_4);
+		vAllLevels.push_back(sLevel_5);
+		vAllLevels.push_back(sLevel_6);
+		vAllLevels.push_back(sLevel_7);
+		vAllLevels.push_back(sLevel_8);
+		vAllLevels.push_back(sLevel_9);
+		vAllLevels.push_back(sLevel_10);
+		vAllLevels.push_back(sLevel_11);
+		vAllLevels.push_back(sLevel_12);
+		vAllLevels.push_back(sLevel_13);
+		vAllLevels.push_back(sLevel_14);
+		vAllLevels.push_back(sLevel_15);
+		vAllLevels.push_back(sLevel_16);
+		vAllLevels.push_back(sLevel_17);
+		vAllLevels.push_back(sLevel_18);
+		vAllLevels.push_back(sLevel_19);
+		vAllLevels.push_back(sLevel_20);
+		vAllLevels.push_back(sLevel_21);
+		vAllLevels.push_back(sLevel_22);
+		vAllLevels.push_back(sLevel_23);
+		vAllLevels.push_back(sLevel_24);
+		vAllLevels.push_back(sLevel_25);
+		vAllLevels.push_back(sLevel_26);
+		vAllLevels.push_back(sLevel_27);
+		vAllLevels.push_back(sLevel_28);
+		vAllLevels.push_back(sLevel_29);
+		vAllLevels.push_back(sLevel_30);
+		vAllLevels.push_back(sLevel_31);
+		vAllLevels.push_back(sLevel_32);
+		vAllLevels.push_back(sLevel_33);
+		vAllLevels.push_back(sLevel_34);
+		vAllLevels.push_back(sLevel_35);
+		vAllLevels.push_back(sLevel_36);
+		vAllLevels.push_back(sLevel_37);
+		vAllLevels.push_back(sLevel_38);
+		vAllLevels.push_back(sLevel_39);
+		vAllLevels.push_back(sLevel_40);
+		vAllLevels.push_back(sLevel_41);
+		vAllLevels.push_back(sLevel_42);
+		vAllLevels.push_back(sLevel_43);
+		vAllLevels.push_back(sLevel_44);
+		vAllLevels.push_back(sLevel_45);
+		vAllLevels.push_back(sLevel_46);
+		vAllLevels.push_back(sLevel_47);
+		vAllLevels.push_back(sLevel_48);
+		vAllLevels.push_back(sLevel_49);
+		vAllLevels.push_back(sLevel_50);
+
+		// End cap for vector, used in End Of Game logic
+		vAllLevels.push_back("End");
+	}
+
+	// Load an Individual Level from Memory
+	void LoadLevel(int n, bool bWasRestart)
+	{
+		// Clear existing level data
+		vLevel.clear();
+		vGoals.clear();
+		vDoors_pos.clear();
+		vSwitches.clear();
+		bLevelHasTeleports = false;
+		bDoorsOpen = false;
+
+		// reset audio
+		audioEngine.StopAll();
+		audioEngine_Music.StopAll();
+
+		// check for no more levels in memory
+		if (vAllLevels[iCurLevel] == "End" || bMainMenu)
+		{
+			iCurLevel = -1;
+		}
+
+		// Begin load level
+		std::string sLevelToLoad;
+		if (iCurLevel == -1)
+		{
+			sLevelToLoad = sLevel_Error;
+		}
+		else
+		{
+			sLevelToLoad = vAllLevels[iCurLevel];
+		}
+
+		// SFX
+		if (!bMainMenu) // Dont Play Load SFX when loading Main Menu
+		{
+			if (iCurLevel == -1)
+			{
+				audioEngine.PlayWaveform(&audioSlot_WinJingle, false, fAudioSpeed);			// Play SFX
+			}
+			else if (bWasRestart == true)
+			{
+				audioEngine.PlayWaveform(&audioSlot_RestartLevel, false, fAudioSpeed);		// Play SFX
+			}
+			else
+			{
+				audioEngine.PlayWaveform(&audioSlot_LevelTransition, false, fAudioSpeed);	// Play SFX
+			}
+		}
+
+		// iterate over level
+		for (int y = 0; y < vLevelSize.y; y++)
+		{
+			for (int x = 0; x < vLevelSize.x; x++)
+			{
+				// index into 1D version of array coordinates
+				switch (sLevelToLoad[y * vLevelSize.x + x])
+				{
+				case '#':
+					vLevel.emplace_back(std::make_unique<block_solid>());
+					break;
+				case 'P':
+					vLevel.emplace_back(std::make_unique<block_player>());
+					vPlayerPos = { x,y };
+					break;
+				case '+':
+					vLevel.emplace_back(std::make_unique<block_simple>());
+					break;
+				case '-':
+					vLevel.emplace_back(std::make_unique<block_horizontal>());
+					break;
+				case '|':
+					vLevel.emplace_back(std::make_unique<block_vertical>());
+					break;
+				case '1':
+					vLevel.emplace_back(std::make_unique<block_countdown>(1));
+					break;
+				case '2':
+					vLevel.emplace_back(std::make_unique<block_countdown>(2));
+					break;
+				case '3':
+					vLevel.emplace_back(std::make_unique<block_countdown>(3));
+					break;
+				case '4':
+					vLevel.emplace_back(std::make_unique<block_countdown>(4));
+					break;
+				case '5':
+					vLevel.emplace_back(std::make_unique<block_countdown>(5));
+					break;
+				case '6':
+					vLevel.emplace_back(std::make_unique<block_countdown>(6));
+					break;
+				case '7':
+					vLevel.emplace_back(std::make_unique<block_countdown>(7));
+					break;
+				case '8':
+					vLevel.emplace_back(std::make_unique<block_countdown>(8));
+					break;
+				case '9':
+					vLevel.emplace_back(std::make_unique<block_countdown>(9));
+					break;
+				case '@':
+					vGoals.push_back({ x,y });
+					vLevel.emplace_back(nullptr);
+					break;
+				case 'D':
+					vDoors_pos.push_back({ x,y });
+					vLevel.emplace_back(nullptr);
+					break;
+				case 'S':
+					vSwitches.push_back({ x,y });
+					vLevel.emplace_back(nullptr);
+					break;
+				case 'B':
+					vTele_Blue = { x,y };
+					bLevelHasTeleports = true;
+					vLevel.emplace_back(nullptr);
+					break;
+				case 'O':
+					vTele_Orange = { x,y };
+					bLevelHasTeleports = true;
+					vLevel.emplace_back(nullptr);
+					break;
+				default:
+					vLevel.emplace_back(nullptr);
+				}
+			}
+		}
+
+		// restart music
+		if (iCurLevel >= 1 && iCurLevel <= 15 && !bMainMenu)
+		{
+			audioEngine_Music.PlayWaveform(&audioSlot_Music_1, true, fAudioSpeed * 0.75f);
+		}
+		else if (iCurLevel >= 16 && iCurLevel <= 35 && !bMainMenu)
+		{
+			audioEngine_Music.PlayWaveform(&audioSlot_Music_2, true, fAudioSpeed * 0.75f);
+		}
+		else if (iCurLevel >= 36 && iCurLevel <= 50 && !bMainMenu)
+		{
+			audioEngine_Music.PlayWaveform(&audioSlot_Music_3, true, fAudioSpeed * 0.75f);
+		}
+		else if (bMainMenu)
+		{
+			audioEngine_Music.PlayWaveform(&audioSlot_Music_Menu, true, fAudioSpeed * 0.75f);
 		}
 	}
+
+	// Saves Moves High score for Current Level if it is better than previous High Score
+	void internalHighScoreUtility_Moves()
+	{
+		if (vHighScore_Moves[0] > iNumOfMoves_1 && iNumOfMoves_1 != 0) vHighScore_Moves[0] = iNumOfMoves_1;
+		if (vHighScore_Moves[1] > iNumOfMoves_2 && iNumOfMoves_2 != 0) vHighScore_Moves[1] = iNumOfMoves_2;
+		if (vHighScore_Moves[2] > iNumOfMoves_3 && iNumOfMoves_3 != 0) vHighScore_Moves[2] = iNumOfMoves_3;
+		if (vHighScore_Moves[3] > iNumOfMoves_4 && iNumOfMoves_4 != 0) vHighScore_Moves[3] = iNumOfMoves_4;
+		if (vHighScore_Moves[4] > iNumOfMoves_5 && iNumOfMoves_5 != 0) vHighScore_Moves[4] = iNumOfMoves_5;
+		if (vHighScore_Moves[5] > iNumOfMoves_6 && iNumOfMoves_6 != 0) vHighScore_Moves[5] = iNumOfMoves_6;
+		if (vHighScore_Moves[6] > iNumOfMoves_7 && iNumOfMoves_7 != 0) vHighScore_Moves[6] = iNumOfMoves_7;
+		if (vHighScore_Moves[7] > iNumOfMoves_8 && iNumOfMoves_8 != 0) vHighScore_Moves[7] = iNumOfMoves_8;
+		if (vHighScore_Moves[8] > iNumOfMoves_9 && iNumOfMoves_9 != 0) vHighScore_Moves[8] = iNumOfMoves_9;
+		if (vHighScore_Moves[9] > iNumOfMoves_10 && iNumOfMoves_10 != 0) vHighScore_Moves[9] = iNumOfMoves_10;
+		if (vHighScore_Moves[10] > iNumOfMoves_11 && iNumOfMoves_11 != 0) vHighScore_Moves[10] = iNumOfMoves_11;
+		if (vHighScore_Moves[11] > iNumOfMoves_12 && iNumOfMoves_12 != 0) vHighScore_Moves[11] = iNumOfMoves_12;
+		if (vHighScore_Moves[12] > iNumOfMoves_13 && iNumOfMoves_13 != 0) vHighScore_Moves[12] = iNumOfMoves_13;
+		if (vHighScore_Moves[13] > iNumOfMoves_14 && iNumOfMoves_14 != 0) vHighScore_Moves[13] = iNumOfMoves_14;
+		if (vHighScore_Moves[14] > iNumOfMoves_15 && iNumOfMoves_15 != 0) vHighScore_Moves[14] = iNumOfMoves_15;
+		if (vHighScore_Moves[15] > iNumOfMoves_16 && iNumOfMoves_16 != 0) vHighScore_Moves[15] = iNumOfMoves_16;
+		if (vHighScore_Moves[16] > iNumOfMoves_17 && iNumOfMoves_17 != 0) vHighScore_Moves[16] = iNumOfMoves_17;
+		if (vHighScore_Moves[17] > iNumOfMoves_18 && iNumOfMoves_18 != 0) vHighScore_Moves[17] = iNumOfMoves_18;
+		if (vHighScore_Moves[18] > iNumOfMoves_19 && iNumOfMoves_19 != 0) vHighScore_Moves[18] = iNumOfMoves_19;
+		if (vHighScore_Moves[19] > iNumOfMoves_20 && iNumOfMoves_20 != 0) vHighScore_Moves[19] = iNumOfMoves_20;
+		if (vHighScore_Moves[20] > iNumOfMoves_21 && iNumOfMoves_21 != 0) vHighScore_Moves[20] = iNumOfMoves_21;
+		if (vHighScore_Moves[21] > iNumOfMoves_22 && iNumOfMoves_22 != 0) vHighScore_Moves[21] = iNumOfMoves_22;
+		if (vHighScore_Moves[22] > iNumOfMoves_23 && iNumOfMoves_23 != 0) vHighScore_Moves[22] = iNumOfMoves_23;
+		if (vHighScore_Moves[23] > iNumOfMoves_24 && iNumOfMoves_24 != 0) vHighScore_Moves[23] = iNumOfMoves_24;
+		if (vHighScore_Moves[24] > iNumOfMoves_25 && iNumOfMoves_25 != 0) vHighScore_Moves[24] = iNumOfMoves_25;
+		if (vHighScore_Moves[25] > iNumOfMoves_26 && iNumOfMoves_26 != 0) vHighScore_Moves[25] = iNumOfMoves_26;
+		if (vHighScore_Moves[26] > iNumOfMoves_27 && iNumOfMoves_27 != 0) vHighScore_Moves[26] = iNumOfMoves_27;
+		if (vHighScore_Moves[27] > iNumOfMoves_28 && iNumOfMoves_28 != 0) vHighScore_Moves[27] = iNumOfMoves_28;
+		if (vHighScore_Moves[28] > iNumOfMoves_29 && iNumOfMoves_29 != 0) vHighScore_Moves[28] = iNumOfMoves_29;
+		if (vHighScore_Moves[29] > iNumOfMoves_30 && iNumOfMoves_30 != 0) vHighScore_Moves[29] = iNumOfMoves_30;
+		if (vHighScore_Moves[30] > iNumOfMoves_31 && iNumOfMoves_31 != 0) vHighScore_Moves[30] = iNumOfMoves_31;
+		if (vHighScore_Moves[31] > iNumOfMoves_32 && iNumOfMoves_32 != 0) vHighScore_Moves[31] = iNumOfMoves_32;
+		if (vHighScore_Moves[32] > iNumOfMoves_33 && iNumOfMoves_33 != 0) vHighScore_Moves[32] = iNumOfMoves_33;
+		if (vHighScore_Moves[33] > iNumOfMoves_34 && iNumOfMoves_34 != 0) vHighScore_Moves[33] = iNumOfMoves_34;
+		if (vHighScore_Moves[34] > iNumOfMoves_35 && iNumOfMoves_35 != 0) vHighScore_Moves[34] = iNumOfMoves_35;
+		if (vHighScore_Moves[35] > iNumOfMoves_36 && iNumOfMoves_36 != 0) vHighScore_Moves[35] = iNumOfMoves_36;
+		if (vHighScore_Moves[36] > iNumOfMoves_37 && iNumOfMoves_37 != 0) vHighScore_Moves[36] = iNumOfMoves_37;
+		if (vHighScore_Moves[37] > iNumOfMoves_38 && iNumOfMoves_38 != 0) vHighScore_Moves[37] = iNumOfMoves_38;
+		if (vHighScore_Moves[38] > iNumOfMoves_39 && iNumOfMoves_39 != 0) vHighScore_Moves[38] = iNumOfMoves_39;
+		if (vHighScore_Moves[39] > iNumOfMoves_40 && iNumOfMoves_40 != 0) vHighScore_Moves[39] = iNumOfMoves_40;
+		if (vHighScore_Moves[40] > iNumOfMoves_41 && iNumOfMoves_41 != 0) vHighScore_Moves[40] = iNumOfMoves_41;
+		if (vHighScore_Moves[41] > iNumOfMoves_42 && iNumOfMoves_42 != 0) vHighScore_Moves[41] = iNumOfMoves_42;
+		if (vHighScore_Moves[42] > iNumOfMoves_43 && iNumOfMoves_43 != 0) vHighScore_Moves[42] = iNumOfMoves_43;
+		if (vHighScore_Moves[43] > iNumOfMoves_44 && iNumOfMoves_44 != 0) vHighScore_Moves[43] = iNumOfMoves_44;
+		if (vHighScore_Moves[44] > iNumOfMoves_45 && iNumOfMoves_45 != 0) vHighScore_Moves[44] = iNumOfMoves_45;
+		if (vHighScore_Moves[45] > iNumOfMoves_46 && iNumOfMoves_46 != 0) vHighScore_Moves[45] = iNumOfMoves_46;
+		if (vHighScore_Moves[46] > iNumOfMoves_47 && iNumOfMoves_47 != 0) vHighScore_Moves[46] = iNumOfMoves_47;
+		if (vHighScore_Moves[47] > iNumOfMoves_48 && iNumOfMoves_48 != 0) vHighScore_Moves[47] = iNumOfMoves_48;
+		if (vHighScore_Moves[48] > iNumOfMoves_49 && iNumOfMoves_49 != 0) vHighScore_Moves[48] = iNumOfMoves_49;
+		if (vHighScore_Moves[49] > iNumOfMoves_50 && iNumOfMoves_50 != 0) vHighScore_Moves[49] = iNumOfMoves_50;
+	}
+
+	// Saves Time High score for Current Level if it is better than previous High Score
+	void internalHighScoreUtility_Time()
+	{
+		if (vHighScore_Time[0] > iTime_1 && iTime_1 != 0) vHighScore_Time[0] = iTime_1;
+		if (vHighScore_Time[1] > iTime_2 && iTime_2 != 0) vHighScore_Time[1] = iTime_2;
+		if (vHighScore_Time[2] > iTime_3 && iTime_3 != 0) vHighScore_Time[2] = iTime_3;
+		if (vHighScore_Time[3] > iTime_4 && iTime_4 != 0) vHighScore_Time[3] = iTime_4;
+		if (vHighScore_Time[4] > iTime_5 && iTime_5 != 0) vHighScore_Time[4] = iTime_5;
+		if (vHighScore_Time[5] > iTime_6 && iTime_6 != 0) vHighScore_Time[5] = iTime_6;
+		if (vHighScore_Time[6] > iTime_7 && iTime_7 != 0) vHighScore_Time[6] = iTime_7;
+		if (vHighScore_Time[7] > iTime_8 && iTime_8 != 0) vHighScore_Time[7] = iTime_8;
+		if (vHighScore_Time[8] > iTime_9 && iTime_9 != 0) vHighScore_Time[8] = iTime_9;
+		if (vHighScore_Time[9] > iTime_10 && iTime_10 != 0) vHighScore_Time[9] = iTime_10;
+		if (vHighScore_Time[10] > iTime_11 && iTime_11 != 0) vHighScore_Time[10] = iTime_11;
+		if (vHighScore_Time[11] > iTime_12 && iTime_12 != 0) vHighScore_Time[11] = iTime_12;
+		if (vHighScore_Time[12] > iTime_13 && iTime_13 != 0) vHighScore_Time[12] = iTime_13;
+		if (vHighScore_Time[13] > iTime_14 && iTime_14 != 0) vHighScore_Time[13] = iTime_14;
+		if (vHighScore_Time[14] > iTime_15 && iTime_15 != 0) vHighScore_Time[14] = iTime_15;
+		if (vHighScore_Time[15] > iTime_16 && iTime_16 != 0) vHighScore_Time[15] = iTime_16;
+		if (vHighScore_Time[16] > iTime_17 && iTime_17 != 0) vHighScore_Time[16] = iTime_17;
+		if (vHighScore_Time[17] > iTime_18 && iTime_18 != 0) vHighScore_Time[17] = iTime_18;
+		if (vHighScore_Time[18] > iTime_19 && iTime_19 != 0) vHighScore_Time[18] = iTime_19;
+		if (vHighScore_Time[19] > iTime_20 && iTime_20 != 0) vHighScore_Time[19] = iTime_20;
+		if (vHighScore_Time[20] > iTime_21 && iTime_21 != 0) vHighScore_Time[20] = iTime_21;
+		if (vHighScore_Time[21] > iTime_22 && iTime_22 != 0) vHighScore_Time[21] = iTime_22;
+		if (vHighScore_Time[22] > iTime_23 && iTime_23 != 0) vHighScore_Time[22] = iTime_23;
+		if (vHighScore_Time[23] > iTime_24 && iTime_24 != 0) vHighScore_Time[23] = iTime_24;
+		if (vHighScore_Time[24] > iTime_25 && iTime_25 != 0) vHighScore_Time[24] = iTime_25;
+		if (vHighScore_Time[25] > iTime_26 && iTime_26 != 0) vHighScore_Time[25] = iTime_26;
+		if (vHighScore_Time[26] > iTime_27 && iTime_27 != 0) vHighScore_Time[26] = iTime_27;
+		if (vHighScore_Time[27] > iTime_28 && iTime_28 != 0) vHighScore_Time[27] = iTime_28;
+		if (vHighScore_Time[28] > iTime_29 && iTime_29 != 0) vHighScore_Time[28] = iTime_29;
+		if (vHighScore_Time[29] > iTime_30 && iTime_30 != 0) vHighScore_Time[29] = iTime_30;
+		if (vHighScore_Time[30] > iTime_31 && iTime_31 != 0) vHighScore_Time[30] = iTime_31;
+		if (vHighScore_Time[31] > iTime_32 && iTime_32 != 0) vHighScore_Time[31] = iTime_32;
+		if (vHighScore_Time[32] > iTime_33 && iTime_33 != 0) vHighScore_Time[32] = iTime_33;
+		if (vHighScore_Time[33] > iTime_34 && iTime_34 != 0) vHighScore_Time[33] = iTime_34;
+		if (vHighScore_Time[34] > iTime_35 && iTime_35 != 0) vHighScore_Time[34] = iTime_35;
+		if (vHighScore_Time[35] > iTime_36 && iTime_36 != 0) vHighScore_Time[35] = iTime_36;
+		if (vHighScore_Time[36] > iTime_37 && iTime_37 != 0) vHighScore_Time[36] = iTime_37;
+		if (vHighScore_Time[37] > iTime_38 && iTime_38 != 0) vHighScore_Time[37] = iTime_38;
+		if (vHighScore_Time[38] > iTime_39 && iTime_39 != 0) vHighScore_Time[38] = iTime_39;
+		if (vHighScore_Time[39] > iTime_40 && iTime_40 != 0) vHighScore_Time[39] = iTime_40;
+		if (vHighScore_Time[40] > iTime_41 && iTime_41 != 0) vHighScore_Time[40] = iTime_41;
+		if (vHighScore_Time[41] > iTime_42 && iTime_42 != 0) vHighScore_Time[41] = iTime_42;
+		if (vHighScore_Time[42] > iTime_43 && iTime_43 != 0) vHighScore_Time[42] = iTime_43;
+		if (vHighScore_Time[43] > iTime_44 && iTime_44 != 0) vHighScore_Time[43] = iTime_44;
+		if (vHighScore_Time[44] > iTime_45 && iTime_45 != 0) vHighScore_Time[44] = iTime_45;
+		if (vHighScore_Time[45] > iTime_46 && iTime_46 != 0) vHighScore_Time[45] = iTime_46;
+		if (vHighScore_Time[46] > iTime_47 && iTime_47 != 0) vHighScore_Time[46] = iTime_47;
+		if (vHighScore_Time[47] > iTime_48 && iTime_48 != 0) vHighScore_Time[47] = iTime_48;
+		if (vHighScore_Time[48] > iTime_49 && iTime_49 != 0) vHighScore_Time[48] = iTime_49;
+		if (vHighScore_Time[49] > iTime_50 && iTime_50 != 0) vHighScore_Time[49] = iTime_50;
+	}
+#pragma endregion
+
+	// Reset Functions
+	#pragma region Reset Functions
+
+	// Resets All Main Menu Variables
+	void ResetMainMenu()
+	{
+		iMenuSelectCursor_main = 0;
+		bCursorBlink = false;
+		iTitleSwitch = 0;
+		iMenuSceneState = -3;
+		fMenuSceneTimer = 0.0f;
+		fMenuSceneRestartEffectTimer = 0.0f;
+		fSceneEffectTimer = 0.0f;
+		fSceneFreezeTimer = 0.0f;
+		bRestartScene = false;
+		bSceneEffect = false;
+	}
+
+	// Resets Time Score and Moves Score for a Single Level
+	void ResetLevelScore()
+	{
+		switch (iCurLevel)
+		{
+		case 1:
+			iNumOfMoves_1 = 0;
+			iTime_1 = 0;
+			break;
+		case 2:
+			iNumOfMoves_2 = 0;
+			iTime_2 = 0;
+			break;
+		case 3:
+			iNumOfMoves_3 = 0;
+			iTime_3 = 0;
+			break;
+		case 4:
+			iNumOfMoves_4 = 0;
+			iTime_4 = 0;
+			break;
+		case 5:
+			iNumOfMoves_5 = 0;
+			iTime_5 = 0;
+			break;
+		case 6:
+			iNumOfMoves_6 = 0;
+			iTime_6 = 0;
+			break;
+		case 7:
+			iNumOfMoves_7 = 0;
+			iTime_7 = 0;
+			break;
+		case 8:
+			iNumOfMoves_8 = 0;
+			iTime_8 = 0;
+			break;
+		case 9:
+			iNumOfMoves_9 = 0;
+			iTime_9 = 0;
+			break;
+		case 10:
+			iNumOfMoves_10 = 0;
+			iTime_10 = 0;
+			break;
+		case 11:
+			iNumOfMoves_11 = 0;
+			iTime_11 = 0;
+			break;
+		case 12:
+			iNumOfMoves_12 = 0;
+			iTime_12 = 0;
+			break;
+		case 13:
+			iNumOfMoves_13 = 0;
+			iTime_13 = 0;
+			break;
+		case 14:
+			iNumOfMoves_14 = 0;
+			iTime_14 = 0;
+			break;
+		case 15:
+			iNumOfMoves_15 = 0;
+			iTime_15 = 0;
+			break;
+		case 16:
+			iNumOfMoves_16 = 0;
+			iTime_16 = 0;
+			break;
+		case 17:
+			iNumOfMoves_17 = 0;
+			iTime_17 = 0;
+			break;
+		case 18:
+			iNumOfMoves_18 = 0;
+			iTime_18 = 0;
+			break;
+		case 19:
+			iNumOfMoves_19 = 0;
+			iTime_19 = 0;
+			break;
+		case 20:
+			iNumOfMoves_20 = 0;
+			iTime_20 = 0;
+			break;
+		case 21:
+			iNumOfMoves_21 = 0;
+			iTime_21 = 0;
+			break;
+		case 22:
+			iNumOfMoves_22 = 0;
+			iTime_22 = 0;
+			break;
+		case 23:
+			iNumOfMoves_23 = 0;
+			iTime_23 = 0;
+			break;
+		case 24:
+			iNumOfMoves_24 = 0;
+			iTime_24 = 0;
+			break;
+		case 25:
+			iNumOfMoves_25 = 0;
+			iTime_25 = 0;
+			break;
+		case 26:
+			iNumOfMoves_26 = 0;
+			iTime_26 = 0;
+			break;
+		case 27:
+			iNumOfMoves_27 = 0;
+			iTime_27 = 0;
+			break;
+		case 28:
+			iNumOfMoves_28 = 0;
+			iTime_28 = 0;
+			break;
+		case 29:
+			iNumOfMoves_29 = 0;
+			iTime_29 = 0;
+			break;
+		case 30:
+			iNumOfMoves_30 = 0;
+			iTime_30 = 0;
+			break;
+		case 31:
+			iNumOfMoves_31 = 0;
+			iTime_31 = 0;
+			break;
+		case 32:
+			iNumOfMoves_32 = 0;
+			iTime_32 = 0;
+			break;
+		case 33:
+			iNumOfMoves_33 = 0;
+			iTime_33 = 0;
+			break;
+		case 34:
+			iNumOfMoves_34 = 0;
+			iTime_34 = 0;
+			break;
+		case 35:
+			iNumOfMoves_35 = 0;
+			iTime_35 = 0;
+			break;
+		case 36:
+			iNumOfMoves_36 = 0;
+			iTime_36 = 0;
+			break;
+		case 37:
+			iNumOfMoves_37 = 0;
+			iTime_37 = 0;
+			break;
+		case 38:
+			iNumOfMoves_38 = 0;
+			iTime_38 = 0;
+			break;
+		case 39:
+			iNumOfMoves_39 = 0;
+			iTime_39 = 0;
+			break;
+		case 40:
+			iNumOfMoves_40 = 0;
+			iTime_40 = 0;
+			break;
+		case 41:
+			iNumOfMoves_41 = 0;
+			iTime_41 = 0;
+			break;
+		case 42:
+			iNumOfMoves_42 = 0;
+			iTime_42 = 0;
+			break;
+		case 43:
+			iNumOfMoves_43 = 0;
+			iTime_43 = 0;
+			break;
+		case 44:
+			iNumOfMoves_44 = 0;
+			iTime_44 = 0;
+			break;
+		case 45:
+			iNumOfMoves_45 = 0;
+			iTime_45 = 0;
+			break;
+		case 46:
+			iNumOfMoves_46 = 0;
+			iTime_46 = 0;
+			break;
+		case 47:
+			iNumOfMoves_47 = 0;
+			iTime_47 = 0;
+			break;
+		case 48:
+			iNumOfMoves_48 = 0;
+			iTime_48 = 0;
+			break;
+		case 49:
+			iNumOfMoves_49 = 0;
+			iTime_49 = 0;
+			break;
+		case 50:
+			iNumOfMoves_50 = 0;
+			iTime_50 = 0;
+			break;
+		default:
+			break;
+		}
+
+		internalHighScoreUtility_Moves();
+		internalHighScoreUtility_Time();
+	}
+
+	// Resets Time Score and Moves Score for a ALL Levels
+	void DoLevelScoreReset()
+	{
+		// Reset Move Counters
+		iNumOfMoves_1 = 0;
+		iNumOfMoves_2 = 0;
+		iNumOfMoves_3 = 0;
+		iNumOfMoves_4 = 0;
+		iNumOfMoves_5 = 0;
+		iNumOfMoves_6 = 0;
+		iNumOfMoves_7 = 0;
+		iNumOfMoves_8 = 0;
+		iNumOfMoves_9 = 0;
+		iNumOfMoves_10 = 0;
+		iNumOfMoves_11 = 0;
+		iNumOfMoves_12 = 0;
+		iNumOfMoves_13 = 0;
+		iNumOfMoves_14 = 0;
+		iNumOfMoves_15 = 0;
+		iNumOfMoves_16 = 0;
+		iNumOfMoves_17 = 0;
+		iNumOfMoves_18 = 0;
+		iNumOfMoves_19 = 0;
+		iNumOfMoves_20 = 0;
+		iNumOfMoves_21 = 0;
+		iNumOfMoves_22 = 0;
+		iNumOfMoves_23 = 0;
+		iNumOfMoves_24 = 0;
+		iNumOfMoves_25 = 0;
+		iNumOfMoves_26 = 0;
+		iNumOfMoves_27 = 0;
+		iNumOfMoves_28 = 0;
+		iNumOfMoves_29 = 0;
+		iNumOfMoves_30 = 0;
+		iNumOfMoves_31 = 0;
+		iNumOfMoves_32 = 0;
+		iNumOfMoves_33 = 0;
+		iNumOfMoves_34 = 0;
+		iNumOfMoves_35 = 0;
+		iNumOfMoves_36 = 0;
+		iNumOfMoves_37 = 0;
+		iNumOfMoves_38 = 0;
+		iNumOfMoves_39 = 0;
+		iNumOfMoves_40 = 0;
+		iNumOfMoves_41 = 0;
+		iNumOfMoves_42 = 0;
+		iNumOfMoves_43 = 0;
+		iNumOfMoves_44 = 0;
+		iNumOfMoves_45 = 0;
+		iNumOfMoves_46 = 0;
+		iNumOfMoves_47 = 0;
+		iNumOfMoves_48 = 0;
+		iNumOfMoves_49 = 0;
+		iNumOfMoves_50 = 0;
+
+		// Reset Timers
+		iTime_1 = 0.0f;
+		iTime_2 = 0.0f;
+		iTime_3 = 0.0f;
+		iTime_4 = 0.0f;
+		iTime_5 = 0.0f;
+		iTime_6 = 0.0f;
+		iTime_7 = 0.0f;
+		iTime_8 = 0.0f;
+		iTime_9 = 0.0f;
+		iTime_10 = 0.0f;
+		iTime_11 = 0.0f;
+		iTime_12 = 0.0f;
+		iTime_13 = 0.0f;
+		iTime_14 = 0.0f;
+		iTime_15 = 0.0f;
+		iTime_16 = 0.0f;
+		iTime_17 = 0.0f;
+		iTime_18 = 0.0f;
+		iTime_19 = 0.0f;
+		iTime_20 = 0.0f;
+		iTime_21 = 0.0f;
+		iTime_22 = 0.0f;
+		iTime_23 = 0.0f;
+		iTime_24 = 0.0f;
+		iTime_25 = 0.0f;
+		iTime_26 = 0.0f;
+		iTime_27 = 0.0f;
+		iTime_28 = 0.0f;
+		iTime_29 = 0.0f;
+		iTime_30 = 0.0f;
+		iTime_31 = 0.0f;
+		iTime_32 = 0.0f;
+		iTime_33 = 0.0f;
+		iTime_34 = 0.0f;
+		iTime_35 = 0.0f;
+		iTime_36 = 0.0f;
+		iTime_37 = 0.0f;
+		iTime_38 = 0.0f;
+		iTime_39 = 0.0f;
+		iTime_40 = 0.0f;
+		iTime_41 = 0.0f;
+		iTime_42 = 0.0f;
+		iTime_43 = 0.0f;
+		iTime_44 = 0.0f;
+		iTime_45 = 0.0f;
+		iTime_46 = 0.0f;
+		iTime_47 = 0.0f;
+		iTime_48 = 0.0f;
+		iTime_49 = 0.0f;
+		iTime_50 = 0.0f;
+	}
+#pragma endregion
+
+	// Utility Functions
+	#pragma region Utility Functions
+
+	// Truncates float to 2 decimal places 
+	float TruncateFloat(float fIn)
+	{
+		float fScaled = fIn * 100.0f;
+
+		float fTruncatedScaled = std::trunc(fScaled);
+
+		float fTruncated = fTruncatedScaled / 100.0f;
+
+		return fTruncated;
+	}
+
+	// Converts float to string, truncated to 2 decimal places
+	std::string FloatToString(float fIn)
+	{
+		std::stringstream ss;
+
+		ss << std::fixed << std::setprecision(2) << fIn;
+
+		return ss.str();
+	}
+
+	// Toggles Music based on BackgroundMusic Flag
+	void BackgroundMusicToggle()
+	{
+		if (!bDoBackgroundMusic)
+		{
+			audioEngine_Music.SetOutputVolume(0.0f);
+		}
+		else
+		{
+			audioEngine_Music.SetOutputVolume(fMusicVolume);
+		}
+	}
+
+	// Tracks & Records Time per Frame for Level Time Score
+	void RecordLevelTimePerFrame(float fElapsedTime)
+	{
+		switch (iCurLevel)
+		{
+		case 1:
+			iTime_1 += fElapsedTime;
+			break;
+		case 2:
+			iTime_2 += fElapsedTime;
+			break;
+		case 3:
+			iTime_3 += fElapsedTime;
+			break;
+		case 4:
+			iTime_4 += fElapsedTime;
+			break;
+		case 5:
+			iTime_5 += fElapsedTime;
+			break;
+		case 6:
+			iTime_6 += fElapsedTime;
+			break;
+		case 7:
+			iTime_7 += fElapsedTime;
+			break;
+		case 8:
+			iTime_8 += fElapsedTime;
+			break;
+		case 9:
+			iTime_9 += fElapsedTime;
+			break;
+		case 10:
+			iTime_10 += fElapsedTime;
+			break;
+		case 11:
+			iTime_11 += fElapsedTime;
+			break;
+		case 12:
+			iTime_12 += fElapsedTime;
+			break;
+		case 13:
+			iTime_13 += fElapsedTime;
+			break;
+		case 14:
+			iTime_14 += fElapsedTime;
+			break;
+		case 15:
+			iTime_15 += fElapsedTime;
+			break;
+		case 16:
+			iTime_16 += fElapsedTime;
+			break;
+		case 17:
+			iTime_17 += fElapsedTime;
+			break;
+		case 18:
+			iTime_18 += fElapsedTime;
+			break;
+		case 19:
+			iTime_19 += fElapsedTime;
+			break;
+		case 20:
+			iTime_20 += fElapsedTime;
+			break;
+		case 21:
+			iTime_21 += fElapsedTime;
+			break;
+		case 22:
+			iTime_22 += fElapsedTime;
+			break;
+		case 23:
+			iTime_23 += fElapsedTime;
+			break;
+		case 24:
+			iTime_24 += fElapsedTime;
+			break;
+		case 25:
+			iTime_25 += fElapsedTime;
+			break;
+		case 26:
+			iTime_26 += fElapsedTime;
+			break;
+		case 27:
+			iTime_27 += fElapsedTime;
+			break;
+		case 28:
+			iTime_28 += fElapsedTime;
+			break;
+		case 29:
+			iTime_29 += fElapsedTime;
+			break;
+		case 30:
+			iTime_30 += fElapsedTime;
+			break;
+		case 31:
+			iTime_31 += fElapsedTime;
+			break;
+		case 32:
+			iTime_32 += fElapsedTime;
+			break;
+		case 33:
+			iTime_33 += fElapsedTime;
+			break;
+		case 34:
+			iTime_34 += fElapsedTime;
+			break;
+		case 35:
+			iTime_35 += fElapsedTime;
+			break;
+		case 36:
+			iTime_36 += fElapsedTime;
+			break;
+		case 37:
+			iTime_37 += fElapsedTime;
+			break;
+		case 38:
+			iTime_38 += fElapsedTime;
+			break;
+		case 39:
+			iTime_39 += fElapsedTime;
+			break;
+		case 40:
+			iTime_40 += fElapsedTime;
+			break;
+		case 41:
+			iTime_41 += fElapsedTime;
+			break;
+		case 42:
+			iTime_42 += fElapsedTime;
+			break;
+		case 43:
+			iTime_43 += fElapsedTime;
+			break;
+		case 44:
+			iTime_44 += fElapsedTime;
+			break;
+		case 45:
+			iTime_45 += fElapsedTime;
+			break;
+		case 46:
+			iTime_46 += fElapsedTime;
+			break;
+		case 47:
+			iTime_47 += fElapsedTime;
+			break;
+		case 48:
+			iTime_48 += fElapsedTime;
+			break;
+		case 49:
+			iTime_49 += fElapsedTime;
+			break;
+		case 50:
+			iTime_50 += fElapsedTime;
+			break;
+		default:
+			break;
+		}
+	}
+
+	// Tracks & Records Moves per Frame for Level Moves Score
+	void DoLevelMoveCounting(bool bPlayerMoved, int iMovementSuceededOrFailed)
+	{
+		if (bPlayerMoved == true && iMovementSuceededOrFailed == 1)
+		{
+			switch (iCurLevel)
+			{
+			case 1:
+				iNumOfMoves_1++;
+				break;
+			case 2:
+				iNumOfMoves_2++;
+				break;
+			case 3:
+				iNumOfMoves_3++;
+				break;
+			case 4:
+				iNumOfMoves_4++;
+				break;
+			case 5:
+				iNumOfMoves_5++;
+				break;
+			case 6:
+				iNumOfMoves_6++;
+				break;
+			case 7:
+				iNumOfMoves_7++;
+				break;
+			case 8:
+				iNumOfMoves_8++;
+				break;
+			case 9:
+				iNumOfMoves_8++;
+				break;
+			case 10:
+				iNumOfMoves_10++;
+				break;
+			case 11:
+				iNumOfMoves_11++;
+				break;
+			case 12:
+				iNumOfMoves_12++;
+				break;
+			case 13:
+				iNumOfMoves_13++;
+				break;
+			case 14:
+				iNumOfMoves_14++;
+				break;
+			case 15:
+				iNumOfMoves_15++;
+				break;
+			case 16:
+				iNumOfMoves_16++;
+				break;
+			case 17:
+				iNumOfMoves_17++;
+				break;
+			case 18:
+				iNumOfMoves_18++;
+				break;
+			case 19:
+				iNumOfMoves_19++;
+				break;
+			case 20:
+				iNumOfMoves_20++;
+				break;
+			case 21:
+				iNumOfMoves_21++;
+				break;
+			case 22:
+				iNumOfMoves_22++;
+				break;
+			case 23:
+				iNumOfMoves_23++;
+				break;
+			case 24:
+				iNumOfMoves_24++;
+				break;
+			case 25:
+				iNumOfMoves_25++;
+				break;
+			case 26:
+				iNumOfMoves_26++;
+				break;
+			case 27:
+				iNumOfMoves_27++;
+				break;
+			case 28:
+				iNumOfMoves_28++;
+				break;
+			case 29:
+				iNumOfMoves_29++;
+				break;
+			case 30:
+				iNumOfMoves_30++;
+				break;
+			case 31:
+				iNumOfMoves_31++;
+				break;
+			case 32:
+				iNumOfMoves_32++;
+				break;
+			case 33:
+				iNumOfMoves_33++;
+				break;
+			case 34:
+				iNumOfMoves_34++;
+				break;
+			case 35:
+				iNumOfMoves_35++;
+				break;
+			case 36:
+				iNumOfMoves_36++;
+				break;
+			case 37:
+				iNumOfMoves_37++;
+				break;
+			case 38:
+				iNumOfMoves_38++;
+				break;
+			case 39:
+				iNumOfMoves_39++;
+				break;
+			case 40:
+				iNumOfMoves_40++;
+				break;
+			case 41:
+				iNumOfMoves_41++;
+				break;
+			case 42:
+				iNumOfMoves_42++;
+				break;
+			case 43:
+				iNumOfMoves_43++;
+				break;
+			case 44:
+				iNumOfMoves_44++;
+				break;
+			case 45:
+				iNumOfMoves_45++;
+				break;
+			case 46:
+				iNumOfMoves_46++;
+				break;
+			case 47:
+				iNumOfMoves_47++;
+				break;
+			case 48:
+				iNumOfMoves_48++;
+				break;
+			case 49:
+				iNumOfMoves_49++;
+				break;
+			case 50:
+				iNumOfMoves_50++;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	// Overridden Text Entry function for use in Level Select Menu
+	void OnTextEntryComplete(const std::string& sText) override
+	{
+		sInputCode = sText;
+	}
+#pragma endregion
 };
 
+// Main
 int main()
 {
-	Puzzle Incremento;
+	Game Incremento;
 	if (Incremento.Construct(256, 240, 4, 4))
 		Incremento.Start();
 	return 0;

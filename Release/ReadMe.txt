@@ -1,7 +1,7 @@
 =======================================
 		READ ME
 =======================================
-"Block Map"
+"Incremento"
 
 3bytes Studio
 2025
@@ -18,10 +18,8 @@ Promotional Materials:	Tyler Clardy
 =======================================
 		Controls
 =======================================
-W / Up	   	     : Move Up
-S / Down	     : Move Down
-D / Right            : Move Right
-A / Left             : Move Left
+WASD / Arrow Keys    : Movement & Menu Selection
+Enter		     : Make Menu Selection
 R	             : Restart Level
 ESC / P		     : Pause
 
@@ -47,8 +45,11 @@ Universal Block		(+) : Moves in all directions
 Horizontal Block	(-) : Moves side to side
 Vertical Block		(|) : Moves up and down
 Countdown Block		(5) : Moves in all directions, but only moves the number of times displayed on its face
-Win Tile		(o) : Cover these with Blocks!
+Win Tile		(o) : Cover these with Blocks to beat each level! The Player Block counts, too.
 Wall Block		(#) : Solid Wall Blocks that cannot be moved
+Door Block		(#) : Solid Blocks that black can be opened and passed through by Players and Blocks
+Door Switch		(o) : Cover these with Blocks to open doors!
+Teleport Block		(G) : Teleports Player between themselves. Does not allow Blocks!
 
 =======================================
 		Cheats
