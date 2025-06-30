@@ -13,18 +13,21 @@
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
 // startup SFX jingle not affected by fileio options
 // weirdness with cursor on main menu - caught on camera. repeatable?
+// Entering 'p' during Level Select Input Code - exits to main menu
 
 // TODO_A - Finish Game
 // Fill out Levels!
 
 // TODO_B - Rework & Polish
+// Unsync rotation of portals
+// reskin doors? adding | & - Doors
 // Add background decal sprites to clear screen to instead of black
 // add color to main menu sub menus
 //		- High Scores
 //		- level select
 //		- options
 // Update Name
-//		- exe output
+//		- project & exe output
 // Update Button GFX
 //		- WinTile GFX
 //      - DoorSwitch GFX
@@ -83,9 +86,6 @@ olc::vi2d vBlockSize = { 16,16 };
 auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; }; // Translates Coordinates 2D to 1D
 #pragma endregion
 
-// Created by Tyler Clardy in June 2025
-// Thanks to oneLoneCoder for the PixelGameEngine and SoundWaveEngine, as well as the inspiration for the start of the project. You rock, Javid!
-
 // Game Class
 class Game : public olc::PixelGameEngine
 {
@@ -93,6 +93,7 @@ public:
 
 	// Strings containing levels
 	#pragma region Levels
+
 	// +		= any direction movable block
 	// -		= horizontal movement block
 	// P		= player block
@@ -1113,6 +1114,7 @@ public:
 
 	// Structs containing definitions & logic for block types
 	#pragma region Block Types
+
 	struct block // basic block definition
 	{
 		bool bCanTeleport = false;
@@ -1277,7 +1279,7 @@ public:
 
 	// Timer for executing teleport rotate
 	float fTele_GFX_Flip = 0.0f;
-	float fTele_RotateSpeed = 0.35f;
+	float fTele_RotateSpeed = 0.2f;
 
 	// Variables for Button Click SFX
 	bool bPlayButtonSFX_1 = false;
@@ -1387,6 +1389,7 @@ public:
 
 	// Audio
 	#pragma region Sound
+
 	// Audio Engine
 	olc::sound::WaveEngine audioEngine;
 	olc::sound::WaveEngine audioEngine_Music;
@@ -1444,7 +1447,7 @@ public:
 	// Constructor
 	Game()
 	{
-		sAppName = "INCREMENTO";
+		sAppName = "I N C R E M E N T O";
 	}
 
 	// Deconstructor
@@ -1490,6 +1493,7 @@ public:
 
 		// User Input
 		#pragma region User Input
+
 		bool bPushing = false;
 		int iDirPush = NORTH;
 		if (iCurLevel != -1) // disable most input on end screen
@@ -3704,7 +3708,6 @@ public:
 			}
 		}
 	}
-
 #pragma endregion
 
 	// Saving, Loading, and FileIO Functions
@@ -4924,3 +4927,6 @@ int main()
 		Incremento.Start();
 	return 0;
 }
+
+// Created by Tyler Clardy in June 2025
+// Thanks to oneLoneCoder and his community for the PixelGameEngine & SoundWaveEngine, as well as the inspiration for the start of the project. You rock, Javid!
