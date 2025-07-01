@@ -2568,17 +2568,17 @@ public:
 
 		DrawString((this->ScreenWidth() / 2) - 42, 20, "HIGH SCORES", olc::MAGENTA);
 
-		DrawString(20, 190, "Arrow Keys", olc::CYAN);
-		DrawString(106, 190, "to", olc::WHITE);
-		DrawString(130, 190, "Select Page", olc::CYAN);
+		DrawString(20, 194, "Arrow Keys", olc::CYAN);
+		DrawString(106, 194, "to", olc::WHITE);
+		DrawString(130, 194, "Select Page", olc::CYAN);
 
-		DrawString(20, 200, "H", olc::YELLOW);
-		DrawString(32, 200, "to", olc::WHITE);
-		DrawString(54, 200, "Reset Scores", olc::YELLOW);
+		DrawString(20, 204, "H", olc::YELLOW);
+		DrawString(32, 204, "to", olc::WHITE);
+		DrawString(54, 204, "Reset Scores", olc::YELLOW);
 
-		DrawString(20, 210, "ESC", olc::RED);
-		DrawString(50, 210, "to", olc::WHITE);
-		DrawString(75, 210, "Close", olc::RED);
+		DrawString(20, 214, "ESC", olc::RED);
+		DrawString(50, 214, "to", olc::WHITE);
+		DrawString(75, 214, "Close", olc::RED);
 
 		DrawString(230, 215, std::to_string(iPageNum), pNumbers);
 
@@ -2589,308 +2589,308 @@ public:
 			DrawString(20, 43, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 43, std::to_string(vHighScore_Moves[0]), olc::CYAN);
 			DrawString(110, 43, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 43, FloatToString(TruncateFloat(vHighScore_Time[0])) + "s", olc::CYAN);
+			DrawString(155, 43, FloatToString(vHighScore_Time[0], 2) + "s", olc::CYAN);
 
 			DrawString(20, 53, "Level 2:", pLevelColor);
 			DrawString(20, 63, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 63, std::to_string(vHighScore_Moves[1]), olc::CYAN);
 			DrawString(110, 63, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 63, FloatToString(TruncateFloat(vHighScore_Time[1])) + "s", olc::CYAN);
+			DrawString(155, 63, FloatToString(vHighScore_Time[1], 2) + "s", olc::CYAN);
 
 			DrawString(20, 73, "Level 3:", pLevelColor);
 			DrawString(20, 83, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 83, std::to_string(vHighScore_Moves[2]), olc::CYAN);
 			DrawString(110, 83, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 83, FloatToString(TruncateFloat(vHighScore_Time[2])) + "s", olc::CYAN);
+			DrawString(155, 83, FloatToString(vHighScore_Time[2], 2) + "s", olc::CYAN);
 
 			DrawString(20, 93, "Level 4:", pLevelColor);
 			DrawString(20, 103, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 103, std::to_string(vHighScore_Moves[3]), olc::CYAN);
 			DrawString(110, 103, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 103, FloatToString(TruncateFloat(vHighScore_Time[3])) + "s", olc::CYAN);
+			DrawString(155, 103, FloatToString(vHighScore_Time[3], 2) + "s", olc::CYAN);
 
 			DrawString(20, 113, "Level 5:", pLevelColor);
 			DrawString(20, 123, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 123, std::to_string(vHighScore_Moves[4]), olc::CYAN);
 			DrawString(110, 123, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 123, FloatToString(TruncateFloat(vHighScore_Time[4])) + "s", olc::CYAN);
+			DrawString(155, 123, FloatToString(vHighScore_Time[4], 2) + "s", olc::CYAN);
 
 			DrawString(20, 133, "Level 6:", pLevelColor);
 			DrawString(20, 143, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 143, std::to_string(vHighScore_Moves[5]), olc::CYAN);
 			DrawString(110, 143, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 143, FloatToString(TruncateFloat(vHighScore_Time[5])) + "s", olc::CYAN);
+			DrawString(155, 143, FloatToString(vHighScore_Time[5], 2) + "s", olc::CYAN);
 
 			DrawString(20, 153, "Level 7:", pLevelColor);
 			DrawString(20, 163, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 163, std::to_string(vHighScore_Moves[6]), olc::CYAN);
 			DrawString(110, 163, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 163, FloatToString(TruncateFloat(vHighScore_Time[6])) + "s", olc::CYAN);
+			DrawString(155, 163, FloatToString(vHighScore_Time[6], 2) + "s", olc::CYAN);
 			break;
 		case 2:
 			DrawString(20, 33, "Level 8:", pLevelColor);
 			DrawString(20, 43, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 43, std::to_string(vHighScore_Moves[7]), olc::CYAN);
 			DrawString(110, 43, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 43, FloatToString(TruncateFloat(vHighScore_Time[7])) + "s", olc::CYAN);
+			DrawString(155, 43, FloatToString(vHighScore_Time[7], 2) + "s", olc::CYAN);
 
 			DrawString(20, 53, "Level 9:", pLevelColor);
 			DrawString(20, 63, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 63, std::to_string(vHighScore_Moves[8]), olc::CYAN);
 			DrawString(110, 63, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 63, FloatToString(TruncateFloat(vHighScore_Time[8])) + "s", olc::CYAN);
+			DrawString(155, 63, FloatToString(vHighScore_Time[8], 2) + "s", olc::CYAN);
 
 			DrawString(20, 73, "Level 10:", pLevelColor);
 			DrawString(20, 83, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 83, std::to_string(vHighScore_Moves[9]), olc::CYAN);
 			DrawString(110, 83, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 83, FloatToString(TruncateFloat(vHighScore_Time[9])) + "s", olc::CYAN);
+			DrawString(155, 83, FloatToString(vHighScore_Time[9], 2) + "s", olc::CYAN);
 
 			DrawString(20, 93, "Level 11:", pLevelColor);
 			DrawString(20, 103, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 103, std::to_string(vHighScore_Moves[10]), olc::CYAN);
 			DrawString(110, 103, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 103, FloatToString(TruncateFloat(vHighScore_Time[10])) + "s", olc::CYAN);
+			DrawString(155, 103, FloatToString(vHighScore_Time[10], 2) + "s", olc::CYAN);
 
 			DrawString(20, 113, "Level 12:", pLevelColor);
 			DrawString(20, 123, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 123, std::to_string(vHighScore_Moves[11]), olc::CYAN);
 			DrawString(110, 123, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 123, FloatToString(TruncateFloat(vHighScore_Time[11])) + "s", olc::CYAN);
+			DrawString(155, 123, FloatToString(vHighScore_Time[11], 2) + "s", olc::CYAN);
 
 			DrawString(20, 133, "Level 13:", pLevelColor);
 			DrawString(20, 143, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 143, std::to_string(vHighScore_Moves[12]), olc::CYAN);
 			DrawString(110, 143, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 143, FloatToString(TruncateFloat(vHighScore_Time[12])) + "s", olc::CYAN);
+			DrawString(155, 143, FloatToString(vHighScore_Time[12], 2) + "s", olc::CYAN);
 
 			DrawString(20, 153, "Level 14:", pLevelColor);
 			DrawString(20, 163, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 163, std::to_string(vHighScore_Moves[13]), olc::CYAN);
 			DrawString(110, 163, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 163, FloatToString(TruncateFloat(vHighScore_Time[13])) + "s", olc::CYAN);			
+			DrawString(155, 163, FloatToString(vHighScore_Time[13], 2) + "s", olc::CYAN);
 			break;
 		case 3:
 			DrawString(20, 33, "Level 15:", pLevelColor);
 			DrawString(20, 43, "Moves: ", pMovesAndTime_Easy);
 			DrawString(70, 43, std::to_string(vHighScore_Moves[14]), olc::CYAN);
 			DrawString(110, 43, "Time: ", pMovesAndTime_Easy);
-			DrawString(155, 43, FloatToString(TruncateFloat(vHighScore_Time[14])) + "s", olc::CYAN);
+			DrawString(155, 43, FloatToString(vHighScore_Time[14], 2) + "s", olc::CYAN);
 
 			DrawString(20, 53, "Level 16:", pLevelColor);
 			DrawString(20, 63, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 63, std::to_string(vHighScore_Moves[15]), olc::CYAN);
 			DrawString(110, 63, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 63, FloatToString(TruncateFloat(vHighScore_Time[15])) + "s", olc::CYAN);
+			DrawString(155, 63, FloatToString(vHighScore_Time[15], 2) + "s", olc::CYAN);
 
 			DrawString(20, 73, "Level 17:", pLevelColor);
 			DrawString(20, 83, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 83, std::to_string(vHighScore_Moves[16]), olc::CYAN);
 			DrawString(110, 83, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 83, FloatToString(TruncateFloat(vHighScore_Time[16])) + "s", olc::CYAN);
+			DrawString(155, 83, FloatToString(vHighScore_Time[16], 2) + "s", olc::CYAN);
 
 			DrawString(20, 93, "Level 18:", pLevelColor);
 			DrawString(20, 103, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 103, std::to_string(vHighScore_Moves[17]), olc::CYAN);
 			DrawString(110, 103, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 103, FloatToString(TruncateFloat(vHighScore_Time[17])) + "s", olc::CYAN);
+			DrawString(155, 103, FloatToString(vHighScore_Time[17], 2) + "s", olc::CYAN);
 
 			DrawString(20, 113, "Level 19:", pLevelColor);
 			DrawString(20, 123, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 123, std::to_string(vHighScore_Moves[18]), olc::CYAN);
 			DrawString(110, 123, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 123, FloatToString(TruncateFloat(vHighScore_Time[18])) + "s", olc::CYAN);
+			DrawString(155, 123, FloatToString(vHighScore_Time[18], 2) + "s", olc::CYAN);
 
 			DrawString(20, 133, "Level 20:", pLevelColor);
 			DrawString(20, 143, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 143, std::to_string(vHighScore_Moves[19]), olc::CYAN);
 			DrawString(110, 143, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 143, FloatToString(TruncateFloat(vHighScore_Time[19])) + "s", olc::CYAN);
+			DrawString(155, 143, FloatToString(vHighScore_Time[19], 2) + "s", olc::CYAN);
 
 			DrawString(20, 153, "Level 21:", pLevelColor);
 			DrawString(20, 163, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 163, std::to_string(vHighScore_Moves[20]), olc::CYAN);
 			DrawString(110, 163, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 163, FloatToString(TruncateFloat(vHighScore_Time[20])) + "s", olc::CYAN);			
+			DrawString(155, 163, FloatToString(vHighScore_Time[20], 2) + "s", olc::CYAN);
 			break;
 		case 4:
 			DrawString(20, 33, "Level 22:", pLevelColor);
 			DrawString(20, 43, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 43, std::to_string(vHighScore_Moves[21]), olc::CYAN);
 			DrawString(110, 43, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 43, FloatToString(TruncateFloat(vHighScore_Time[21])) + "s", olc::CYAN);
+			DrawString(155, 43, FloatToString(vHighScore_Time[21], 2) + "s", olc::CYAN);
 
 			DrawString(20, 53, "Level 23:", pLevelColor);
 			DrawString(20, 63, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 63, std::to_string(vHighScore_Moves[22]), olc::CYAN);
 			DrawString(110, 63, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 63, FloatToString(TruncateFloat(vHighScore_Time[22])) + "s", olc::CYAN);
+			DrawString(155, 63, FloatToString(vHighScore_Time[22], 2) + "s", olc::CYAN);
 
 			DrawString(20, 73, "Level 24:", pLevelColor);
 			DrawString(20, 83, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 83, std::to_string(vHighScore_Moves[23]), olc::CYAN);
 			DrawString(110, 83, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 83, FloatToString(TruncateFloat(vHighScore_Time[23])) + "s", olc::CYAN);
+			DrawString(155, 83, FloatToString(vHighScore_Time[23], 2) + "s", olc::CYAN);
 
 			DrawString(20, 93, "Level 25:", pLevelColor);
 			DrawString(20, 103, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 103, std::to_string(vHighScore_Moves[24]), olc::CYAN);
 			DrawString(110, 103, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 103, FloatToString(TruncateFloat(vHighScore_Time[24])) + "s", olc::CYAN);
+			DrawString(155, 103, FloatToString(vHighScore_Time[24], 2) + "s", olc::CYAN);
 
 			DrawString(20, 113, "Level 26:", pLevelColor);
 			DrawString(20, 123, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 123, std::to_string(vHighScore_Moves[25]), olc::CYAN);
 			DrawString(110, 123, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 123, FloatToString(TruncateFloat(vHighScore_Time[25])) + "s", olc::CYAN);
+			DrawString(155, 123, FloatToString(vHighScore_Time[25], 2) + "s", olc::CYAN);
 
 			DrawString(20, 133, "Level 27:", pLevelColor);
 			DrawString(20, 143, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 143, std::to_string(vHighScore_Moves[26]), olc::CYAN);
 			DrawString(110, 143, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 143, FloatToString(TruncateFloat(vHighScore_Time[26])) + "s", olc::CYAN);
+			DrawString(155, 143, FloatToString(vHighScore_Time[26], 2) + "s", olc::CYAN);
 
 			DrawString(20, 153, "Level 28:", pLevelColor);
 			DrawString(20, 163, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 163, std::to_string(vHighScore_Moves[27]), olc::CYAN);
 			DrawString(110, 163, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 163, FloatToString(TruncateFloat(vHighScore_Time[27])) + "s", olc::CYAN);			
+			DrawString(155, 163, FloatToString(vHighScore_Time[27], 2) + "s", olc::CYAN);
 			break;
 		case 5:
 			DrawString(20, 33, "Level 29:", pLevelColor);
 			DrawString(20, 43, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 43, std::to_string(vHighScore_Moves[28]), olc::CYAN);
 			DrawString(110, 43, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 43, FloatToString(TruncateFloat(vHighScore_Time[28])) + "s", olc::CYAN);
+			DrawString(155, 43, FloatToString(vHighScore_Time[28], 2) + "s", olc::CYAN);
 
 			DrawString(20, 53, "Level 30:", pLevelColor);
 			DrawString(20, 63, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 63, std::to_string(vHighScore_Moves[29]), olc::CYAN);
 			DrawString(110, 63, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 63, FloatToString(TruncateFloat(vHighScore_Time[29])) + "s", olc::CYAN);
+			DrawString(155, 63, FloatToString(vHighScore_Time[29], 2) + "s", olc::CYAN);
 
 			DrawString(20, 73, "Level 31:", pLevelColor);
 			DrawString(20, 83, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 83, std::to_string(vHighScore_Moves[30]), olc::CYAN);
 			DrawString(110, 83, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 83, FloatToString(TruncateFloat(vHighScore_Time[30])) + "s", olc::CYAN);
+			DrawString(155, 83, FloatToString(vHighScore_Time[30], 2) + "s", olc::CYAN);
 
 			DrawString(20, 93, "Level 32:", pLevelColor);
 			DrawString(20, 103, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 103, std::to_string(vHighScore_Moves[31]), olc::CYAN);
 			DrawString(110, 103, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 103, FloatToString(TruncateFloat(vHighScore_Time[31])) + "s", olc::CYAN);
+			DrawString(155, 103, FloatToString(vHighScore_Time[31], 2) + "s", olc::CYAN);
 
 			DrawString(20, 113, "Level 33:", pLevelColor);
 			DrawString(20, 123, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 123, std::to_string(vHighScore_Moves[32]), olc::CYAN);
 			DrawString(110, 123, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 123, FloatToString(TruncateFloat(vHighScore_Time[32])) + "s", olc::CYAN);
+			DrawString(155, 123, FloatToString(vHighScore_Time[32], 2) + "s", olc::CYAN);
 
 			DrawString(20, 133, "Level 34:", pLevelColor);
 			DrawString(20, 143, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 143, std::to_string(vHighScore_Moves[33]), olc::CYAN);
 			DrawString(110, 143, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 143, FloatToString(TruncateFloat(vHighScore_Time[33])) + "s", olc::CYAN);
+			DrawString(155, 143, FloatToString(vHighScore_Time[33], 2) + "s", olc::CYAN);
 
 			DrawString(20, 153, "Level 35:", pLevelColor);
 			DrawString(20, 163, "Moves: ", pMovesAndTime_Medium);
 			DrawString(70, 163, std::to_string(vHighScore_Moves[34]), olc::CYAN);
 			DrawString(110, 163, "Time: ", pMovesAndTime_Medium);
-			DrawString(155, 163, FloatToString(TruncateFloat(vHighScore_Time[34])) + "s", olc::CYAN);			
+			DrawString(155, 163, FloatToString(vHighScore_Time[34], 2) + "s", olc::CYAN);
 			break;
 		case 6:
 			DrawString(20, 33, "Level 36:", pLevelColor);
 			DrawString(20, 43, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 43, std::to_string(vHighScore_Moves[35]), olc::CYAN);
 			DrawString(110, 43, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 43, FloatToString(TruncateFloat(vHighScore_Time[35])) + "s", olc::CYAN);
+			DrawString(155, 43, FloatToString(vHighScore_Time[35], 2) + "s", olc::CYAN);
 
 			DrawString(20, 53, "Level 37:", pLevelColor);
 			DrawString(20, 63, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 63, std::to_string(vHighScore_Moves[36]), olc::CYAN);
 			DrawString(110, 63, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 63, FloatToString(TruncateFloat(vHighScore_Time[36])) + "s", olc::CYAN);
+			DrawString(155, 63, FloatToString(vHighScore_Time[36], 2) + "s", olc::CYAN);
 
 			DrawString(20, 73, "Level 38:", pLevelColor);
 			DrawString(20, 83, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 83, std::to_string(vHighScore_Moves[37]), olc::CYAN);
 			DrawString(110, 83, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 83, FloatToString(TruncateFloat(vHighScore_Time[37])) + "s", olc::CYAN);
+			DrawString(155, 83, FloatToString(vHighScore_Time[37], 2) + "s", olc::CYAN);
 
 			DrawString(20, 93, "Level 39:", pLevelColor);
 			DrawString(20, 103, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 103, std::to_string(vHighScore_Moves[38]), olc::CYAN);
 			DrawString(110, 103, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 103, FloatToString(TruncateFloat(vHighScore_Time[38])) + "s", olc::CYAN);
+			DrawString(155, 103, FloatToString(vHighScore_Time[38], 2) + "s", olc::CYAN);
 
 			DrawString(20, 113, "Level 40:", pLevelColor);
 			DrawString(20, 123, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 123, std::to_string(vHighScore_Moves[39]), olc::CYAN);
 			DrawString(110, 123, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 123, FloatToString(TruncateFloat(vHighScore_Time[39])) + "s", olc::CYAN);
+			DrawString(155, 123, FloatToString(vHighScore_Time[39], 2) + "s", olc::CYAN);
 
 			DrawString(20, 133, "Level 41:", pLevelColor);
 			DrawString(20, 143, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 143, std::to_string(vHighScore_Moves[40]), olc::CYAN);
 			DrawString(110, 143, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 143, FloatToString(TruncateFloat(vHighScore_Time[40])) + "s", olc::CYAN);
+			DrawString(155, 143, FloatToString(vHighScore_Time[40], 2) + "s", olc::CYAN);
 
 			DrawString(20, 153, "Level 42:", pLevelColor);
 			DrawString(20, 163, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 163, std::to_string(vHighScore_Moves[41]), olc::CYAN);
 			DrawString(110, 163, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 163, FloatToString(TruncateFloat(vHighScore_Time[41])) + "s", olc::CYAN);			
+			DrawString(155, 163, FloatToString(vHighScore_Time[41], 2) + "s", olc::CYAN);			
 			break;
 		case 7:
 			DrawString(20, 33, "Level 43:", pLevelColor);
 			DrawString(20, 43, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 43, std::to_string(vHighScore_Moves[42]), olc::CYAN);
 			DrawString(110, 43, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 43, FloatToString(TruncateFloat(vHighScore_Time[42])) + "s", olc::CYAN);
+			DrawString(155, 43, FloatToString(vHighScore_Time[42], 2) + "s", olc::CYAN);
 
 			DrawString(20, 53, "Level 44:", pLevelColor);
 			DrawString(20, 63, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 63, std::to_string(vHighScore_Moves[43]), olc::CYAN);
 			DrawString(110, 63, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 63, FloatToString(TruncateFloat(vHighScore_Time[43])) + "s", olc::CYAN);
+			DrawString(155, 63, FloatToString(vHighScore_Time[43], 2) + "s", olc::CYAN);
 
 			DrawString(20, 73, "Level 45:", pLevelColor);
 			DrawString(20, 83, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 83, std::to_string(vHighScore_Moves[44]), olc::CYAN);
 			DrawString(110, 83, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 83, FloatToString(TruncateFloat(vHighScore_Time[44])) + "s", olc::CYAN);
+			DrawString(155, 83, FloatToString(vHighScore_Time[44], 2) + "s", olc::CYAN);
 
 			DrawString(20, 93, "Level 46:", pLevelColor);
 			DrawString(20, 103, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 103, std::to_string(vHighScore_Moves[45]), olc::CYAN);
 			DrawString(110, 103, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 103, FloatToString(TruncateFloat(vHighScore_Time[45])) + "s", olc::CYAN);
+			DrawString(155, 103, FloatToString(vHighScore_Time[45], 2) + "s", olc::CYAN);
 
 			DrawString(20, 113, "Level 47:", pLevelColor);
 			DrawString(20, 123, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 123, std::to_string(vHighScore_Moves[46]), olc::CYAN);
 			DrawString(110, 123, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 123, FloatToString(TruncateFloat(vHighScore_Time[46])) + "s", olc::CYAN);
+			DrawString(155, 123, FloatToString(vHighScore_Time[46], 2) + "s", olc::CYAN);
 
 			DrawString(20, 133, "Level 48:", pLevelColor);
 			DrawString(20, 143, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 143, std::to_string(vHighScore_Moves[47]), olc::CYAN);
 			DrawString(110, 143, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 143, FloatToString(TruncateFloat(vHighScore_Time[47])) + "s", olc::CYAN);
+			DrawString(155, 143, FloatToString(vHighScore_Time[47], 2) + "s", olc::CYAN);
 
 			DrawString(20, 153, "Level 49:", pLevelColor);
 			DrawString(20, 163, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 163, std::to_string(vHighScore_Moves[48]), olc::CYAN);
 			DrawString(110, 163, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 163, FloatToString(TruncateFloat(vHighScore_Time[48])) + "s", olc::CYAN);			
+			DrawString(155, 163, FloatToString(vHighScore_Time[48], 2) + "s", olc::CYAN);
 			break;
 		case 8:
 			DrawString(20, 33, "Level 50:", pLevelColor);
 			DrawString(20, 43, "Moves: ", pMovesAndTime_Hard);
 			DrawString(70, 43, std::to_string(vHighScore_Moves[49]), olc::CYAN);
 			DrawString(110, 43, "Time: ", pMovesAndTime_Hard);
-			DrawString(155, 43, FloatToString(TruncateFloat(vHighScore_Time[49])) + "s", olc::CYAN);
+			DrawString(155, 43, FloatToString(vHighScore_Time[49], 2) + "s", olc::CYAN);
 
 			iTotal_HS = 0;
 			fTotal_HS = 0.0f;
@@ -2907,7 +2907,7 @@ public:
 			DrawString(20, 73, "Moves: ", olc::WHITE);
 			DrawString(70, 73, std::to_string(iTotal_HS), olc::CYAN);
 			DrawString(20, 83, "Time: ", olc::WHITE);
-			DrawString(65, 83, FloatToString(TruncateFloat(fTotal_HS)) + "s", olc::CYAN);			
+			DrawString(65, 83, FloatToString(fTotal_HS, 2) + "s", olc::CYAN);
 			break;
 		default:
 			break;
@@ -2917,15 +2917,20 @@ public:
 	// Draws Options UI
 	void DrawUI_Options()
 	{
-		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "OPTIONS", olc::WHITE);
-		DrawString((256 / 2) - 108, (240 / 2) - 85, "Press Arrow Keys to", olc::WHITE);
-		DrawString((256 / 2) - 108, (240 / 2) - 75, "Adjust Music Volume", olc::WHITE);
-		DrawString((256 / 2) - 108, (240 / 2) - 60, "Press A or D to", olc::WHITE);
-		DrawString((256 / 2) - 108, (240 / 2) - 50, "Adjust SFX Volume", olc::WHITE);
+		DrawString((this->ScreenWidth() / 2) - 28, (240 / 2) - 96, "OPTIONS", olc::BLUE);
+		
+		DrawString((this->ScreenWidth() / 2) - 20, 38, "Audio", olc::GREEN);
 
-		DrawString((256 / 2) - 108, (240 / 2) + 72, "Music: " + std::to_string(fMusicVolume), olc::WHITE);
-		DrawString((256 / 2) - 108, (240 / 2) + 82, "SFX: " + std::to_string(fSFXVolume), olc::WHITE);
-		DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
+		DrawString((this->ScreenWidth() / 2) - 45, 48, "Music: ", olc::YELLOW);
+		DrawString((this->ScreenWidth() / 2) + 5, 48, FloatToString(fMusicVolume, 1), olc::CYAN);
+
+
+		DrawString((this->ScreenWidth() / 2) - 45, 58, "SFX: ", olc::YELLOW);
+		DrawString((this->ScreenWidth() / 2) + 5, 58, FloatToString(fSFXVolume, 1), olc::CYAN);
+
+		DrawString(20, 214, "ESC", olc::RED);
+		DrawString(50, 214, "to", olc::WHITE);
+		DrawString(75, 214, "Close", olc::RED);
 	}
 
 	// Draws Level Select UI
@@ -2933,13 +2938,13 @@ public:
 	{
 		DrawString((this->ScreenWidth() / 2) - 44, (240 / 2) - 96, "LEVEL SELECT", olc::YELLOW);
 
-		DrawString(20, 202, "Enter", olc::CYAN);
-		DrawString(64, 202, "to", olc::WHITE);
-		DrawString(85, 202, "Input Code", olc::CYAN);
+		DrawString(20, 204, "Enter", olc::CYAN);
+		DrawString(64, 204, "to", olc::WHITE);
+		DrawString(85, 204, "Input Code", olc::CYAN);
 
-		DrawString(20, 212, "ESC", olc::RED);
-		DrawString(50, 212, "to", olc::WHITE);
-		DrawString(75, 212, "Close", olc::RED);
+		DrawString(20, 214, "ESC", olc::RED);
+		DrawString(50, 214, "to", olc::WHITE);
+		DrawString(75, 214, "Close", olc::RED);
 
 		// Text Entry UI
 		if (IsTextEntryEnabled() == true)
@@ -2970,8 +2975,11 @@ public:
 			DrawString(20, 155, "Promotional Materials:", olc::BLUE);
 			DrawString(20, 165, "Tyler Clardy", olc::WHITE);
 
-			DrawString(20, 200, "3bytes Studio 2025", olc::CYAN);
-			DrawString(20, 212, "Press ESC to Close", olc::WHITE);
+			DrawString(20, 202, "3bytes Studio 2025", olc::CYAN);
+			
+			DrawString(20, 214, "ESC", olc::RED);
+			DrawString(50, 214, "to", olc::WHITE);
+			DrawString(75, 214, "Close", olc::RED);
 	}
 
 	// Draws Pause Menu
@@ -4702,161 +4710,161 @@ public:
 		switch (iCurLevel)
 		{
 		case 1:
-			sTime = FloatToString(TruncateFloat(iTime_1));
+			sTime = FloatToString(iTime_1, 2);
 			break;
 		case 2:
-			sTime = FloatToString(TruncateFloat(iTime_2));
+			sTime = FloatToString(iTime_2, 2);
 			break;
 		case 3:
-			sTime = FloatToString(TruncateFloat(iTime_3));
+			sTime = FloatToString(iTime_3, 2);
 			break;
 		case 4:
-			sTime = FloatToString(TruncateFloat(iTime_4));
+			sTime = FloatToString(iTime_4, 2);
 			break;
 		case 5:
-			sTime = FloatToString(TruncateFloat(iTime_5));
+			sTime = FloatToString(iTime_5, 2);
 			break;
 		case 6:
-			sTime = FloatToString(TruncateFloat(iTime_6));
+			sTime = FloatToString(iTime_6, 2);
 			break;
 		case 7:
-			sTime = FloatToString(TruncateFloat(iTime_7));
+			sTime = FloatToString(iTime_7, 2);
 			break;
 		case 8:
-			sTime = FloatToString(TruncateFloat(iTime_8));
+			sTime = FloatToString(iTime_8, 2);
 			break;
 		case 9:
-			sTime = FloatToString(TruncateFloat(iTime_9));
+			sTime = FloatToString(iTime_9, 2);
 			break;
 		case 10:
-			sTime = FloatToString(TruncateFloat(iTime_10));
+			sTime = FloatToString(iTime_10, 2);
 			break;
 		case 11:
-			sTime = FloatToString(TruncateFloat(iTime_11));
+			sTime = FloatToString(iTime_11, 2);
 			break;
 		case 12:
-			sTime = FloatToString(TruncateFloat(iTime_12));
+			sTime = FloatToString(iTime_12, 2);
 			break;
 		case 13:
-			sTime = FloatToString(TruncateFloat(iTime_13));
+			sTime = FloatToString(iTime_13, 2);
 			break;
 		case 14:
-			sTime = FloatToString(TruncateFloat(iTime_14));
+			sTime = FloatToString(iTime_14, 2);
 			break;
 		case 15:
-			sTime = FloatToString(TruncateFloat(iTime_15));
+			sTime = FloatToString(iTime_15, 2);
 			break;
 		case 16:
-			sTime = FloatToString(TruncateFloat(iTime_16));
+			sTime = FloatToString(iTime_16, 2);
 			break;
 		case 17:
-			sTime = FloatToString(TruncateFloat(iTime_17));
+			sTime = FloatToString(iTime_17, 2);
 			break;
 		case 18:
-			sTime = FloatToString(TruncateFloat(iTime_18));
+			sTime = FloatToString(iTime_18, 2);
 			break;
 		case 19:
-			sTime = FloatToString(TruncateFloat(iTime_19));
+			sTime = FloatToString(iTime_19, 2);
 			break;
 		case 20:
-			sTime = FloatToString(TruncateFloat(iTime_20));
+			sTime = FloatToString(iTime_20, 2);
 			break;
 		case 21:
-			sTime = FloatToString(TruncateFloat(iTime_21));
+			sTime = FloatToString(iTime_21, 2);
 			break;
 		case 22:
-			sTime = FloatToString(TruncateFloat(iTime_22));
+			sTime = FloatToString(iTime_22, 2);
 			break;
 		case 23:
-			sTime = FloatToString(TruncateFloat(iTime_23));
+			sTime = FloatToString(iTime_23, 2);
 			break;
 		case 24:
-			sTime = FloatToString(TruncateFloat(iTime_24));
+			sTime = FloatToString(iTime_24, 2);
 			break;
 		case 25:
-			sTime = FloatToString(TruncateFloat(iTime_25));
+			sTime = FloatToString(iTime_25, 2);
 			break;
 		case 26:
-			sTime = FloatToString(TruncateFloat(iTime_26));
+			sTime = FloatToString(iTime_26, 2);
 			break;
 		case 27:
-			sTime = FloatToString(TruncateFloat(iTime_27));
+			sTime = FloatToString(iTime_27, 2);
 			break;
 		case 28:
-			sTime = FloatToString(TruncateFloat(iTime_28));
+			sTime = FloatToString(iTime_28, 2);
 			break;
 		case 29:
-			sTime = FloatToString(TruncateFloat(iTime_29));
+			sTime = FloatToString(iTime_29, 2);
 			break;
 		case 30:
-			sTime = FloatToString(TruncateFloat(iTime_30));
+			sTime = FloatToString(iTime_30, 2);
 			break;
 		case 31:
-			sTime = FloatToString(TruncateFloat(iTime_31));
+			sTime = FloatToString(iTime_31, 2);
 			break;
 		case 32:
-			sTime = FloatToString(TruncateFloat(iTime_32));
+			sTime = FloatToString(iTime_32, 2);
 			break;
 		case 33:
-			sTime = FloatToString(TruncateFloat(iTime_33));
+			sTime = FloatToString(iTime_33, 2);
 			break;
 		case 34:
-			sTime = FloatToString(TruncateFloat(iTime_34));
+			sTime = FloatToString(iTime_34, 2);
 			break;
 		case 35:
-			sTime = FloatToString(TruncateFloat(iTime_35));
+			sTime = FloatToString(iTime_35, 2);
 			break;
 		case 36:
-			sTime = FloatToString(TruncateFloat(iTime_36));
+			sTime = FloatToString(iTime_36, 2);
 			break;
 		case 37:
-			sTime = FloatToString(TruncateFloat(iTime_37));
+			sTime = FloatToString(iTime_37, 2);
 			break;
 		case 38:
-			sTime = FloatToString(TruncateFloat(iTime_38));
+			sTime = FloatToString(iTime_38, 2);
 			break;
 		case 39:
-			sTime = FloatToString(TruncateFloat(iTime_39));
+			sTime = FloatToString(iTime_39, 2);
 			break;
 		case 40:
-			sTime = FloatToString(TruncateFloat(iTime_40));
+			sTime = FloatToString(iTime_40, 2);
 			break;
 		case 41:
-			sTime = FloatToString(TruncateFloat(iTime_41));
+			sTime = FloatToString(iTime_41, 2);
 			break;
 		case 42:
-			sTime = FloatToString(TruncateFloat(iTime_42));
+			sTime = FloatToString(iTime_42, 2);
 			break;
 		case 43:
-			sTime = FloatToString(TruncateFloat(iTime_43));
+			sTime = FloatToString(iTime_43, 2);
 			break;
 		case 44:
-			sTime = FloatToString(TruncateFloat(iTime_44));
+			sTime = FloatToString(iTime_44, 2);
 			break;
 		case 45:
-			sTime = FloatToString(TruncateFloat(iTime_45));
+			sTime = FloatToString(iTime_45, 2);
 			break;
 		case 46:
-			sTime = FloatToString(TruncateFloat(iTime_46));
+			sTime = FloatToString(iTime_46, 2);
 			break;
 		case 47:
-			sTime = FloatToString(TruncateFloat(iTime_47));
+			sTime = FloatToString(iTime_47, 2);
 			break;
 		case 48:
-			sTime = FloatToString(TruncateFloat(iTime_48));
+			sTime = FloatToString(iTime_48, 2);
 			break;
 		case 49:
-			sTime = FloatToString(TruncateFloat(iTime_49));
+			sTime = FloatToString(iTime_49, 2);
 			break;
 		case 50:
-			sTime = FloatToString(TruncateFloat(iTime_50));
+			sTime = FloatToString(iTime_50, 2);
 			break;
 		default:
 			break;
 		}
 	}
 
-	// Truncates float to 2 decimal places 
+	// Truncates float to decimal places 
 	float TruncateFloat(float fIn)
 	{
 		float fScaled = fIn * 100.0f;
@@ -4868,12 +4876,12 @@ public:
 		return fTruncated;
 	}
 
-	// Converts float to string, truncated to 2 decimal places
-	std::string FloatToString(float fIn)
+	// Converts float to string, truncated to a set number of decimal places
+	std::string FloatToString(float fIn, int iPrecision)
 	{
 		std::stringstream ss;
 
-		ss << std::fixed << std::setprecision(2) << fIn;
+		ss << std::fixed << std::setprecision(iPrecision) << fIn;
 
 		return ss.str();
 	}
