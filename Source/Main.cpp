@@ -22,9 +22,6 @@
 // Add background decal sprites to clear screen to instead of black
 // Update Name
 //		- project & exe output
-// Update Button GFX
-//		- WinTile GFX
-//      - DoorSwitch GFX
 // Update Pause Menu
 // Rework sound design to create unified theme & replace placeholdersfx
 //		- add SFX for cursor select 
@@ -2469,13 +2466,13 @@ public:
 		// win condition drawing
 		for (auto& g : vGoals)
 		{
-			FillCircle(g * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+			DrawPartialSprite(g * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 4) * vBlockSize, vBlockSize);
 		}
 
 		// door switch drawing
 		for (auto& d : vSwitches)
 		{
-			FillCircle(d * vBlockSize + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
+			DrawPartialSprite(d * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 3) * vBlockSize, vBlockSize);
 		}
 
 		// teleport drawing
@@ -3577,14 +3574,14 @@ public:
 			}
 			// Door Switch
 			olc::vi2d vDoorSwitch_MenuScene = { 208, 160 };
-			FillCircle(vDoorSwitch_MenuScene + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::RED);
+			DrawPartialSprite(vDoorSwitch_MenuScene, gfxTiles.Sprite(), olc::vi2d(4, 3) * vBlockSize, vBlockSize);
 			// Win Tiles
 			olc::vi2d vWinTile_MenuScene_1 = { 64, 192 };
 			olc::vi2d vWinTile_MenuScene_2 = { 176, 160 };
 			olc::vi2d vWinTile_MenuScene_3 = { 32, 160 };
-			FillCircle(vWinTile_MenuScene_1 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
-			FillCircle(vWinTile_MenuScene_2 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
-			FillCircle(vWinTile_MenuScene_3 + vBlockSize / 2, vBlockSize.x / 2 - 2, olc::YELLOW);
+			DrawPartialSprite(vWinTile_MenuScene_1, gfxTiles.Sprite(), olc::vi2d(4, 4)* vBlockSize, vBlockSize);
+			DrawPartialSprite(vWinTile_MenuScene_2, gfxTiles.Sprite(), olc::vi2d(4, 4)* vBlockSize, vBlockSize);
+			DrawPartialSprite(vWinTile_MenuScene_3, gfxTiles.Sprite(), olc::vi2d(4, 4)* vBlockSize, vBlockSize);
 
 			// SCENE NonStatic
 			// Door
