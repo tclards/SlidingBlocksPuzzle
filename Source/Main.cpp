@@ -20,8 +20,6 @@
 // Unsync rotation of portals
 // reskin doors? adding | & - Doors
 // Add background decal sprites to clear screen to instead of black
-// add color to main menu sub menus
-//		- options
 // Update Name
 //		- project & exe output
 // Update Button GFX
@@ -1313,6 +1311,7 @@ public:
 
 	// Variables used for main menu cursor/selection system
 	int iMenuSelectCursor_main = 0; // 0 - Start Game, 1 - Level Select, 2 - High Scores, 3 - Options, 4 - Credits, 5, Quit Game
+	int iMenuSelectCursor_options = 0; // 0 - Music Volume, 1 - SFX Volume
 	float fCursorBlinkTimer = 0.0f;
 	float fCursorBlinkSpeed = 0.5f; // Timing for cursor blink
 	bool bCursorBlink = false;
@@ -2089,25 +2088,59 @@ public:
 				// Save Changes
 				iOptionsSave = SaveOptions();
 
+				iMenuSelectCursor_options = 0;
+				bCursorBlink = false;
+				fCursorBlinkTimer = 0.0f;
 				iCurDisplay = -1;
 			}
-			if (GetKey(olc::Key::D).bPressed)		// Increase SFX Volume
+
+			// User Input:
+			if (GetKey(olc::Key::UP).bPressed || GetKey(olc::Key::W).bPressed)
 			{
-				fSFXVolume += 0.1f;
-				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+				bCursorBlink = false;
+				fCursorBlinkTimer = 0.0f;
+
+				iMenuSelectCursor_options--;
+				if (iMenuSelectCursor_options < 0)
+				{
+					iMenuSelectCursor_options = 1;
+				}
 			}
-			if (GetKey(olc::Key::A).bPressed)		// Decrease SFX Volume
+			if (GetKey(olc::Key::DOWN).bPressed || GetKey(olc::Key::S).bPressed)
 			{
-				fSFXVolume -= 0.1f;
-				audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+				bCursorBlink = false;
+				fCursorBlinkTimer = 0.0f;
+
+				iMenuSelectCursor_options++;
+				if (iMenuSelectCursor_options > 1)
+				{
+					iMenuSelectCursor_options = 0;
+				}
 			}
-			if (GetKey(olc::Key::RIGHT).bPressed)	// Increase Music Volume
+
+			if (GetKey(olc::Key::D).bPressed || GetKey(olc::Key::RIGHT).bPressed)
 			{
-				fMusicVolume += 0.1f;
+				if (iMenuSelectCursor_options == 0) // Increase music volume
+				{
+					fMusicVolume += 0.1f;
+				}
+				else if (iMenuSelectCursor_options == 1) // Increase SFX Volume
+				{
+					fSFXVolume += 0.1f;
+					audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+				}
 			}
-			if (GetKey(olc::Key::LEFT).bPressed)	// Decrease Music Volume
+			if (GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
 			{
-				fMusicVolume -= 0.1f;
+				if (iMenuSelectCursor_options == 0) // Decrease music volume
+				{
+					fMusicVolume -= 0.1f;
+				}
+				else if (iMenuSelectCursor_options == 1) // Decrease SFX Volume
+				{
+					fSFXVolume -= 0.1f;
+					audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+				}
 			}
 
 			// Clamp Volume Values
@@ -2136,7 +2169,7 @@ public:
 			DrawLevel(iLevelSet);
 
 			// Draw Options UI
-			DrawUI_Options();
+			DrawUI_Options(fElapsedTime);
 			
 			break;
 		case 2: // Level Select Code Screen
@@ -2915,22 +2948,48 @@ public:
 	}
 
 	// Draws Options UI
-	void DrawUI_Options()
+	void DrawUI_Options(float fElapsedTime)
 	{
-		DrawString((this->ScreenWidth() / 2) - 28, (240 / 2) - 96, "OPTIONS", olc::BLUE);
+		DrawString((this->ScreenWidth() / 2) - 28, (240 / 2) - 94, "OPTIONS", olc::BLUE);
 		
 		DrawString((this->ScreenWidth() / 2) - 20, 38, "Audio", olc::GREEN);
 
-		DrawString((this->ScreenWidth() / 2) - 45, 48, "Music: ", olc::YELLOW);
-		DrawString((this->ScreenWidth() / 2) + 5, 48, FloatToString(fMusicVolume, 1), olc::CYAN);
+		DrawString((this->ScreenWidth() / 2) - 35, 48, "Music: ", olc::YELLOW);
+		DrawString((this->ScreenWidth() / 2) + 15, 48, FloatToString(fMusicVolume, 1), olc::CYAN);
 
-
-		DrawString((this->ScreenWidth() / 2) - 45, 58, "SFX: ", olc::YELLOW);
-		DrawString((this->ScreenWidth() / 2) + 5, 58, FloatToString(fSFXVolume, 1), olc::CYAN);
+		DrawString((this->ScreenWidth() / 2) - 35, 58, "SFX: ", olc::YELLOW);
+		DrawString((this->ScreenWidth() / 2) + 15, 58, FloatToString(fSFXVolume, 1), olc::CYAN);
 
 		DrawString(20, 214, "ESC", olc::RED);
 		DrawString(50, 214, "to", olc::WHITE);
 		DrawString(75, 214, "Close", olc::RED);
+
+		// Draw cursor 
+		DoCursorBlink(fElapsedTime); // update cursor blink variables
+
+		if (!bCursorBlink) // only draw cursor on frames where cursor blink is toggled false
+		{
+			olc::vi2d vCursorPos_R = { 0,0 }; 
+			olc::vi2d vCursorPos_L = { 0,0 }; 
+
+			switch (iMenuSelectCursor_options)
+			{
+			case 0: // Music volume
+				vCursorPos_R = { (this->ScreenWidth() / 2) + 39, 43 };
+				vCursorPos_L = { (this->ScreenWidth() / 2) - 52, 43 };
+				DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R 
+				DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L 
+				break;																								 
+			case 1: // SFX Volume																					 
+				vCursorPos_R = { (this->ScreenWidth() / 2) + 39, 53 };												 
+				vCursorPos_L = { (this->ScreenWidth() / 2) - 52, 53 };
+				DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R 
+				DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L 
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	// Draws Level Select UI
@@ -4862,18 +4921,6 @@ public:
 		default:
 			break;
 		}
-	}
-
-	// Truncates float to decimal places 
-	float TruncateFloat(float fIn)
-	{
-		float fScaled = fIn * 100.0f;
-
-		float fTruncatedScaled = std::trunc(fScaled);
-
-		float fTruncated = fTruncatedScaled / 100.0f;
-
-		return fTruncated;
 	}
 
 	// Converts float to string, truncated to a set number of decimal places
