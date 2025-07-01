@@ -2529,10 +2529,17 @@ public:
 			DrawString(55, 4, std::to_string(nGoals) + " / " + std::to_string(vGoals.size()), pColor_GameUI);
 
 			// Level Tracking UI
-			FillRect(144, 2, 100, 10, pColor_RectUI_Fill);
-			DrawRect(144, 2, 100, 10, pColor_RectUI_Border);
-			DrawString(146, 4, "Level: ", pColor_GameUI);
-			DrawString(196, 4, std::to_string(iCurLevel) + " / " + std::to_string(iNumOfLevels), pColor_GameUI);
+			FillRect(166, 2, 67, 10, pColor_RectUI_Fill);
+			DrawRect(166, 2, 67, 10, pColor_RectUI_Border);
+			DrawString(167, 4, "Level: ", pColor_GameUI);
+			if (iCurLevel < 10)
+			{
+				DrawString(217, 4, "0" + std::to_string(iCurLevel), pColor_GameUI);
+			}
+			else
+			{
+				DrawString(217, 4, std::to_string(iCurLevel), pColor_GameUI);
+			}
 
 			// Debug Mode Indicator
 			if (bDebugMode) 
@@ -5283,5 +5290,5 @@ int main()
 	return 0;
 }
 
-// Created by Tyler Clardy in June 2025
+// Created by Tyler Clardy in Summer 2025
 // Thanks to oneLoneCoder and his community for the PixelGameEngine & SoundWaveEngine, as well as the inspiration for the start of the project. You rock, Javid!
