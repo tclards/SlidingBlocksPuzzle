@@ -21,7 +21,6 @@
 // reskin doors? adding | & - Doors
 // Add background decal sprites to clear screen to instead of black
 // add color to main menu sub menus
-//		- level select
 //		- options
 // Update Name
 //		- project & exe output
@@ -2932,14 +2931,20 @@ public:
 	// Draws Level Select UI
 	void DrawUI_LevelSelect()
 	{
-		DrawString((this->ScreenWidth() / 2) - 50, (240 / 2) - 96, "LEVEL SELECT", olc::WHITE);
-		DrawString(20, 199, "Press Enter to Input Code", olc::WHITE);
-		DrawString((256 / 2) - 108, (240 / 2) + 92, "Press ESC to Close", olc::WHITE);
+		DrawString((this->ScreenWidth() / 2) - 44, (240 / 2) - 96, "LEVEL SELECT", olc::YELLOW);
+
+		DrawString(20, 202, "Enter", olc::CYAN);
+		DrawString(64, 202, "to", olc::WHITE);
+		DrawString(85, 202, "Input Code", olc::CYAN);
+
+		DrawString(20, 212, "ESC", olc::RED);
+		DrawString(50, 212, "to", olc::WHITE);
+		DrawString(75, 212, "Close", olc::RED);
 
 		// Text Entry UI
 		if (IsTextEntryEnabled() == true)
 		{
-			DrawString(65, 35, "Text Entry Mode", olc::YELLOW);
+			DrawString(91, 35, "Input Mode", olc::CYAN);
 		}
 	}
 
