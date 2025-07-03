@@ -1245,6 +1245,9 @@ public:
 	// Vector containing door positions
 	std::vector<olc::vi2d> vDoors_pos;
 
+	// Flag for controller debug frame numbers for main menu scene
+	bool bDrawMainMenuSceneFrameNumber = false;
+
 	// Vector containing door switches
 	std::vector<olc::vi2d> vSwitches;
 
@@ -1982,7 +1985,6 @@ public:
 
 			// Pause Logic
 			if (bPaused) { return DoPauseLogic(fElapsedTime); }
-
 		}
 	}
 
@@ -3383,8 +3385,11 @@ public:
 		}
 
 		// debug
-		/*DrawString(17, 17, std::to_string(iMenuSceneState), olc::DARK_GREY);
-		if (GetKey(olc::Key::RIGHT).bPressed)
+		if (bDrawMainMenuSceneFrameNumber)
+		{
+			DrawString(17, 17, std::to_string(iMenuSceneState), olc::DARK_GREY);
+		}
+		/*if (GetKey(olc::Key::RIGHT).bPressed)
 		{
 			iMenuSceneState++;
 			if (iMenuSceneState > 32)
@@ -4671,139 +4676,139 @@ public:
 			break;
 		case 5:
 			sMoves = std::to_string(iNumOfMoves_5);
-				break;
+			break;
 		case 6:
 			sMoves = std::to_string(iNumOfMoves_6);
-				break;
+			break;
 		case 7:
 			sMoves = std::to_string(iNumOfMoves_7);
-				break;
+			break;
 		case 8:
 			sMoves = std::to_string(iNumOfMoves_8);
-				break;
+			break;
 		case 9:
 			sMoves = std::to_string(iNumOfMoves_9);
-				break;
+			break;
 		case 10:
 			sMoves = std::to_string(iNumOfMoves_10);
-				break;
+			break;
 		case 11:
 			sMoves = std::to_string(iNumOfMoves_11);
 			break;
 		case 12:
 			sMoves = std::to_string(iNumOfMoves_12);
-				break;
+			break;
 		case 13:
 			sMoves = std::to_string(iNumOfMoves_13);
-				break;
+			break;
 		case 14:
 			sMoves = std::to_string(iNumOfMoves_14);
-				break;
+			break;
 		case 15:
 			sMoves = std::to_string(iNumOfMoves_15);
-				break;
+			break;
 		case 16:
 			sMoves = std::to_string(iNumOfMoves_16);
-				break;
+			break;
 		case 17:
 			sMoves = std::to_string(iNumOfMoves_17);
-				break;
+			break;
 		case 18:
 			sMoves = std::to_string(iNumOfMoves_18);
-				break;
+			break;
 		case 19:
 			sMoves = std::to_string(iNumOfMoves_19);
-				break;
+			break;
 		case 20:
 			sMoves = std::to_string(iNumOfMoves_20);
-				break;
+			break;
 		case 21:
 			sMoves = std::to_string(iNumOfMoves_21);
 			break;
 		case 22:
 			sMoves = std::to_string(iNumOfMoves_22);
-				break;
+			break;
 		case 23:
 			sMoves = std::to_string(iNumOfMoves_23);
-				break;
+			break;
 		case 24:
 			sMoves = std::to_string(iNumOfMoves_24);
-				break;
+			break;
 		case 25:
 			sMoves = std::to_string(iNumOfMoves_25);
-				break;
+			break;
 		case 26:
 			sMoves = std::to_string(iNumOfMoves_26);
-				break;
+			break;
 		case 27:
 			sMoves = std::to_string(iNumOfMoves_27);
-				break;
+			break;
 		case 28:
 			sMoves = std::to_string(iNumOfMoves_28);
-				break;
+			break;
 		case 29:
 			sMoves = std::to_string(iNumOfMoves_29);
-				break;
+			break;
 		case 30:
 			sMoves = std::to_string(iNumOfMoves_30);
-				break;
+			break;
 		case 31:
 			sMoves = std::to_string(iNumOfMoves_31);
-				break;
+			break;
 		case 32:
 			sMoves = std::to_string(iNumOfMoves_32);
 			break;
 		case 33:
 			sMoves = std::to_string(iNumOfMoves_33);
-				break;
+			break;
 		case 34:
 			sMoves = std::to_string(iNumOfMoves_34);
-				break;
+			break;
 		case 35:
 			sMoves = std::to_string(iNumOfMoves_35);
-				break;
+			break;
 		case 36:
 			sMoves = std::to_string(iNumOfMoves_36);
-				break;
+			break;
 		case 37:
 			sMoves = std::to_string(iNumOfMoves_37);
-				break;
+			break;
 		case 38:
 			sMoves = std::to_string(iNumOfMoves_38);
-				break;
+			break;
 		case 39:
 			sMoves = std::to_string(iNumOfMoves_39);
-				break;
+			break;
 		case 40:
 			sMoves = std::to_string(iNumOfMoves_40);
-				break;
+			break;
 		case 41:
 			sMoves = std::to_string(iNumOfMoves_41);
-				break;
+			break;
 		case 42:
 			sMoves = std::to_string(iNumOfMoves_42);
-				break;
+			break;
 		case 43:
 			sMoves = std::to_string(iNumOfMoves_43);
 			break;
 		case 44:
 			sMoves = std::to_string(iNumOfMoves_44);
-				break;
+			break;
 		case 45:
 			sMoves = std::to_string(iNumOfMoves_45);
-				break;
+			break;
 		case 46:
 			sMoves = std::to_string(iNumOfMoves_46);
-				break;
+			break;
 		case 47:
 			sMoves = std::to_string(iNumOfMoves_47);
-				break;
+			break;
 		case 48:
 			sMoves = std::to_string(iNumOfMoves_48);
-				break;
+			break;
 		case 49:
 			sMoves = std::to_string(iNumOfMoves_49);
-				break;
+			break;
 		case 50:
 			sMoves = std::to_string(iNumOfMoves_50);
 			break;
