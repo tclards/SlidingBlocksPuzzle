@@ -55,7 +55,7 @@ Teleport Block		(G) : Teleports Player between themselves. Does not allow Blocks
 		Cheats
 =======================================
 Hold CTRL and press Enter & Minus at the same time to enter Debug Mode.
-While in Debug Mode press N to Skip Level, V to force Open Doors, and H to reset Level Timer and Move Counter.
+While in Debug Mode press N to Skip Level, V to force Open Doors, L to skip to Win Screen, and H to reset Level Timer and Move Counter.
 
 Level Codes:
 Medium - M1b3z

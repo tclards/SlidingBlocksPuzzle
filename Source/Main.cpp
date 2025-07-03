@@ -11,24 +11,19 @@
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor - low priority: does not matter in release mode
 // random crashes related to a nullptr in soundwaveengine, usually while player is moving
-// weirdness with cursor on main menu - caught on camera. repeatable?
 
 // TODO_A - Finish Game
 // Fill out Levels!
-
-// TODO_B - Rework & Polish
-// Unsync rotation of portals
-// reskin doors? adding | & - Doors
 // Add background decal sprites to clear screen to instead of black
 // Update Name
 //		- project & exe output
-// Rework sound design to create unified theme & replace placeholdersfx
-//		- add SFX for cursor select 
-//		- add SFX for cursor enter
-//		- Rework movement SFX to make unique SFX for each block type
-//		- Replace any SFX not matching theme
-//		- replace background music to match theme
-//		- audio balance
+
+// TODO_B - Prerelease Steps
+// create promotional materials
+//		- Trailer
+//		- Showcases
+// create itch.io page
+// QA Test on multiple machines
 
 // TODO_C - Feature Wishlist
 // Add level selector properly? with level locking system
@@ -36,13 +31,15 @@
 //		- easy
 //		- medium
 //		- hard
-
-// TODO_D - Prerelease Steps
-// create promotional materials
-//		- Trailer
-//		- Showcases
-// create itch.io page
-// QA Test on multiple machines
+// Rework sound design to create unified theme & replace placeholdersfx
+//		- add SFX for cursor select 
+//		- add SFX for cursor enter
+//		- Rework movement SFX to make unique SFX for each block type
+//		- Replace any SFX not matching theme
+//		- replace background music to match theme
+//		- audio balance
+// reskin doors? adding | & - Doors
+// Unsync rotation of portals
 #pragma endregion
 
 // Controls
@@ -53,6 +50,7 @@
 // N (While Debug Enabled) - Next Level
 // H (While Debug Enabled) - Reset Level Scores - Timer and Moves
 // V (While Debug Enabled) - Open & Close Doors
+// L (While Debug Enabled) - Skip to You Win Screen
 #pragma endregion
 
 // Globally Defined Variables & lambda functions
@@ -144,7 +142,7 @@ public:
 		"################";
 
 	// starting here -> make sure to add any new levels to the LoadAll function that is used in OnUserCreate, and update UI for timer and move counter on pause menu and main UI
-	// Easy Levels - 10
+	// Easy Levels - 15
 	float iTime_1 = 0.0f;
 	int iNumOfMoves_1 = 0;
 	std::string sLevel_1 = 
@@ -160,7 +158,7 @@ public:
 		"#.............S#"
 		"#.....____.....#"
 		"#.2..........3.#"
-		"#######DD#######"
+		"######D##D######"
 		"#B............O#"
 		"################";
 
@@ -1546,6 +1544,12 @@ public:
 					bDoors_DebugForceOpen = true;
 				}
 			}
+			if (bEnableInput && bDebugMode && GetKey(olc::Key::L).bPressed) // Skip to end game You Win Screen, also disable debug mode
+			{
+				bDebugMode = false; 
+				iCurLevel = 51;
+				LoadLevel(iCurLevel, false);
+			}
 		}
 		else
 		{
@@ -2586,9 +2590,15 @@ public:
 				bEnableInput = true;
 				iLevelSet = -1;
 				audioEngine_Music.SetOutputVolume(0.0f);
-				DrawString((256 / 2) - 108, (240 / 2) - 96, "YOU WIN!", pColor_WinUI);
-				DrawString((256 / 2) - 108, (240 / 2) + 92, "Thank you for playing!", pColor_WinUI);
-				DrawString((256 / 2) - 108, (240 / 2) + 78, "Press ESC for Main Menu", pColor_WinUI);
+				DrawString((this->ScreenWidth() / 2) - 28, 24, "YOU WIN!", olc::CYAN);
+
+				DrawString(((this->ScreenWidth() / 2) - 100) + 17, 48, "Press", olc::WHITE);
+				DrawString(((this->ScreenWidth() / 2) - 55) + 17, 48, "ESC", olc::RED);
+				DrawString(((this->ScreenWidth() / 2) - 28) + 17, 48, "for", olc::WHITE);
+				DrawString(((this->ScreenWidth() / 2) - 0) + 17, 48, "Main Menu", olc::RED);
+
+				DrawString(20, 202, "3bytes Studio 2025", olc::CYAN);
+				DrawString(20, 214, "Thank you for playing!", olc::CYAN);
 			}
 		}
 	}
@@ -3285,22 +3295,23 @@ public:
 		}
 
 		// Draw UI Elements
-		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", olc::CYAN);
+		DrawString((this->ScreenWidth() / 2) - 40, (240 / 2) - 96, "GAME PAUSED", olc::WHITE);
 
 		DrawString(20, 45, "Level " + std::to_string(iCurLevel), pColor_PauseUI);
 
-		DrawString(20, 70, "Timer:", olc::MAGENTA);
-		DrawString(70, 70, sTimerUI + "s", olc::WHITE);
+		DrawString(20, 70, "Moves:", olc::MAGENTA);
+		DrawString(70, 70, sMovementUI, olc::WHITE);
 
-		DrawString(20, 57, "Moves:", olc::MAGENTA);
-		DrawString(70, 57, sMovementUI, olc::WHITE);
+		DrawString(20, 57, "Timer:", olc::MAGENTA);
+		DrawString(70, 57, sTimerUI + "s", olc::WHITE);
 
 		DrawString(20, 204, "Enter", olc::CYAN);
 		DrawString(64, 204, "to", olc::WHITE);
 		DrawString(85, 204, "Resume", olc::CYAN);
+
 		DrawString(20, 214, "ESC", olc::RED);
-		DrawString(50, 214, "to", olc::WHITE);
-		DrawString(75, 214, "Close", olc::RED);
+		DrawString(46, 214, "for", olc::WHITE);
+		DrawString(74, 214, "Main Menu", olc::RED);
 
 	}
 
