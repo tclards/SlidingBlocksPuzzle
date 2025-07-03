@@ -1518,7 +1518,7 @@ public:
 				ResetLevelScore();
 				LoadLevel(iCurLevel, true);
 			}
-			if (bEnableInput && GetKey(olc::Key::ESCAPE).bPressed && !bPaused || GetKey(olc::Key::P).bPressed) // Gameplay Pause
+			if (bEnableInput && GetKey(olc::Key::ESCAPE).bPressed && !bPaused) // Gameplay Pause
 			{
 				bPaused = true;	// Pause Game
 			}
@@ -2007,7 +2007,7 @@ public:
 			bPaused = false;														// Reset Flags
 			bPauseJinglePlayed = false;
 		}
-		if (GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)		// Quit to Main Menu
+		if (GetKey(olc::Key::ESCAPE).bPressed)										// Quit to Main Menu
 		{
 			audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
 			bPaused = false;														// Reset Pause Flags
