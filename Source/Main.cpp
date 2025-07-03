@@ -1270,7 +1270,7 @@ public:
 
 	// Timer for executing teleport rotate
 	float fTele_GFX_Flip = 0.0f;
-	float fTele_RotateSpeed = 0.2f;
+	float fTele_RotateSpeed = 0.1f;
 
 	// Flag for initial options loading during startup routine
 	bool bInitialLoad = false;
