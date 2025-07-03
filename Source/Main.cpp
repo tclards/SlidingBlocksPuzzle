@@ -22,7 +22,6 @@
 // Add background decal sprites to clear screen to instead of black
 // Update Name
 //		- project & exe output
-// Update Pause Menu
 // Rework sound design to create unified theme & replace placeholdersfx
 //		- add SFX for cursor select 
 //		- add SFX for cursor enter
@@ -3051,8 +3050,29 @@ public:
 		// Clear screen to black before drawing each frame
 		Clear(olc::BLACK);
 
+		// Set LevelSet Variable to Menu for draw function
+		iLevelSet = -1;
+		DrawLevel(iLevelSet);
+
+		// Reset LevelSet Variable after draw, also set pause UI color based on current level
+		if (iCurLevel < 16)
+		{
+			iLevelSet = 0;
+			pColor_PauseUI = olc::GREEN;
+		}
+		else if (iCurLevel > 15 && iCurLevel < 36)
+		{
+			iLevelSet = 1;
+			pColor_PauseUI = olc::YELLOW;
+		}
+		else
+		{
+			iLevelSet = 2;
+			pColor_PauseUI = olc::RED;
+		}
+
 		// Draw Pause Window
-		FillRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::DARK_BLUE);
+		FillRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::BLACK);
 		DrawRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::WHITE);
 
 		// Get Timer and Movement Data
@@ -3061,216 +3081,227 @@ public:
 		switch (iCurLevel)
 		{
 		case 1:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_1);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_1);
+			sMovementUI = std::to_string(iNumOfMoves_1);
+			sTimerUI = FloatToString(iTime_1, 2);
 			break;
 		case 2:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_2);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_2);
+			sMovementUI = std::to_string(iNumOfMoves_2);
+			sTimerUI = FloatToString(iTime_2, 2);
 			break;
 		case 3:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_3);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_3);
+			sMovementUI = std::to_string(iNumOfMoves_3);
+			sTimerUI = FloatToString(iTime_3, 2);
 			break;
 		case 4:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_4);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_4);
+			sMovementUI = std::to_string(iNumOfMoves_4);
+			sTimerUI = FloatToString(iTime_4, 2);
 			break;
 		case 5:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_5);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_5);
+			sMovementUI = std::to_string(iNumOfMoves_5);
+			sTimerUI = FloatToString(iTime_5, 2);
 			break;
 		case 6:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_6);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_6);
+			sMovementUI = std::to_string(iNumOfMoves_6);
+			sTimerUI = FloatToString(iTime_6, 2);
 			break;
 		case 7:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_7);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_7);
+			sMovementUI = std::to_string(iNumOfMoves_7);
+			sTimerUI = FloatToString(iTime_7, 2);
 			break;
 		case 8:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_8);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_8);
+			sMovementUI = std::to_string(iNumOfMoves_8);
+			sTimerUI = FloatToString(iTime_8, 2);
 			break;
 		case 9:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_9);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_9);
+			sMovementUI = std::to_string(iNumOfMoves_9);
+			sTimerUI = FloatToString(iTime_9, 2);
 			break;
 		case 10:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_10);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_10);
+			sMovementUI = std::to_string(iNumOfMoves_10);
+			sTimerUI = FloatToString(iTime_10, 2);
 			break;
 		case 11:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_11);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_11);
+			sMovementUI = std::to_string(iNumOfMoves_11);
+			sTimerUI = FloatToString(iTime_11, 2);
 			break;
 		case 12:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_12);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_12);
+			sMovementUI = std::to_string(iNumOfMoves_12);
+			sTimerUI = FloatToString(iTime_12, 2);
 			break;
 		case 13:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_13);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_13);
+			sMovementUI = std::to_string(iNumOfMoves_13);
+			sTimerUI = FloatToString(iTime_13, 2);
 			break;
 		case 14:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_14);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_14);
+			sMovementUI = std::to_string(iNumOfMoves_14);
+			sTimerUI = FloatToString(iTime_14, 2);
 			break;
 		case 15:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_15);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_15);
+			sMovementUI = std::to_string(iNumOfMoves_15);
+			sTimerUI = FloatToString(iTime_15, 2);
 			break;
 		case 16:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_16);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_16);
+			sMovementUI = std::to_string(iNumOfMoves_16);
+			sTimerUI = FloatToString(iTime_16, 2);
 			break;
 		case 17:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_17);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_17);
+			sMovementUI = std::to_string(iNumOfMoves_17);
+			sTimerUI = FloatToString(iTime_17, 2);
 			break;
 		case 18:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_18);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_18);
+			sMovementUI = std::to_string(iNumOfMoves_18);
+			sTimerUI = FloatToString(iTime_18, 2);
 			break;
 		case 19:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_19);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_19);
+			sMovementUI = std::to_string(iNumOfMoves_19);
+			sTimerUI = FloatToString(iTime_19, 2);
 			break;
 		case 20:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_20);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_20);
+			sMovementUI = std::to_string(iNumOfMoves_20);
+			sTimerUI = FloatToString(iTime_20, 2);
 			break;
 		case 21:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_21);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_21);
+			sMovementUI = std::to_string(iNumOfMoves_21);
+			sTimerUI = FloatToString(iTime_21, 2);
 			break;
 		case 22:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_22);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_22);
+			sMovementUI = std::to_string(iNumOfMoves_22);
+			sTimerUI = FloatToString(iTime_22, 2);
 			break;
 		case 23:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_23);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_23);
+			sMovementUI = std::to_string(iNumOfMoves_23);
+			sTimerUI = FloatToString(iTime_23, 2);
 			break;
 		case 24:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_24);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_24);
+			sMovementUI = std::to_string(iNumOfMoves_24);
+			sTimerUI = FloatToString(iTime_24, 2);
 			break;
 		case 25:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_25);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_25);
+			sMovementUI = std::to_string(iNumOfMoves_25);
+			sTimerUI = FloatToString(iTime_25, 2);
 			break;
 		case 26:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_26);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_26);
+			sMovementUI = std::to_string(iNumOfMoves_26);
+			sTimerUI = FloatToString(iTime_26, 2);
 			break;
 		case 27:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_27);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_27);
+			sMovementUI = std::to_string(iNumOfMoves_27);
+			sTimerUI = FloatToString(iTime_27, 2);
 			break;
 		case 28:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_28);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_28);
+			sMovementUI = std::to_string(iNumOfMoves_28);
+			sTimerUI = FloatToString(iTime_28, 2);
 			break;
 		case 29:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_29);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_29);
+			sMovementUI = std::to_string(iNumOfMoves_29);
+			sTimerUI = FloatToString(iTime_29, 2);
 			break;
 		case 30:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_30);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_30);
+			sMovementUI = std::to_string(iNumOfMoves_30);
+			sTimerUI = FloatToString(iTime_30, 2);
 			break;
 		case 31:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_31);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_31);
+			sMovementUI = std::to_string(iNumOfMoves_31);
+			sTimerUI = FloatToString(iTime_31, 2);
 			break;
 		case 32:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_32);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_32);
+			sMovementUI = std::to_string(iNumOfMoves_32);
+			sTimerUI = FloatToString(iTime_32, 2);
 			break;
 		case 33:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_33);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_33);
+			sMovementUI = std::to_string(iNumOfMoves_33);
+			sTimerUI = FloatToString(iTime_33, 2);
 			break;
 		case 34:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_34);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_34);
+			sMovementUI = std::to_string(iNumOfMoves_34);
+			sTimerUI = FloatToString(iTime_34, 2);
 			break;
 		case 35:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_35);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_35);
+			sMovementUI = std::to_string(iNumOfMoves_35);
+			sTimerUI = FloatToString(iTime_35, 2);
 			break;
 		case 36:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_36);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_36);
+			sMovementUI = std::to_string(iNumOfMoves_36);
+			sTimerUI = FloatToString(iTime_36, 2);
 			break;
 		case 37:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_37);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_37);
+			sMovementUI = std::to_string(iNumOfMoves_37);
+			sTimerUI = FloatToString(iTime_37, 2);
 			break;
 		case 38:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_38);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_38);
+			sMovementUI = std::to_string(iNumOfMoves_38);
+			sTimerUI = FloatToString(iTime_38, 2);
 			break;
 		case 39:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_39);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_39);
+			sMovementUI = std::to_string(iNumOfMoves_39);
+			sTimerUI = FloatToString(iTime_39, 2);
 			break;
 		case 40:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_40);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_40);
+			sMovementUI = std::to_string(iNumOfMoves_40);
+			sTimerUI = FloatToString(iTime_40, 2);
 			break;
 		case 41:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_41);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_41);
+			sMovementUI = std::to_string(iNumOfMoves_41);
+			sTimerUI = FloatToString(iTime_41, 2);
 			break;
 		case 42:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_42);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_42);
+			sMovementUI = std::to_string(iNumOfMoves_42);
+			sTimerUI = FloatToString(iTime_42, 2);
 			break;
 		case 43:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_43);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_43);
+			sMovementUI = std::to_string(iNumOfMoves_43);
+			sTimerUI = FloatToString(iTime_43, 2);
 			break;
 		case 44:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_44);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_44);
+			sMovementUI = std::to_string(iNumOfMoves_44);
+			sTimerUI = FloatToString(iTime_44, 2);
 			break;
 		case 45:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_45);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_45);
+			sMovementUI = std::to_string(iNumOfMoves_45);
+			sTimerUI = FloatToString(iTime_45, 2);
 			break;
 		case 46:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_46);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_46);
+			sMovementUI = std::to_string(iNumOfMoves_46);
+			sTimerUI = FloatToString(iTime_46, 2);
 			break;
 		case 47:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_47);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_47);
+			sMovementUI = std::to_string(iNumOfMoves_47);
+			sTimerUI = FloatToString(iTime_47, 2);
 			break;
 		case 48:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_48);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_48);
+			sMovementUI = std::to_string(iNumOfMoves_48);
+			sTimerUI = FloatToString(iTime_48, 2);
 			break;
 		case 49:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_49);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_49);
+			sMovementUI = std::to_string(iNumOfMoves_49);
+			sTimerUI = FloatToString(iTime_49, 2);
 			break;
 		case 50:
-			sMovementUI = "Moves: " + std::to_string(iNumOfMoves_50);
-			sTimerUI = "Level Timer: " + std::to_string(iTime_50);
+			sMovementUI = std::to_string(iNumOfMoves_50);
+			sTimerUI = FloatToString(iTime_50, 2);
 			break;
 		default:
 			break;
 		}
 
 		// Draw UI Elements
-		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", pColor_PauseUI);
-		DrawString(20, 45, "Stats for Current Level", pColor_PauseUI);
-		DrawString(20, 70, sTimerUI, pColor_PauseUI);
-		DrawString(20, 57, sMovementUI, pColor_PauseUI);
-		DrawString(20, 212, "Press Enter to Resume", pColor_PauseUI);
-		DrawString(20, 198, "Press ESC for Main Menu", pColor_PauseUI);
+		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "GAME PAUSED", olc::CYAN);
+
+		DrawString(20, 45, "Level " + std::to_string(iCurLevel), pColor_PauseUI);
+
+		DrawString(20, 70, "Timer:", olc::MAGENTA);
+		DrawString(70, 70, sTimerUI + "s", olc::WHITE);
+
+		DrawString(20, 57, "Moves:", olc::MAGENTA);
+		DrawString(70, 57, sMovementUI, olc::WHITE);
+
+		DrawString(20, 204, "Enter", olc::CYAN);
+		DrawString(64, 204, "to", olc::WHITE);
+		DrawString(85, 204, "Resume", olc::CYAN);
+		DrawString(20, 214, "ESC", olc::RED);
+		DrawString(50, 214, "to", olc::WHITE);
+		DrawString(75, 214, "Close", olc::RED);
+
 	}
 
 	// Draws the game scene loop in the main menu
