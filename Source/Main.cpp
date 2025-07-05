@@ -38,7 +38,6 @@
 //		- replace background music to match theme
 //		- audio balance
 // reskin doors? adding | & - Doors
-// Unsync rotation of portals
 #pragma endregion
 
 // Controls
