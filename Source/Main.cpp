@@ -14,7 +14,6 @@
 
 // TODO_A - Finish Game
 // Fill out Levels!
-// add transparancy to tile sheets
 // Update Name
 //		- project & exe output
 
@@ -2390,6 +2389,7 @@ public:
 				olc::vi2d vCursorPos_R = { 0,0 };
 				olc::vi2d vCursorPos_L = { 0,0 };
 
+				SetPixelMode(olc::Pixel::MASK);
 				switch (iMenuSelectCursor_main)
 				{
 				case 0: // Start Game
@@ -2431,6 +2431,7 @@ public:
 				default:
 					break;
 				}
+				SetPixelMode(olc::Pixel::NORMAL);
 			}
 
 			// Draw game scene loop
@@ -2484,7 +2485,9 @@ public:
 			case 0:		// easy
 				if (bDoorsOpen)
 				{
+					SetPixelMode(olc::Pixel::MASK);
 					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize);
+					SetPixelMode(olc::Pixel::NORMAL);
 				}
 				else
 				{
@@ -2494,7 +2497,10 @@ public:
 			case 1:		// medium
 				if (bDoorsOpen)
 				{
+					SetPixelMode(olc::Pixel::MASK);
 					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(2, 2) * vBlockSize, vBlockSize);
+					SetPixelMode(olc::Pixel::NORMAL);
+
 				}
 				else
 				{
@@ -2504,7 +2510,9 @@ public:
 			case 2:		// hard
 				if (bDoorsOpen)
 				{
+					SetPixelMode(olc::Pixel::MASK);
 					DrawPartialSprite(vDoors_pos[i] * vBlockSize, gfxTiles.Sprite(), olc::vi2d(3, 2) * vBlockSize, vBlockSize);
+					SetPixelMode(olc::Pixel::NORMAL);
 				}
 				else
 				{
@@ -2517,20 +2525,22 @@ public:
 		}
 
 		// win condition drawing
+		SetPixelMode(olc::Pixel::MASK);
 		for (auto& g : vGoals)
 		{
 			DrawPartialSprite(g * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 4) * vBlockSize, vBlockSize);
 		}
-
 		// door switch drawing
 		for (auto& d : vSwitches)
 		{
 			DrawPartialSprite(d * vBlockSize, gfxTiles.Sprite(), olc::vi2d(4, 3) * vBlockSize, vBlockSize);
 		}
+		SetPixelMode(olc::Pixel::NORMAL);
 
 		// teleport drawing
 		if (bLevelHasTeleports)
 		{
+			SetPixelMode(olc::Pixel::MASK);
 			switch (iTele_Facing)
 			{
 			case 0:
@@ -2550,6 +2560,7 @@ public:
 				DrawPartialSprite(vTele_Orange * vBlockSize, gfxTiles.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize);
 				break;
 			}
+			SetPixelMode(olc::Pixel::NORMAL);
 		}
 
 		// block drawing
@@ -3042,6 +3053,7 @@ public:
 			olc::vi2d vCursorPos_R = { 0,0 }; 
 			olc::vi2d vCursorPos_L = { 0,0 }; 
 
+			SetPixelMode(olc::Pixel::MASK);
 			switch (iMenuSelectCursor_options)
 			{
 			case 0: // Music volume
@@ -3059,6 +3071,7 @@ public:
 			default:
 				break;
 			}
+			SetPixelMode(olc::Pixel::NORMAL);
 		}
 	}
 
@@ -3725,6 +3738,7 @@ public:
 			// SCENE Static:
 			// Portals
 			DoTeleportFlipCheck(fElapsedTime);
+			SetPixelMode(olc::Pixel::MASK);
 			switch (iTele_Facing)
 			{
 			case 0:
@@ -3754,12 +3768,15 @@ public:
 			DrawPartialSprite(vWinTile_MenuScene_1, gfxTiles.Sprite(), olc::vi2d(4, 4)* vBlockSize, vBlockSize);
 			DrawPartialSprite(vWinTile_MenuScene_2, gfxTiles.Sprite(), olc::vi2d(4, 4)* vBlockSize, vBlockSize);
 			DrawPartialSprite(vWinTile_MenuScene_3, gfxTiles.Sprite(), olc::vi2d(4, 4)* vBlockSize, vBlockSize);
+			SetPixelMode(olc::Pixel::NORMAL);
 
 			// SCENE NonStatic
 			// Door
 			if (iMenuSceneState >= 4) // open
 			{
+				SetPixelMode(olc::Pixel::MASK);
 				DrawPartialSprite({ 64, 160 }, gfxTiles.Sprite(), olc::vi2d(2, 2) * vBlockSize, vBlockSize);
+				SetPixelMode(olc::Pixel::NORMAL);
 			}
 			else // closed
 			{
