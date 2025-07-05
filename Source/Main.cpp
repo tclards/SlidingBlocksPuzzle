@@ -14,7 +14,7 @@
 
 // TODO_A - Finish Game
 // Fill out Levels!
-// Add background decal sprites to clear screen to instead of black
+// add transparancy to tile sheets
 // Update Name
 //		- project & exe output
 
@@ -1295,6 +1295,16 @@ public:
 	olc::Renderable gfxSplash;
 	olc::Renderable gfxCursors;
 	olc::Renderable gfxMenuScene;
+	olc::Renderable gfxBackground_MainMenu;
+	olc::Renderable gfxBackground_LevelSelect;
+	olc::Renderable gfxBackground_HighScores;
+	olc::Renderable gfxBackground_Options;
+	olc::Renderable gfxBackground_Credits;
+	olc::Renderable gfxBackground_Pause;
+	olc::Renderable gfxBackground_Easy;
+	olc::Renderable gfxBackground_Medium;
+	olc::Renderable gfxBackground_Hard;
+	olc::Renderable gfxBackground_YouWin;
 
 	// Flag for enabling and disabling input
 	bool bEnableInput = true;
@@ -1472,6 +1482,16 @@ public:
 		gfxWin.Load("Graphics//WinScreen.png");
 		gfxCursors.Load("Graphics//Cursors.png");
 		gfxMenuScene.Load("Graphics//MainMenuScene.png");
+		gfxBackground_MainMenu.Load("Graphics//background//background_Menu_MainMenu.png");
+		gfxBackground_LevelSelect.Load("Graphics//background//background_Menu_Levelselect.png");
+		gfxBackground_HighScores.Load("Graphics//background//background_Menu_HighScores.png");
+		gfxBackground_Options.Load("Graphics//background//background_Menu_Options.png");
+		gfxBackground_Credits.Load("Graphics//background//background_Menu_Credits.png");
+		gfxBackground_Pause.Load("Graphics//background//background_Pause.png");
+		gfxBackground_Easy.Load("Graphics//background//background_Easy.png");
+		gfxBackground_Medium.Load("Graphics//background//background_Medium.png");
+		gfxBackground_Hard.Load("Graphics//background//background_Hard.png");
+		gfxBackground_YouWin.Load("Graphics//background//background_Menu_YouWin.png");
 
 		// Level Loading
 		LoadAllLevels();
@@ -1763,7 +1783,7 @@ public:
 		DoLevelMoveCounting(bPlayerMoved, iMovementSuceededOrFailed);
 
 		// Draw Function
-		DrawLevel(iLevelSet);
+		DrawLevel(iLevelSet, false);
 
 		// UI and Level Set Tracking
 		DrawUI(fElapsedTime);
@@ -2076,8 +2096,9 @@ public:
 				int iLoad = LoadHighScores();
 			}
 
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
+			// Draw Background & Blank Menu Level
+			DrawSprite(olc::vi2d(0, 0), gfxBackground_HighScores.Sprite());
+			DrawLevel(iLevelSet, false);
 
 			// Draw High Score UI
 			DrawUI_HighScores();
@@ -2167,8 +2188,9 @@ public:
 			audioEngine.SetOutputVolume(fSFXVolume);
 			audioEngine_Music.SetOutputVolume(fMusicVolume);
 
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
+			// Draw Background & Blank Menu Level
+			DrawSprite(olc::vi2d(0, 0), gfxBackground_Options.Sprite());
+			DrawLevel(iLevelSet, false);
 
 			// Draw Options UI
 			DrawUI_Options(fElapsedTime);
@@ -2253,8 +2275,9 @@ public:
 				}
 			}
 
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
+			// Draw Background & Blank Menu Level
+			DrawSprite(olc::vi2d(0, 0), gfxBackground_LevelSelect.Sprite());
+			DrawLevel(iLevelSet, false);
 
 			// Draw Level Select UI
 			DrawUI_LevelSelect();
@@ -2270,8 +2293,9 @@ public:
 				iCurDisplay = -1;
 			}
 
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
+			// Draw Background & Blank Menu Level
+			DrawSprite(olc::vi2d(0, 0), gfxBackground_Credits.Sprite());
+			DrawLevel(iLevelSet, false);
 
 			// Draw UI
 			DrawUI_Credits();
@@ -2344,17 +2368,18 @@ public:
 				}
 			}
 
-			// Draw Blank Menu Level
-			DrawLevel(iLevelSet);
+			// Draw Background & Blank Menu Level
+			DrawSprite(olc::vi2d(0, 0), gfxBackground_MainMenu.Sprite());
+			DrawLevel(iLevelSet, false);
 
 			// Draw UI
 			DoGameTitle(fElapsedTime);
 			DrawString((this->ScreenWidth() / 2) - 36, 51, "MAIN MENU", olc::WHITE);
 			DrawString((this->ScreenWidth() / 2) - 40, 68, "Start Game", olc::CYAN);
-			DrawString((this->ScreenWidth() / 2) - 48, 80, "Level Select", olc::YELLOW);
-			DrawString((this->ScreenWidth() / 2) - 44, 92, "High Scores", olc::MAGENTA);
-			DrawString((this->ScreenWidth() / 2) - 28, 104, "Options", olc::BLUE);
-			DrawString((this->ScreenWidth() / 2) - 28, 116, "Credits", olc::GREEN);
+			DrawString((this->ScreenWidth() / 2) - 48, 80, "Level Select", olc::MAGENTA);
+			DrawString((this->ScreenWidth() / 2) - 44, 92, "High Scores", olc::YELLOW);
+			DrawString((this->ScreenWidth() / 2) - 28, 104, "Options", olc::GREEN);
+			DrawString((this->ScreenWidth() / 2) - 28, 116, "Credits", olc::BLUE);
 			DrawString((this->ScreenWidth() / 2) - 15, 128, "Quit", olc::RED);
 
 			// Draw cursor 
@@ -2376,26 +2401,26 @@ public:
 				case 1: // Level Select
 					vCursorPos_R = { (this->ScreenWidth() / 2) + 48, 75 };
 					vCursorPos_L = { (this->ScreenWidth() / 2) - 65, 75 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize); // L
 					break;
 				case 2: // High Scores
 					vCursorPos_R = { (this->ScreenWidth() / 2) + 45, 87 };
 					vCursorPos_L = { (this->ScreenWidth() / 2) - 61, 87 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 1) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 1) * vBlockSize, vBlockSize); // L
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L
 					break;
 				case 3: // Options
 					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 99 };
 					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 99 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize); // L
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L
 					break;
 				case 4: // Credits
 					vCursorPos_R = { (this->ScreenWidth() / 2) + 28, 111 };
 					vCursorPos_L = { (this->ScreenWidth() / 2) - 45, 111 };
-					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R
-					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L
+					DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 2) * vBlockSize, vBlockSize); // R
+					DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 2) * vBlockSize, vBlockSize); // L
 					break;
 				case 5: // Quit Game
 					vCursorPos_R = { (this->ScreenWidth() / 2) + 18, 123 };
@@ -2420,10 +2445,33 @@ public:
 	#pragma region Draw Functions
 
 	// Draws Level
-	void DrawLevel(int iLevelSet)
+	void DrawLevel(int iLevelSet, bool bClearScreen)
 	{
-		// Clear screen to black before drawing each frame
-		Clear(olc::BLACK);
+		// Handle background
+		if (bClearScreen)
+		{
+			Clear(olc::BLACK);
+		}
+		else
+		{
+			switch (iLevelSet)
+			{
+			case 0:
+				// Draw Background 
+				DrawSprite(olc::vi2d(0, 0), gfxBackground_Easy.Sprite());
+				break;
+			case 1:
+				// Draw Background 
+				DrawSprite(olc::vi2d(0, 0), gfxBackground_Medium.Sprite());
+				break;
+			case 2:
+				// Draw Background
+				DrawSprite(olc::vi2d(0, 0), gfxBackground_Hard.Sprite());
+				break;
+			default:
+				break;
+			}
+		}
 
 		// Check & Set LevelSet Variable
 		SetLevelSet();
@@ -2592,6 +2640,11 @@ public:
 				bEnableInput = true;
 				iLevelSet = -1;
 				audioEngine_Music.SetOutputVolume(0.0f);
+
+				// Draw Background & Blank Menu Level
+				DrawSprite(olc::vi2d(0, 0), gfxBackground_YouWin.Sprite());
+				DrawLevel(iLevelSet, false);
+
 				DrawString((this->ScreenWidth() / 2) - 28, 24, "YOU WIN!", olc::CYAN);
 
 				DrawString(((this->ScreenWidth() / 2) - 100) + 17, 48, "Press", olc::WHITE);
@@ -2614,7 +2667,7 @@ public:
 		olc::Pixel pMovesAndTime_Hard = olc::RED;
 		olc::Pixel pNumbers = olc::CYAN;
 
-		DrawString((this->ScreenWidth() / 2) - 42, 20, "HIGH SCORES", olc::MAGENTA);
+		DrawString((this->ScreenWidth() / 2) - 42, 20, "HIGH SCORES", olc::YELLOW);
 
 		DrawString(20, 194, "Arrow Keys", olc::CYAN);
 		DrawString(106, 194, "to", olc::WHITE);
@@ -2965,16 +3018,18 @@ public:
 	// Draws Options UI
 	void DrawUI_Options(float fElapsedTime)
 	{
-		DrawString((this->ScreenWidth() / 2) - 28, (240 / 2) - 94, "OPTIONS", olc::BLUE);
+		DrawString(((this->ScreenWidth() / 2) - 23) + 45, 26 + 10, "OPTIONS", olc::WHITE);
 		
-		DrawString((this->ScreenWidth() / 2) - 20, 38, "Audio", olc::GREEN);
+		FillRect(((this->ScreenWidth() / 2) - 50) + 45, 35 + 10, 109, 32, olc::BLACK);
+		DrawRect(((this->ScreenWidth() / 2) - 50) + 45, 35 + 10, 109, 32, olc::WHITE);
+		DrawString(((this->ScreenWidth() / 2) - 18) + 45, 38 + 10, "Audio", olc::CYAN);
+		DrawString(((this->ScreenWidth() / 2) - 33) + 45, 48 + 10, "Music: ", olc::GREEN);
+		DrawString(((this->ScreenWidth() / 2) + 18) + 45, 48 + 10, FloatToString(fMusicVolume, 1), olc::WHITE);
+		DrawString(((this->ScreenWidth() / 2) - 33) + 45, 58 + 10, "SFX: ", olc::GREEN);
+		DrawString(((this->ScreenWidth() / 2) + 18) + 45, 58 + 10, FloatToString(fSFXVolume, 1), olc::WHITE);
 
-		DrawString((this->ScreenWidth() / 2) - 35, 48, "Music: ", olc::YELLOW);
-		DrawString((this->ScreenWidth() / 2) + 15, 48, FloatToString(fMusicVolume, 1), olc::CYAN);
-
-		DrawString((this->ScreenWidth() / 2) - 35, 58, "SFX: ", olc::YELLOW);
-		DrawString((this->ScreenWidth() / 2) + 15, 58, FloatToString(fSFXVolume, 1), olc::CYAN);
-
+		FillRect(18, 212, 97, 10, olc::BLACK);
+		DrawRect(18, 212, 97, 10, olc::WHITE);
 		DrawString(20, 214, "ESC", olc::RED);
 		DrawString(50, 214, "to", olc::WHITE);
 		DrawString(75, 214, "Close", olc::RED);
@@ -2990,16 +3045,16 @@ public:
 			switch (iMenuSelectCursor_options)
 			{
 			case 0: // Music volume
-				vCursorPos_R = { (this->ScreenWidth() / 2) + 39, 43 };
-				vCursorPos_L = { (this->ScreenWidth() / 2) - 52, 43 };
-				DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R 
-				DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L 
-				break;																								 
-			case 1: // SFX Volume																					 
-				vCursorPos_R = { (this->ScreenWidth() / 2) + 39, 53 };												 
-				vCursorPos_L = { (this->ScreenWidth() / 2) - 52, 53 };
-				DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 4) * vBlockSize, vBlockSize); // R 
-				DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 4) * vBlockSize, vBlockSize); // L 
+				vCursorPos_R = { ((this->ScreenWidth() / 2) + 42) + 45, 43 + 10 };
+				vCursorPos_L = { ((this->ScreenWidth() / 2) - 49) + 45, 43 + 10 };
+				DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R 
+				DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L 
+				break;																			 
+			case 1: // SFX Volume																 
+				vCursorPos_R = { ((this->ScreenWidth() / 2) + 42) + 45, 53 + 10 };							 
+				vCursorPos_L = { ((this->ScreenWidth() / 2) - 49) + 45, 53 + 10 };
+				DrawPartialSprite(vCursorPos_R, gfxCursors.Sprite(), olc::vi2d(0, 3) * vBlockSize, vBlockSize); // R 
+				DrawPartialSprite(vCursorPos_L, gfxCursors.Sprite(), olc::vi2d(1, 3) * vBlockSize, vBlockSize); // L 
 				break;
 			default:
 				break;
@@ -3010,27 +3065,29 @@ public:
 	// Draws Level Select UI
 	void DrawUI_LevelSelect()
 	{
-		DrawString((this->ScreenWidth() / 2) - 44, (240 / 2) - 96, "LEVEL SELECT", olc::YELLOW);
+		DrawString(35, (240 / 2) - 96, "LEVEL SELECT", olc::MAGENTA);
 
-		DrawString(20, 204, "Enter", olc::CYAN);
-		DrawString(64, 204, "to", olc::WHITE);
-		DrawString(85, 204, "Input Code", olc::CYAN);
-
-		DrawString(20, 214, "ESC", olc::RED);
-		DrawString(50, 214, "to", olc::WHITE);
-		DrawString(75, 214, "Close", olc::RED);
+		FillRect(100, 201, 139, 21, olc::BLACK);
+		DrawRect(100, 201, 139, 21, olc::WHITE);
+		DrawString(144, 204, "ESC", olc::RED);
+		DrawString(174, 204, "to", olc::WHITE);
+		DrawString(198, 204, "Close", olc::RED);
+		DrawString(103, 213, "Enter", olc::MAGENTA); 
+		DrawString(145, 213, "to", olc::WHITE); 
+		DrawString(162, 213, "Input", olc::MAGENTA);
+		DrawString(206, 213, "Code", olc::MAGENTA);
 
 		// Text Entry UI
 		if (IsTextEntryEnabled() == true)
 		{
-			DrawString(91, 35, "Input Mode", olc::CYAN);
+			DrawString(42, 35, "Input Mode", olc::WHITE);
 		}
 	}
 
 	// Draws Credits UI
 	void DrawUI_Credits()
 	{
-		DrawString((this->ScreenWidth() / 2) - 42, (240 / 2) - 96, "CREDITS", olc::WHITE);
+		DrawString(35, 120 - 96, "CREDITS", olc::BLUE);
 
 			DrawString(20, 35, "Programming:", olc::YELLOW);
 			DrawString(20, 45, "Tyler Clardy", olc::WHITE);
@@ -3045,47 +3102,94 @@ public:
 			DrawString(20, 120, "Tyler Clardy", olc::WHITE);
 			DrawString(20, 130, "James Norman", olc::WHITE);
 			DrawString(20, 140, "Aaron McBroom", olc::WHITE);
-
-			DrawString(20, 155, "Promotional Materials:", olc::BLUE);
-			DrawString(20, 165, "Tyler Clardy", olc::WHITE);
-
-			DrawString(20, 202, "3bytes Studio 2025", olc::CYAN);
 			
-			DrawString(20, 214, "ESC", olc::RED);
-			DrawString(50, 214, "to", olc::WHITE);
-			DrawString(75, 214, "Close", olc::RED);
+			DrawString(144, 204, "ESC", olc::RED);
+			DrawString(174, 204, "to", olc::WHITE); 
+			DrawString(199, 204, "Close", olc::RED);
+
+			DrawString(95, 214, "3bytes Studio 2025", olc::CYAN);
 	}
 
 	// Draws Pause Menu
 	void DrawPauseMenu()
 	{
-		// Clear screen to black before drawing each frame
+		// Clear screen to black at beginning of each frame
 		Clear(olc::BLACK);
 
-		// Set LevelSet Variable to Menu for draw function
-		iLevelSet = -1;
-		DrawLevel(iLevelSet);
+		// Draw Pause Menu background
+		DrawSprite(olc::vi2d(0, 0), gfxBackground_Pause.Sprite());
 
-		// Reset LevelSet Variable after draw, also set pause UI color based on current level
-		if (iCurLevel < 16)
-		{
-			iLevelSet = 0;
-			pColor_PauseUI = olc::GREEN;
-		}
-		else if (iCurLevel > 15 && iCurLevel < 36)
-		{
-			iLevelSet = 1;
-			pColor_PauseUI = olc::YELLOW;
-		}
-		else
-		{
-			iLevelSet = 2;
-			pColor_PauseUI = olc::RED;
-		}
+		// Draw Menu Border
+		// Corners
+		DrawPartialSprite({ 0, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0) * vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		// Top
+		DrawPartialSprite({ 16, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 32, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 48, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 64, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 80, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 96, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 112, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 128, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 144, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 160, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 176, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 192, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 208, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 224, 0 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
 
-		// Draw Pause Window
-		FillRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::BLACK);
-		DrawRect(16, 16, this->ScreenWidth() - 32, this->ScreenHeight() - 32, olc::WHITE);
+		// Left
+		DrawPartialSprite({ 0, 16 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 32 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 48 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 64 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 80 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 96 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 112 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 128 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 144 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 160 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 176 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 192 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 208 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 0, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+
+		// Right
+		DrawPartialSprite({ 240, 16 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 32 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 48 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 64 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 80 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 96 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 112 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 128 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 144 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 160 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 176 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 192 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 208 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 240, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		// Bottom
+		DrawPartialSprite({ 16, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 32, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 48, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 64, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 80, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 96, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 112, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 128, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 144, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 160, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 176, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 192, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 208, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+		DrawPartialSprite({ 224, 224 }, gfxTiles.Sprite(), olc::vi2d(0, 0)* vBlockSize, vBlockSize);
+
+		// Draw Pause Window outline
+		DrawRect(16, 16, this->ScreenWidth() - 33, this->ScreenHeight() - 33, olc::WHITE);
 
 		// Get Timer and Movement Data
 		std::string sMovementUI;
@@ -3294,6 +3398,20 @@ public:
 			break;
 		default:
 			break;
+		}
+
+		// Set Font Color for Level UI
+		if (iCurLevel < 16)
+		{
+			pColor_PauseUI = olc::GREEN;
+		}
+		else if (iCurLevel > 15 && iCurLevel < 36)
+		{
+			pColor_PauseUI = olc::YELLOW;
+		}
+		else
+		{
+			pColor_PauseUI = olc::RED;
 		}
 
 		// Draw UI Elements
@@ -4646,7 +4764,7 @@ public:
 		{
 			iLevelSet = 0;
 		}
-		else if (iCurLevel < 36)
+		else if (iCurLevel > 15 && iCurLevel < 36)
 		{
 			iLevelSet = 1;
 		}
