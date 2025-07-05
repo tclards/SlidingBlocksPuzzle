@@ -2580,7 +2580,7 @@ public:
 		}
 	}
 
-	// Draws UI
+	// Draws UI for gameplay and win screen
 	void DrawUI(float fElapsedTime)
 	{
 		if (iCurLevel != -1) // Active Gameplay
@@ -2655,15 +2655,14 @@ public:
 				DrawSprite(olc::vi2d(0, 0), gfxBackground_YouWin.Sprite());
 				DrawLevel(iLevelSet, false);
 
-				DrawString((this->ScreenWidth() / 2) - 28, 24, "YOU WIN!", olc::CYAN);
+				DrawString((this->ScreenWidth() / 2) - 28, 24, "YOU WIN!", olc::MAGENTA);
 
-				DrawString(((this->ScreenWidth() / 2) - 100) + 17, 48, "Press", olc::WHITE);
-				DrawString(((this->ScreenWidth() / 2) - 55) + 17, 48, "ESC", olc::RED);
-				DrawString(((this->ScreenWidth() / 2) - 28) + 17, 48, "for", olc::WHITE);
-				DrawString(((this->ScreenWidth() / 2) - 0) + 17, 48, "Main Menu", olc::RED);
+				DrawString(20, 190, "ESC", olc::RED);
+				DrawString(45, 190, "for", olc::WHITE);
+				DrawString(73, 190, "Main Menu", olc::RED);
 
 				DrawString(20, 202, "3bytes Studio 2025", olc::CYAN);
-				DrawString(20, 214, "Thank you for playing!", olc::CYAN);
+				DrawString(19, 214, "Thank you for playing!", olc::MAGENTA);
 			}
 		}
 	}
