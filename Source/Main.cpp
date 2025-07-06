@@ -10,7 +10,6 @@
 
 // TODO_BUGS
 // Crash on closing program - seemingly related to audio engine wave deconstructor - low priority: does not matter in release mode
-// move counting performing unreliably - level 9 only?
 
 // TODO_A - Finish Game
 // Fill out Levels!
@@ -5323,7 +5322,7 @@ public:
 				iNumOfMoves_8++;
 				break;
 			case 9:
-				iNumOfMoves_8++;
+				iNumOfMoves_9++;
 				break;
 			case 10:
 				iNumOfMoves_10++;
