@@ -15,7 +15,6 @@
 // Fill out Levels!
 // Update Name
 //		- project & exe output
-// pause menu quit should reset debug - check other places debug should be reset
 
 // TODO_B - Prerelease Steps
 // create promotional materials
@@ -26,10 +25,6 @@
 
 // TODO_C - Feature Wishlist
 // Add level selector properly? with level locking system
-// Create special effect/animation for loading into the first level of a level set
-//		- easy
-//		- medium
-//		- hard
 // Rework sound design to create unified theme & replace placeholdersfx
 //		- add SFX for cursor select 
 //		- add SFX for cursor enter
@@ -2052,6 +2047,11 @@ public:
 	void MainMenu(float fElapsedTime)
 	{
 		iLevelSet = -1;
+
+		if (bDebugMode)
+		{
+			bDebugMode = false;
+		}
 
 		switch (iCurDisplay)
 		{
