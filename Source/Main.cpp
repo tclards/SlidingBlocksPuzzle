@@ -1,7 +1,7 @@
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
-#define OLC_SOUNDWAVE
-#include "olcSoundWaveEngine.h"
+#define OLC_PGEX_MINIAUDIO
+#include "olcPGEX_MiniAudio.h"
 #include <fstream>
 #include <cmath>
 
@@ -9,7 +9,13 @@
 #pragma region TODO LIST
 
 // TODO_BUGS
-// Crash on closing program - seemingly related to audio engine wave deconstructor - low priority: does not matter in release mode
+// Audio Problems - crackling constantly + audio delayed slightly from time it should be playing
+
+// TODO_AudioAdjustments
+// movement fail speed * 2
+// movement 1 speed * 2
+// gamestartup spped * 1.25
+// all music tracks speed * 0.75
 
 // TODO_A - Finish Game
 // Fill out Levels!
@@ -32,7 +38,6 @@
 //		- Replace any SFX not matching theme
 //		- replace background music to match theme
 //		- audio balance
-// reskin doors? adding | & - Doors
 #pragma endregion
 
 // Controls
@@ -1238,6 +1243,9 @@ public:
 	// Vector containing door positions
 	std::vector<olc::vi2d> vDoors_pos;
 
+	// Flag for shutting down game
+	bool bQuitGame = false;
+
 	// Flag for controller debug frame numbers for main menu scene
 	bool bDrawMainMenuSceneFrameNumber = false;
 
@@ -1375,7 +1383,6 @@ public:
 	// Flags and Vars for Start Up Routine
 	bool bGameStarted = false;
 	bool bDoStartUpJingle = true;
-	olc::sound::PlayingWave pwStart; // Variable to store a Reference to the StartUp Jingle
 	float fStartTime = 0.0f;
 	double dDuration = 0.0f;
 	float fTarget = 0.0f;
@@ -1392,41 +1399,43 @@ public:
 	#pragma region Sound
 
 	// Audio Engine
-	olc::sound::WaveEngine audioEngine;
-	olc::sound::WaveEngine audioEngine_Music;
-	olc::sound::Wave audioSlot_Music_1;
-	olc::sound::Wave audioSlot_Music_2;
-	olc::sound::Wave audioSlot_Music_3;
-	olc::sound::Wave audioSlot_Music_Menu;
-	olc::sound::Wave audioSlot_SFX_WinTile;
-	olc::sound::Wave audioSlot_Movement_Succeed;
-	olc::sound::Wave audioSlot_Movement_Fail;
-	olc::sound::Wave audioSlot_RestartLevel;
-	olc::sound::Wave audioSlot_WinJingle;
-	olc::sound::Wave audioSlot_LevelTransition;
-	olc::sound::Wave audioSlot_PauseJingle;
-	olc::sound::Wave audioSlot_UnPauseJingle;
-	olc::sound::Wave audioSlot_LevelCode_Succeed;
-	olc::sound::Wave audioSlot_LevelCode_Fail;
-	olc::sound::Wave audioSlot_GameStartUp;
-	olc::sound::Wave audioSlot_DoorOpen;
-	olc::sound::Wave audioSlot_DoorClose;
-	olc::sound::Wave audioSlot_Teleport_Fail;
-	olc::sound::Wave audioSlot_Teleport_Succeed;
-	olc::sound::Wave audioSlot_ButtonClick_1;
-	olc::sound::Wave audioSlot_ButtonClick_2;
+	olc::MiniAudio audioEngine;
+	olc::MiniAudio audioEngine_Music;
 
-	float fAudioSpeed = 1.0f;
+	// Saved Reference to currently looping background music
+	int* audio_CurrentBackgroundTrack;
+
+	// Audio IDs
+	int audio_backgroundMusic_1;
+	int audio_backgroundMusic_2;
+	int audio_backgroundMusic_3;
+	int audio_backgroundMusic_Menu;
+	int audio_Movement_1;
+	int audio_Movement_Fail;
+	int audio_RestartLevel;
+	int audio_WinJingle;
+	int audio_LevelTransition;
+	int audio_PauseJingle;
+	int audio_UnPauseJingle;
+	int audio_LevelCode;
+	int audio_LevelCode_Fail;
+	int audio_GameStartUp;
+	int audio_Door_Open;
+	int audio_Door_Close;
+	int audio_Teleport;
+	int audio_Teleport_Fail;
+	int audio_ButtonClick_1;
+	int audio_ButtonClick_2;
+
+	// Volume Variables
 	float fMusicVolume = 0.3f;
 	float fSFXVolume = 0.2f;
 
-	// Background Music
+	// Audio File Paths
 	std::string sBackgroundMusic_1 = "SFX//BackgroundMusic_1.wav";	
 	std::string sBackgroundMusic_2 = "SFX//BackgroundMusic_2.wav";
 	std::string sBackgroundMusic_3 = "SFX//BackgroundMusic_3.wav";
 	std::string sBackgroundMusic_Menu = "SFX//MenuMusic_1.wav";
-
-	// SFX 
 	std::string sMovement_1 = "SFX//Movement_1.wav";
 	std::string sMovementFailure_1 = "SFX//Movement_Failed_1.wav";
 	std::string sRestartLevel_1 = "SFX//RestartLevel_1.wav";			
@@ -1454,10 +1463,7 @@ public:
 	// Deconstructor
 	~Game()
 	{
-		audioEngine.StopAll();
-		audioEngine_Music.StopAll();
-		audioEngine.~WaveEngine();
-		audioEngine_Music.~WaveEngine();
+
 	}
 
 	// Core Functions
@@ -1573,7 +1579,7 @@ public:
 			if (bEnableInput && GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)
 			{
 				fTime_WinScreen = 0.0f;
-				audioEngine_Music.SetOutputVolume(fMusicVolume);	// Unmute Background Music
+				ToggleMusic();										// Unpause Background Music
 				bMainMenu = true;									// Set Flag
 
 				// Reset All Level Score Data
@@ -1755,20 +1761,20 @@ public:
 				// normal move SFX
 				if (iMovementSuceededOrFailed == 0) // Movement Failed
 				{
-					audioEngine.PlayWaveform(&audioSlot_Movement_Fail, false, fAudioSpeed * 2.0f);
+					audioEngine.Play(audio_Movement_Fail);
 				}
 				else if (iMovementSuceededOrFailed == 1) // Movement Succeeded
 				{
-					audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed * 2.0f);
+					audioEngine.Play(audio_Movement_1);
 				}
 			}
 			else if (iTeleportSucceededOrFailed == 0) // teleport failed
 			{
-				audioEngine.PlayWaveform(&audioSlot_Teleport_Fail, false, fAudioSpeed);
+				audioEngine.Play(audio_Teleport_Fail);
 			}
 			else if (iTeleportSucceededOrFailed == 1) // teleport succeeded
 			{
-				audioEngine.PlayWaveform(&audioSlot_Teleport_Succeed, false, fAudioSpeed);
+				audioEngine.Play(audio_Teleport);
 			}
 		}
 
@@ -1832,11 +1838,11 @@ public:
 			} // Button SFX:
 			if (nGoals > nGoals_Previous) // a new win tile has been covered this frame - play sfx
 			{
-				audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+				audioEngine.Play(audio_ButtonClick_1);
 			}
 			else if (nGoals < nGoals_Previous) // a previously covered win tile has been uncovered this frame - play sfx
 			{
-				audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
+				audioEngine.Play(audio_ButtonClick_2);
 			}
 			else if (nGoals != 0 && nGoals == nGoals_Previous && bPlayerMoved)
 			{
@@ -1850,8 +1856,8 @@ public:
 				}
 				if (bDoEdgeCaseButtonSFX)
 				{
-					audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
-					audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+					audioEngine.Play(audio_ButtonClick_2);
+					audioEngine.Play(audio_ButtonClick_1);
 				}
 			}
 		}
@@ -1870,11 +1876,11 @@ public:
 			} // Buton SFX:
 			if (nSwitches > nSwitches_Previous) // a new switch has been covered this frame - play sfx
 			{
-				audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+				audioEngine.Play(audio_ButtonClick_1);
 			}
 			else if (nSwitches < nSwitches_Previous) // a previously covered switch has been uncovered this frame - play sfx
 			{
-				audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
+				audioEngine.Play(audio_ButtonClick_2);
 			}
 			else if (nSwitches != 0 && nSwitches == nSwitches_Previous && bPlayerMoved)
 			{
@@ -1888,8 +1894,8 @@ public:
 				}
 				if (bDoEdgeCaseButtonSFX)
 				{
-					audioEngine.PlayWaveform(&audioSlot_ButtonClick_2, false, fAudioSpeed);
-					audioEngine.PlayWaveform(&audioSlot_ButtonClick_1, false, fAudioSpeed);
+					audioEngine.Play(audio_ButtonClick_2);
+					audioEngine.Play(audio_ButtonClick_1);
 				}
 			}
 		}
@@ -1901,7 +1907,7 @@ public:
 			{
 				if (bDoorsOpen == false) // play SFX on toggle
 				{
-					audioEngine.PlayWaveform(&audioSlot_DoorOpen, false, fAudioSpeed);
+					audioEngine.Play(audio_Door_Open);
 				}
 
 				bDoorsOpen = true;
@@ -1910,7 +1916,7 @@ public:
 			{
 				if (bDoorsOpen == false) // play SFX on toggle
 				{
-					audioEngine.PlayWaveform(&audioSlot_DoorOpen, false, fAudioSpeed);
+					audioEngine.Play(audio_Door_Open);
 				}
 
 				bDoorsOpen = true;
@@ -1919,7 +1925,7 @@ public:
 			{
 				if (bDoorsOpen == true) // play SFX on toggle
 				{
-					audioEngine.PlayWaveform(&audioSlot_DoorClose, false, fAudioSpeed);
+					audioEngine.Play(audio_Door_Close);
 				}
 
 				bDoorsOpen = false;
@@ -1933,15 +1939,15 @@ public:
 	// Runs every frame
 	bool OnUserUpdate(float fElapsedTime) override
 	{
-		// Check Background Music Flag
-		BackgroundMusicToggle();
-
 		// Startup Routine
 		#pragma region StartUp Routine
 
 		// Do StartUp Routine at beginning of game
 		if (!bGameStarted)
 		{
+			// Make sure Background music is stopped
+			audioEngine_Music.Stop(audio_backgroundMusic_Menu);
+
 			// Load options into memory once on first frame of game - before startup
 			if (!bInitialLoad)
 			{
@@ -1949,8 +1955,7 @@ public:
 				iOptionsLoad = LoadOptions();
 
 				// Check & Set Volume
-				audioEngine.SetOutputVolume(fSFXVolume);
-				audioEngine_Music.SetOutputVolume(fMusicVolume);
+				SetVolume();
 
 				// Load High Scores
 				iHighScoreLoad = LoadHighScores();
@@ -1962,10 +1967,7 @@ public:
 			if (bDoStartUpJingle)
 			{
 				// Play Game Start Up SFX
-				pwStart = audioEngine.PlayWaveform(&audioSlot_GameStartUp, false, fSplashScreenSpeed);
-				fStartTime = fElapsedTime;
-				dDuration = pwStart->dDuration;
-				fTarget = fElapsedTime + dDuration;
+				audioEngine.Play(audio_GameStartUp);
 
 				// Set Flag
 				bDoStartUpJingle = false;
@@ -1975,12 +1977,13 @@ public:
 			DrawSprite(olc::vi2d(0, 0), gfxSplash.Sprite());
 
 			// Wait for StartUp SFX to finish, then set flags to stop Start Up Routine
-			fTimer += fElapsedTime;
-			if (fTimer >= fTarget)
+			if (audioEngine.GetSound(audio_GameStartUp)->atEnd)
 			{
+				// Start Background Music
+				audioEngine_Music.Play(audio_backgroundMusic_Menu);
+
 				// Set Flags
 				bGameStarted = true;
-				bDoBackgroundMusic = true;
 			}
 
 			return true;
@@ -1990,6 +1993,9 @@ public:
 		// Game Logic Per Frame
 		if (bGameStarted)
 		{
+			// Check for Quit Game flag
+			if (bQuitGame) { StopAllAudio(); return false; }
+
 			// Main Menu Logic
 			if (bMainMenu) { MainMenu(fElapsedTime); return true; }
 
@@ -2007,24 +2013,24 @@ public:
 		// Play SFX
 		if (bPauseJinglePlayed == false)
 		{
-			audioEngine.PlayWaveform(&audioSlot_PauseJingle, false, fAudioSpeed);
+			audioEngine.Play(audio_PauseJingle);
 			bPauseJinglePlayed = true;
 		}
 
 		// Pause Background Music
-		audioEngine_Music.SetOutputVolume(0.0f);
+		ToggleMusic();
 
 		// Check for user input to unpause or Quit
 		if (GetKey(olc::Key::ENTER).bPressed)										// Unpause
 		{
-			audioEngine.PlayWaveform(&audioSlot_UnPauseJingle, false, fAudioSpeed);	// Play UnPause Jingle SFX
-			audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
+			audioEngine.Play(audio_UnPauseJingle);									// Play UnPause Jingle SFX
+			ToggleMusic();															// Unmute Music
 			bPaused = false;														// Reset Flags
 			bPauseJinglePlayed = false;
 		}
 		if (GetKey(olc::Key::ESCAPE).bPressed)										// Quit to Main Menu
 		{
-			audioEngine_Music.SetOutputVolume(fMusicVolume);						// Unmute Music
+			ToggleMusic();															// Unmute Music
 			bPaused = false;														// Reset Pause Flags
 			bPauseJinglePlayed = false;
 
@@ -2046,6 +2052,11 @@ public:
 	// Called per Frame while Main Menu flag is on
 	void MainMenu(float fElapsedTime)
 	{
+		if (!audioEngine_Music.IsPlaying(audio_backgroundMusic_Menu))
+		{
+			audioEngine_Music.Play(audio_backgroundMusic_Menu);
+		}
+
 		iLevelSet = -1;
 
 		if (bDebugMode)
@@ -2148,7 +2159,7 @@ public:
 				else if (iMenuSelectCursor_options == 1) // Increase SFX Volume
 				{
 					fSFXVolume += 0.1f;
-					audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+					audioEngine.Play(audio_Movement_1);
 				}
 			}
 			if (GetKey(olc::Key::A).bPressed || GetKey(olc::Key::LEFT).bPressed)
@@ -2160,7 +2171,7 @@ public:
 				else if (iMenuSelectCursor_options == 1) // Decrease SFX Volume
 				{
 					fSFXVolume -= 0.1f;
-					audioEngine.PlayWaveform(&audioSlot_Movement_Succeed, false, fAudioSpeed);
+					audioEngine.Play(audio_Movement_1);
 				}
 			}
 
@@ -2183,8 +2194,7 @@ public:
 			}
 
 			// Apply Changes
-			audioEngine.SetOutputVolume(fSFXVolume);
-			audioEngine_Music.SetOutputVolume(fMusicVolume);
+			SetVolume();
 
 			// Draw Background & Blank Menu Level
 			DrawSprite(olc::vi2d(0, 0), gfxBackground_Options.Sprite());
@@ -2201,7 +2211,7 @@ public:
 				if (IsTextEntryEnabled() == true) // Cancel Text Entry on ESC if Text Entry is Active
 				{
 					// Play Fail SFX
-					audioEngine.PlayWaveform(&audioSlot_LevelCode_Fail, false, fAudioSpeed);
+					audioEngine.Play(audio_LevelCode_Fail);
 
 					// Disable Text Entry
 					TextEntryEnable(false);
@@ -2228,7 +2238,7 @@ public:
 				if (sInputCode == sMediumLevelCode)
 				{
 					// Play Success SFX
-					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
+					audioEngine.Play(audio_LevelCode);
 
 					// Set Level
 					iCurLevel = 16;
@@ -2246,7 +2256,7 @@ public:
 				else if (sInputCode == sHardLevelCode)
 				{
 					// Play Success SFX
-					audioEngine.PlayWaveform(&audioSlot_LevelCode_Succeed, false, fAudioSpeed);
+					audioEngine.Play(audio_LevelCode);
 
 					// Set Level
 					iCurLevel = 36;
@@ -2263,7 +2273,7 @@ public:
 				else
 				{
 					// Play Fail SFX
-					audioEngine.PlayWaveform(&audioSlot_LevelCode_Fail, false, fAudioSpeed);
+					audioEngine.Play(audio_LevelCode_Fail);
 
 					// Disable Text Entry
 					TextEntryEnable(false);
@@ -2359,8 +2369,7 @@ public:
 					internalHighScoreUtility_Time();
 					internalHighScoreUtility_Moves();
 					SaveHighScores();
-					this->~Game();
-					break;
+					bQuitGame = true;
 				default:
 					break;
 				}
@@ -2649,7 +2658,7 @@ public:
 			{
 				bEnableInput = true;
 				iLevelSet = -1;
-				audioEngine_Music.SetOutputVolume(0.0f);
+				ToggleMusic();
 
 				// Draw Background & Blank Menu Level
 				DrawSprite(olc::vi2d(0, 0), gfxBackground_YouWin.Sprite());
@@ -4079,35 +4088,32 @@ public:
 	// Load All Audio into Memory
 	void LoadAllAudio()
 	{
-		// Initialize Audio Engines
-		audioEngine_Music.InitialiseAudio();
-		audioEngine.InitialiseAudio();
+		// Music Loading
+		audio_backgroundMusic_1 = audioEngine_Music.LoadSound(sBackgroundMusic_1);
+		audio_backgroundMusic_2 = audioEngine_Music.LoadSound(sBackgroundMusic_2);
+		audio_backgroundMusic_3 = audioEngine_Music.LoadSound(sBackgroundMusic_3);
+		audio_backgroundMusic_Menu = audioEngine_Music.LoadSound(sBackgroundMusic_Menu);
 
-		// Load Slots
-		audioSlot_Music_1.LoadAudioWaveform(sBackgroundMusic_1);
-		audioSlot_Music_2.LoadAudioWaveform(sBackgroundMusic_2);
-		audioSlot_Music_3.LoadAudioWaveform(sBackgroundMusic_3);
-		audioSlot_Music_Menu.LoadAudioWaveform(sBackgroundMusic_Menu);
-		audioSlot_Movement_Succeed.LoadAudioWaveform(sMovement_1);
-		audioSlot_Movement_Fail.LoadAudioWaveform(sMovementFailure_1);
-		audioSlot_RestartLevel.LoadAudioWaveform(sRestartLevel_1);
-		audioSlot_WinJingle.LoadAudioWaveform(sWinJingle_1);
-		audioSlot_LevelTransition.LoadAudioWaveform(sLevelTransition_1);
-		audioSlot_PauseJingle.LoadAudioWaveform(sPauseJingle_1);
-		audioSlot_UnPauseJingle.LoadAudioWaveform(sUnPauseJingle_1);
-		audioSlot_LevelCode_Succeed.LoadAudioWaveform(sLevelCode_1);
-		audioSlot_LevelCode_Fail.LoadAudioWaveform(sLevelCodeFail_1);
-		audioSlot_GameStartUp.LoadAudioWaveform(sGameStartUp);
-		audioSlot_DoorOpen.LoadAudioWaveform(sDoorOpen_1);
-		audioSlot_DoorClose.LoadAudioWaveform(sDoorClose_1);
-		audioSlot_Teleport_Succeed.LoadAudioWaveform(sTeleport_1);
-		audioSlot_Teleport_Fail.LoadAudioWaveform(sTeleportFailure_1);
-		audioSlot_ButtonClick_1.LoadAudioWaveform(sButtonClick_1);
-		audioSlot_ButtonClick_2.LoadAudioWaveform(sButtonClick_2);
+		// SFX Loading
+		audio_Movement_1 = audioEngine.LoadSound(sMovement_1);
+		audio_Movement_Fail = audioEngine.LoadSound(sMovementFailure_1);
+		audio_RestartLevel = audioEngine.LoadSound(sRestartLevel_1);
+		audio_WinJingle = audioEngine.LoadSound(sWinJingle_1);
+		audio_LevelTransition = audioEngine.LoadSound(sLevelTransition_1);
+		audio_PauseJingle = audioEngine.LoadSound(sPauseJingle_1);
+		audio_UnPauseJingle = audioEngine.LoadSound(sUnPauseJingle_1);
+		audio_LevelCode = audioEngine.LoadSound(sLevelCode_1);
+		audio_LevelCode_Fail = audioEngine.LoadSound(sLevelCodeFail_1);
+		audio_GameStartUp = audioEngine.LoadSound(sGameStartUp);
+		audio_Door_Open = audioEngine.LoadSound(sDoorOpen_1);
+		audio_Door_Close = audioEngine.LoadSound(sDoorClose_1);
+		audio_Teleport = audioEngine.LoadSound(sTeleport_1);
+		audio_Teleport_Fail = audioEngine.LoadSound(sTeleportFailure_1);
+		audio_ButtonClick_1 = audioEngine.LoadSound(sButtonClick_1);
+		audio_ButtonClick_2 = audioEngine.LoadSound(sButtonClick_2);
 
 		// Set Volume					
-		audioEngine_Music.SetOutputVolume(fMusicVolume);
-		audioEngine.SetOutputVolume(fSFXVolume);
+		SetVolume();
 	}
 
 	// Load All Levels into Memory
@@ -4182,8 +4188,7 @@ public:
 		bDoorsOpen = false;
 
 		// reset audio
-		audioEngine.StopAll();
-		audioEngine_Music.StopAll();
+		StopAllAudio();
 
 		// check for no more levels in memory
 		if (vAllLevels[iCurLevel] == "End" || bMainMenu)
@@ -4207,15 +4212,15 @@ public:
 		{
 			if (iCurLevel == -1)
 			{
-				audioEngine.PlayWaveform(&audioSlot_WinJingle, false, fAudioSpeed);			// Play SFX
+				audioEngine.Play(audio_WinJingle);
 			}
 			else if (bWasRestart == true)
 			{
-				audioEngine.PlayWaveform(&audioSlot_RestartLevel, false, fAudioSpeed);		// Play SFX
+				audioEngine.Play(audio_RestartLevel);
 			}
 			else
 			{
-				audioEngine.PlayWaveform(&audioSlot_LevelTransition, false, fAudioSpeed);	// Play SFX
+				audioEngine.Play(audio_LevelTransition);
 			}
 		}
 
@@ -4301,19 +4306,19 @@ public:
 		// restart music
 		if (iCurLevel >= 1 && iCurLevel <= 15 && !bMainMenu)
 		{
-			audioEngine_Music.PlayWaveform(&audioSlot_Music_1, true, fAudioSpeed * 0.75f);
+			audioEngine_Music.Play(audio_backgroundMusic_1, true);
 		}
 		else if (iCurLevel >= 16 && iCurLevel <= 35 && !bMainMenu)
 		{
-			audioEngine_Music.PlayWaveform(&audioSlot_Music_2, true, fAudioSpeed * 0.75f);
+			audioEngine_Music.Play(audio_backgroundMusic_2, true);
 		}
 		else if (iCurLevel >= 36 && iCurLevel <= 50 && !bMainMenu)
 		{
-			audioEngine_Music.PlayWaveform(&audioSlot_Music_3, true, fAudioSpeed * 0.75f);
+			audioEngine_Music.Play(audio_backgroundMusic_3, true);
 		}
 		else if (bMainMenu)
 		{
-			audioEngine_Music.PlayWaveform(&audioSlot_Music_Menu, true, fAudioSpeed * 0.75f);
+			audioEngine_Music.Play(audio_backgroundMusic_Menu, true);
 		}
 	}
 
@@ -4771,6 +4776,123 @@ public:
 	// Utility Functions
 	#pragma region Utility Functions
 
+	// saves a reference to the ID of the currently playing background music track to the audio_CurrentBackgroundTrack variable. Returns 1 for success -1 for failure
+	int CurrentlyPlaying()
+	{
+		if (audioEngine_Music.IsPlaying(audio_backgroundMusic_1))
+		{
+			audio_CurrentBackgroundTrack = &audio_backgroundMusic_1;
+		}
+		else if (audioEngine_Music.IsPlaying(audio_backgroundMusic_2))
+		{
+			audio_CurrentBackgroundTrack = &audio_backgroundMusic_2;
+		}
+		else if (audioEngine_Music.IsPlaying(audio_backgroundMusic_3))
+		{
+			audio_CurrentBackgroundTrack = &audio_backgroundMusic_3;
+		}
+		else if(audioEngine_Music.IsPlaying(audio_backgroundMusic_Menu))
+		{
+			audio_CurrentBackgroundTrack = &audio_backgroundMusic_Menu;
+		}
+		else
+		{
+			audio_CurrentBackgroundTrack = nullptr;
+		}
+
+		if (audio_CurrentBackgroundTrack != nullptr)
+		{
+			return 1;
+		}
+		else
+		{
+			return -1;
+		}
+	}
+
+	// Pause or Unpause Background Music
+	void ToggleMusic()
+	{
+		int iGetBackgroundTrack = CurrentlyPlaying();
+
+		// Succeeded in getting current background track
+		if (iGetBackgroundTrack == 1)
+		{
+			if (audio_CurrentBackgroundTrack == &audio_backgroundMusic_1)
+			{
+				audioEngine_Music.Toggle(audio_backgroundMusic_1);
+			}
+			else if (audio_CurrentBackgroundTrack == &audio_backgroundMusic_2)
+			{
+				audioEngine_Music.Toggle(audio_backgroundMusic_2);
+			}
+			else if (audio_CurrentBackgroundTrack == &audio_backgroundMusic_3)
+			{
+				audioEngine_Music.Toggle(audio_backgroundMusic_3);
+			}
+			else if (audio_CurrentBackgroundTrack == &audio_backgroundMusic_Menu)
+			{
+				audioEngine_Music.Toggle(audio_backgroundMusic_Menu);
+			}
+		}
+	}
+
+	// Sets Volume for all sounds & music - based on global fMusicVolume and fSFXVolume variables
+	void SetVolume()
+	{
+		// Music
+		audioEngine_Music.SetVolume(audio_backgroundMusic_1, fMusicVolume);
+		audioEngine_Music.SetVolume(audio_backgroundMusic_2, fMusicVolume);
+		audioEngine_Music.SetVolume(audio_backgroundMusic_3, fMusicVolume);
+		audioEngine_Music.SetVolume(audio_backgroundMusic_Menu, fMusicVolume);
+
+		// SFX
+		audioEngine.SetVolume(audio_Movement_1, fSFXVolume);
+		audioEngine.SetVolume(audio_Movement_Fail, fSFXVolume);
+		audioEngine.SetVolume(audio_RestartLevel, fSFXVolume);
+		audioEngine.SetVolume(audio_WinJingle, fSFXVolume);
+		audioEngine.SetVolume(audio_LevelTransition, fSFXVolume);
+		audioEngine.SetVolume(audio_PauseJingle, fSFXVolume);
+		audioEngine.SetVolume(audio_UnPauseJingle, fSFXVolume);
+		audioEngine.SetVolume(audio_LevelCode, fSFXVolume);
+		audioEngine.SetVolume(audio_LevelCode_Fail, fSFXVolume);
+		audioEngine.SetVolume(audio_GameStartUp, fSFXVolume);
+		audioEngine.SetVolume(audio_Door_Open, fSFXVolume);
+		audioEngine.SetVolume(audio_Door_Close, fSFXVolume);
+		audioEngine.SetVolume(audio_Teleport, fSFXVolume);
+		audioEngine.SetVolume(audio_Teleport_Fail, fSFXVolume);
+		audioEngine.SetVolume(audio_ButtonClick_1, fSFXVolume);
+		audioEngine.SetVolume(audio_ButtonClick_2, fSFXVolume);
+	}
+
+	// Stops all currently playing audio
+	void StopAllAudio()
+	{
+		// Music
+		audioEngine_Music.Stop(audio_backgroundMusic_1);
+		audioEngine_Music.Stop(audio_backgroundMusic_2);
+		audioEngine_Music.Stop(audio_backgroundMusic_3);
+		audioEngine_Music.Stop(audio_backgroundMusic_Menu);
+
+		// SFX
+		audioEngine.Stop(audio_Movement_1);
+		audioEngine.Stop(audio_Movement_Fail);
+		audioEngine.Stop(audio_RestartLevel);
+		audioEngine.Stop(audio_WinJingle);
+		audioEngine.Stop(audio_LevelTransition);
+		audioEngine.Stop(audio_PauseJingle);
+		audioEngine.Stop(audio_UnPauseJingle);
+		audioEngine.Stop(audio_LevelCode);
+		audioEngine.Stop(audio_LevelCode_Fail);
+		audioEngine.Stop(audio_GameStartUp);
+		audioEngine.Stop(audio_Door_Open);
+		audioEngine.Stop(audio_Door_Close);
+		audioEngine.Stop(audio_Teleport);
+		audioEngine.Stop(audio_Teleport_Fail);
+		audioEngine.Stop(audio_ButtonClick_1);
+		audioEngine.Stop(audio_ButtonClick_2);
+	}
+
 	// Sets LevelSet variable based on current level
 	void SetLevelSet()
 	{
@@ -5115,19 +5237,6 @@ public:
 		ss << std::fixed << std::setprecision(iPrecision) << fIn;
 
 		return ss.str();
-	}
-
-	// Toggles Music based on BackgroundMusic Flag
-	void BackgroundMusicToggle()
-	{
-		if (!bDoBackgroundMusic)
-		{
-			audioEngine_Music.SetOutputVolume(0.0f);
-		}
-		else
-		{
-			audioEngine_Music.SetOutputVolume(fMusicVolume);
-		}
 	}
 
 	// Tracks & Records Time per Frame for Level Time Score
