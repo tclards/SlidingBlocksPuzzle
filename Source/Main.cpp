@@ -11,6 +11,7 @@
 // TODO_BUGS
 // Audio Problems - crackling constantly + audio delayed slightly from time it should be playing. Spam movement misses some play audio calls
 // - crackling seems worst in the main menu. Only minor or not at all in game?
+// - confirmed only a problem with main menu, also confirmed not an issue with the music file itself, as changing main menu music to other tracks still has crackling
 
 // TODO_AudioAdjustments
 // movement fail speed * 2
@@ -1971,7 +1972,11 @@ public:
 			if (audioEngine.GetSound(audio_GameStartUp)->atEnd)
 			{
 				// Start Background Music
-				audioEngine_Music.Play(audio_backgroundMusic_Menu);
+				if (!bDoBackgroundMusic)
+				{
+					bDoBackgroundMusic = true;
+					//audioEngine_Music.Play(audio_backgroundMusic_Menu);
+				}
 
 				// Set Flags
 				bGameStarted = true;
@@ -2015,9 +2020,22 @@ public:
 		if (GetKey(olc::Key::ENTER).bPressed)										// Unpause
 		{
 			audioEngine.Play(audio_UnPauseJingle);									// Play UnPause Jingle SFX
-			ToggleMusic();															// Unmute Music
 			bPaused = false;														// Reset Flags
 			bPauseJinglePlayed = false;
+
+			// restart music
+			if (iCurLevel >= 1 && iCurLevel <= 15 && !bMainMenu)
+			{
+				audioEngine_Music.Play(audio_backgroundMusic_1, true);
+			}
+			else if (iCurLevel >= 16 && iCurLevel <= 35 && !bMainMenu)
+			{
+				audioEngine_Music.Play(audio_backgroundMusic_2, true);
+			}
+			else if (iCurLevel >= 36 && iCurLevel <= 50 && !bMainMenu)
+			{
+				audioEngine_Music.Play(audio_backgroundMusic_3, true);
+			}
 		}
 		if (GetKey(olc::Key::ESCAPE).bPressed)										// Quit to Main Menu
 		{
@@ -2043,11 +2061,6 @@ public:
 	// Called per Frame while Main Menu flag is on
 	void MainMenu(float fElapsedTime)
 	{
-		if (!audioEngine_Music.IsPlaying(audio_backgroundMusic_Menu))
-		{
-			audioEngine_Music.Play(audio_backgroundMusic_Menu);
-		}
-
 		iLevelSet = -1;
 
 		if (bDebugMode)
@@ -4309,7 +4322,7 @@ public:
 		}
 		else if (bMainMenu)
 		{
-			audioEngine_Music.Play(audio_backgroundMusic_Menu, true);
+			//audioEngine_Music.Play(audio_backgroundMusic_Menu, true);
 		}
 	}
 
@@ -4823,7 +4836,7 @@ public:
 			}
 			else if (audio_CurrentBackgroundTrack == &audio_backgroundMusic_Menu)
 			{
-				audioEngine_Music.Toggle(audio_backgroundMusic_Menu);
+				//audioEngine_Music.Toggle(audio_backgroundMusic_Menu);
 			}
 		}
 	}
