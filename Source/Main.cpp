@@ -7,15 +7,8 @@
 
 // Todo List
 #pragma region TODO LIST
-
-// breakpoints - location of main menu music calls currently commented out
-
 // TODO_BUGS
-// Audio Problems - crackling constantly + audio delayed slightly from time it should be playing. Spam movement misses some play audio calls
-// - crackling seems worst in the main menu. Only minor or not at all in game?
-// - confirmed only a problem with main menu, also confirmed not an issue with the music file itself, as changing main menu music to other tracks still has crackling
-// You Win! Screen -> into main menu // no music plays
-
+// Audio Problems - crackling constantly in background music
 
 // TODO_A - Finish Game
 // Update Name
@@ -27,6 +20,13 @@
 //		- Showcases
 // create itch.io page
 // QA Test on multiple machines
+#pragma endregion
+
+// Known Bugs
+#pragma region Known Bugs
+// Known Bugs
+//	- Rapidly spamming movement key sometimes misses audio calls - resulting, for example, in moving twice with only a single movement sfx playing
+
 #pragma endregion
 
 // Controls
@@ -1568,7 +1568,7 @@ public:
 			if (bEnableInput && GetKey(olc::Key::ESCAPE).bPressed || GetKey(olc::Key::P).bPressed)
 			{
 				fTime_WinScreen = 0.0f;
-				ToggleMusic();										// Unpause Background Music
+				bDoBackgroundMusic = true;
 				bMainMenu = true;									// Set Flag
 
 				// Reset All Level Score Data
@@ -1976,7 +1976,10 @@ public:
 				{
 					// Start Music
 					bDoBackgroundMusic = true;
-					audioEngine_Music.Play(audio_backgroundMusic_Menu);
+					if (audioEngine_Music.IsPlaying(audio_backgroundMusic_Menu) == false)
+					{
+						audioEngine_Music.Play(audio_backgroundMusic_Menu);
+					}
 				}
 
 				// Set Flags
@@ -1992,6 +1995,9 @@ public:
 		{
 			// Check for Quit Game flag
 			if (bQuitGame) { StopAllAudio(); return false; }
+
+			// Handle Music
+			DoBackgroundMusic();
 
 			// Main Menu Logic
 			if (bMainMenu) { MainMenu(fElapsedTime); return true; }
@@ -2663,7 +2669,7 @@ public:
 			{
 				bEnableInput = true;
 				iLevelSet = -1;
-				ToggleMusic();
+				bDoBackgroundMusic = false;
 
 				// Draw Background & Blank Menu Level
 				DrawSprite(olc::vi2d(0, 0), gfxBackground_YouWin.Sprite());
@@ -4307,24 +4313,6 @@ public:
 				}
 			}
 		}
-
-		// restart music
-		if (iCurLevel >= 1 && iCurLevel <= 15 && !bMainMenu)
-		{
-			audioEngine_Music.Play(audio_backgroundMusic_1, true);
-		}
-		else if (iCurLevel >= 16 && iCurLevel <= 35 && !bMainMenu)
-		{
-			audioEngine_Music.Play(audio_backgroundMusic_2, true);
-		}
-		else if (iCurLevel >= 36 && iCurLevel <= 50 && !bMainMenu)
-		{
-			audioEngine_Music.Play(audio_backgroundMusic_3, true);
-		}
-		else if (bMainMenu)
-		{
-			audioEngine_Music.Play(audio_backgroundMusic_Menu, true);
-		}
 	}
 
 	// Saves Moves High score for Current Level if it is better than previous High Score
@@ -4781,6 +4769,49 @@ public:
 	// Utility Functions
 	#pragma region Utility Functions
 
+	// Handles Playing of background music
+	void DoBackgroundMusic()
+	{
+		if (bDoBackgroundMusic == true)
+		{
+			if (iCurLevel >= 1 && iCurLevel <= 15 && !bMainMenu) // Easy Levels
+			{
+				if (audioEngine_Music.IsPlaying(audio_backgroundMusic_1) == false)
+				{
+					audioEngine_Music.Play(audio_backgroundMusic_1, true);
+				}
+			}
+			else if (iCurLevel >= 16 && iCurLevel <= 35 && !bMainMenu) // Medium Levels
+			{
+				if (audioEngine_Music.IsPlaying(audio_backgroundMusic_2) == false)
+				{
+					audioEngine_Music.Play(audio_backgroundMusic_2, true);
+				}
+			}
+			else if (iCurLevel >= 36 && iCurLevel <= 50 && !bMainMenu) // Hard Levels
+			{
+				if (audioEngine_Music.IsPlaying(audio_backgroundMusic_3) == false)
+				{
+					audioEngine_Music.Play(audio_backgroundMusic_3, true);
+				}
+			}
+			else if (bMainMenu) // Main Menu
+			{
+				if (audioEngine_Music.IsPlaying(audio_backgroundMusic_Menu) == false)
+				{
+					audioEngine_Music.Play(audio_backgroundMusic_Menu, true);
+				}
+			}
+		}
+		else
+		{
+			audioEngine_Music.Stop(audio_backgroundMusic_1);
+			audioEngine_Music.Stop(audio_backgroundMusic_2);
+			audioEngine_Music.Stop(audio_backgroundMusic_3);
+			audioEngine_Music.Stop(audio_backgroundMusic_Menu);
+		}
+	}
+
 	// saves a reference to the ID of the currently playing background music track to the audio_CurrentBackgroundTrack variable. Returns 1 for success -1 for failure
 	int CurrentlyPlaying()
 	{
@@ -4815,7 +4846,7 @@ public:
 		}
 	}
 
-	// Pause or Unpause Background Music
+	// Pause or Unpause Background Music - used exclusively in pause function
 	void ToggleMusic()
 	{
 		int iGetBackgroundTrack = CurrentlyPlaying();
