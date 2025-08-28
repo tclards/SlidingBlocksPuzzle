@@ -8,7 +8,7 @@
 // Todo List
 #pragma region TODO LIST
 // TODO_BUGS
-// Audio Problems - crackling constantly in background music
+// Audio Problems - crackling constantly in background music - most noticable in main menu
 
 // TODO_A - Finish Game
 // Update Name
@@ -21,6 +21,9 @@
 // create itch.io page
 // QA Test on multiple machines
 #pragma endregion
+
+// Created by Tyler Clardy in Summer 2025
+// Thanks to oneLoneCoder and his community for the PixelGameEngine, as well as the inspiration for the start of the project. You rock, Javid!
 
 // Known Bugs
 #pragma region Known Bugs
@@ -2029,20 +2032,6 @@ public:
 			audioEngine.Play(audio_UnPauseJingle);									// Play UnPause Jingle SFX
 			bPaused = false;														// Reset Flags
 			bPauseJinglePlayed = false;
-
-			// restart music
-			if (iCurLevel >= 1 && iCurLevel <= 15 && !bMainMenu)
-			{
-				audioEngine_Music.Play(audio_backgroundMusic_1, true);
-			}
-			else if (iCurLevel >= 16 && iCurLevel <= 35 && !bMainMenu)
-			{
-				audioEngine_Music.Play(audio_backgroundMusic_2, true);
-			}
-			else if (iCurLevel >= 36 && iCurLevel <= 50 && !bMainMenu)
-			{
-				audioEngine_Music.Play(audio_backgroundMusic_3, true);
-			}
 		}
 		if (GetKey(olc::Key::ESCAPE).bPressed)										// Quit to Main Menu
 		{
@@ -5614,6 +5603,3 @@ int main()
 		Incremento.Start();
 	return 0;
 }
-
-// Created by Tyler Clardy in Summer 2025
-// Thanks to oneLoneCoder and his community for the PixelGameEngine, as well as the inspiration for the start of the project. You rock, Javid!
