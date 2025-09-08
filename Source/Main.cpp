@@ -5,31 +5,14 @@
 #include <fstream>
 #include <cmath>
 
-// Todo List
-#pragma region TODO LIST
-// TODO_BUGS
-// Audio Problems - crackling constantly in background music - most noticable in main menu
-
-// TODO_A - Finish Game
-// Update Name
-//		- project & exe output
-
-// TODO_B - Prerelease Steps
-// create promotional materials
-//		- Trailer
-//		- Showcases
-// create itch.io page
-// QA Test on multiple machines
-#pragma endregion
-
 // Created by Tyler Clardy in Summer 2025
 // Thanks to oneLoneCoder and his community for the PixelGameEngine, as well as the inspiration for the start of the project. You rock, Javid!
 
 // Known Bugs
 #pragma region Known Bugs
 // Known Bugs
-//	- Rapidly spamming movement key sometimes misses audio calls - resulting, for example, in moving twice with only a single movement sfx playing
-
+//	- Rapidly spamming movement key sometimes misses audio calls - resulting, for example, in moving twice with only a single movement sfx playing.
+//  - Main Menu background music has some slight crackling on some devices. This is worse in debug mode.
 #pragma endregion
 
 // Controls
