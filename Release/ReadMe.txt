@@ -12,7 +12,7 @@
 Programming: 		Tyler Clardy
 Art Design:		Tyler Clardy
 Sound Design:		Tyler Clardy
-Level Design: 		Tyler Clardy, James Norman, Aaron McBroom
+Level Design: 		Tyler Clardy
 Promotional Materials:	Tyler Clardy
 
 =======================================
@@ -30,8 +30,8 @@ Levels 1 through 15 are Easy.
 Levels 16 through 35 are Medium.
 Levels 36 through 50 are Hard.
 Level Difficulty is indicated by the Color of the Wall Blocks.
-Keep an eye out for the Checkpoint Code in the bottom right corner as you beat each Level Set. 
-Input Checkpoint Codes from the Main Menu to return to a Level Set.
+Keep an eye out for the Checkpoint Code in the top right corner as you beat each Level Set. 
+Input Checkpoint Codes from the Main Menu to quickly return to a Level Set.
 
 The number of Moves you make to beat each Level and the Time it takes you is recorded. Can you get the best Time and Move count for each Level?
 Check the High Score screen from the Main Menu to see your Scores!
