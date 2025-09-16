@@ -26,7 +26,7 @@
 // L (While Debug Enabled) - Skip to You Win Screen
 #pragma endregion
 
-// Globally Defined Variables & lambda functions
+// Globally Defined Variables
 #pragma region Globals
 
 // Defining Values for the Movement System
@@ -38,9 +38,6 @@ constexpr int WEST = 3;
 // Defining Level Size &  Block Size
 olc::vf2d vLevelSize = { 16,15 };
 olc::vi2d vBlockSize = { 16,16 };
-
-// Lambda Functions:
-auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; }; // Translates Coordinates 2D to 1D
 #pragma endregion
 
 // Game Class
@@ -1480,6 +1477,9 @@ public:
 	// Gameplay per Frame
 	bool DoGameplayLogic(float fElapsedTime)
 	{
+		// Lambda Function:
+		auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; }; // Translates Coordinates 2D to 1D
+
 		// Teleport GFX Check
 		if (bLevelHasTeleports) { DoTeleportFlipCheck(fElapsedTime); }
 
@@ -1799,6 +1799,9 @@ public:
 	// Button Checking & Button Logic per frame
 	void DoButtonCheck(bool bPlayerMoved, float fElapsedTime)
 	{
+		// Lambda Function:
+		auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; }; // Translates Coordinates 2D to 1D
+
 		// Win Tile Button Check
 		if (vGoals.size() != 0)
 		{
@@ -2439,6 +2442,9 @@ public:
 	// Draws Level
 	void DrawLevel(int iLevelSet, bool bClearScreen)
 	{
+		// Lambda Function:
+		auto id = [&](olc::vi2d& pos) { return pos.y * vLevelSize.x + pos.x; }; // Translates Coordinates 2D to 1D
+
 		// Handle background
 		if (bClearScreen)
 		{
