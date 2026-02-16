@@ -5,6 +5,12 @@
 #include <fstream>
 #include <cmath>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#include <filesystem>
+#endif
+
 // Created by Tyler Clardy in Summer 2025
 // Thanks to oneLoneCoder and his community for the PixelGameEngine, as well as the inspiration for the start of the project. You rock, Javid!
 
@@ -3930,7 +3936,17 @@ public:
 	// FileIO - Load Saved Options
 	int LoadOptions() // returns -1 for failure, or 1 for success
 	{
-		std::ifstream inOptions("Options.txt");
+		#ifdef __EMSCRIPTEN__
+		EM_ASM(
+			FS.mkdir('/persistent');
+		FS.mount(IDBFS, {}, '/persistent');
+		FS.syncfs(true, function(err) {
+			assert(!err);
+		});
+			);
+		#endif
+
+		std::ifstream inOptions("persistent/Options.txt");
 
 		if (inOptions.is_open())
 		{
@@ -3975,7 +3991,7 @@ public:
 	// FileIO - Save Options Menu
 	int SaveOptions() // returns -1 for failure, or 1 for success
 	{
-		std::ofstream outOptions("Options.txt");
+		std::ofstream outOptions("persistent/Options.txt");
 		outOptions.clear();
 
 		if (outOptions.is_open())
@@ -3984,6 +4000,7 @@ public:
 			outOptions << "{Volume_Music}=\n" << fMusicVolume;
 
 			outOptions.close();
+			DoEmscriptenPersistentSave();
 			return 1;
 		}
 		else
@@ -3997,9 +4014,19 @@ public:
 	// FileIO - Load High Scores
 	int LoadHighScores() // returns -1 for failure, or 1 for success
 	{
+		#ifdef __EMSCRIPTEN__
+		EM_ASM(
+			FS.mkdir('/persistent');
+		FS.mount(IDBFS, {}, '/persistent');
+		FS.syncfs(true, function(err) {
+			assert(!err);
+		});
+			);
+		#endif
+
 		// Open Streams
-		std::ifstream inHighScores_Moves("HighScores_Moves.txt");
-		std::ifstream inHighScores_Time("HighScores_Time.txt");
+		std::ifstream inHighScores_Moves("persistent/HighScores_Moves.txt");
+		std::ifstream inHighScores_Time("persistent/HighScores_Time.txt");
 
 		// Check for streams opening correctly
 		if (inHighScores_Moves.is_open() && inHighScores_Time.is_open())
@@ -4042,8 +4069,8 @@ public:
 	// FileIO - Save High Scores
 	int SaveHighScores() // returns -1 for failure, or 1 for success
 	{
-		std::ofstream outHighScores_Moves("HighScores_Moves.txt");
-		std::ofstream outHighScores_Time("HighScores_Time.txt");
+		std::ofstream outHighScores_Moves("persistent/HighScores_Moves.txt");
+		std::ofstream outHighScores_Time("persistent/HighScores_Time.txt");
 		outHighScores_Moves.clear();
 		outHighScores_Time.clear();
 
@@ -4062,6 +4089,7 @@ public:
 			outHighScores_Moves.close();
 			outHighScores_Time.close();
 
+			DoEmscriptenPersistentSave();
 			return 1;
 		}
 		else
@@ -4744,6 +4772,18 @@ public:
 
 	// Utility Functions
 	#pragma region Utility Functions
+
+	// Handles Persistent Browser Saving
+	void DoEmscriptenPersistentSave()
+	{
+		#ifdef __EMSCRIPTEN__
+		EM_ASM(
+			FS.syncfs(function(err) {
+			assert(!err);
+		});
+		);
+		#endif
+	}
 
 	// Handles Playing of background music
 	void DoBackgroundMusic()
